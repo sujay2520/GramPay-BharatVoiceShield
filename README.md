@@ -99,5 +99,30 @@ Includes 16 automated cells testing synthetic vocoder detection, speaker verific
 
 ---
 
+## 🚀 Vercel Deployment
+
+GramPay's frontend is optimized for zero-configuration, zero-downtime deployment on **Vercel**:
+
+### Option A: Import Entire Repository (Root Directory = `.`)
+1. Import repository into Vercel.
+2. Leave **Root Directory** as `./` (or default).
+3. The root [`vercel.json`](file:///c:/Users/chandan.s/OneDrive/Desktop/Unclone/vercel.json) automatically configures clean URLs, routes `/(farmer|judge|split)` to `index.html`, and serves all static assets from `Frontend/`.
+
+### Option B: Deploy Frontend Directory (Root Directory = `Frontend`)
+1. In Vercel Project Settings, set **Root Directory** to `Frontend`.
+2. [`Frontend/vercel.json`](file:///c:/Users/chandan.s/OneDrive/Desktop/Unclone/Frontend/vercel.json) handles clean URLs, view routes, and audio caching.
+
+### Connecting to Live Backend Gateway:
+- **URL Parameter**: Open `https://<your-app>.vercel.app/?backend=https://your-backend.railway.app`
+- **UI Configuration**: Click the **DetectifAI Status Badge** in the header or switch to the **Judge Console** to enter your backend URL and click **Save**.
+- **Vercel Reverse Proxy**: For same-origin `/api` routing, add a rewrite in `vercel.json`:
+  ```json
+  { "source": "/api/(.*)", "destination": "https://your-backend.railway.app/api/$1" }
+  ```
+- **Offline / Demonstration Mode**: The demo quick-test scenarios include offline simulation fallbacks so the biometric telemetry and live audio scenarios display seamlessly even if the backend is momentarily disconnected.
+
+---
+
 ## 📄 License & Attribution
 Developed for the **BMSCE AI Hackathon 2026 (Track 3: UNCLONE Agents)**. Powered by DetectifAI and NVIDIA Nemotron.
+

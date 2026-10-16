@@ -105,7 +105,7 @@
         </div>
 
         <!-- Health / Reachable Badge -->
-        <div id="healthBadge" class="flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold shadow-sm text-ink">
+        <div id="healthBadge" class="flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold shadow-sm text-ink cursor-pointer hover:border-gold hover:shadow transition" title="Backend Gateway Status. Click to configure backend URL">
           <span id="healthDot" class="relative flex h-2.5 w-2.5">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
@@ -738,11 +738,14 @@
 
         <!-- 4. Backend Gateway Connection URL -->
         <div class="rounded-2xl bg-ink-soft p-4 space-y-2">
-          <label class="block text-xs font-bold tracking-wider text-cream-2 uppercase">
-            Backend Gateway URL
-          </label>
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold tracking-wider text-cream-2 uppercase">
+              Backend Gateway URL
+            </label>
+            <span class="text-[11px] text-cream-2/70 font-mono">Relative /api or custom URL</span>
+          </div>
           <div class="flex gap-2">
-            <input id="backendUrlInput" value="http://localhost:8000" placeholder="http://localhost:8000"
+            <input id="backendUrlInput" value="" placeholder="Relative /api or https://your-backend.railway.app or http://localhost:8000"
               class="min-h-11 flex-1 rounded-xl border border-ink bg-ink px-3 text-sm text-cream outline-none focus:border-gold font-mono" />
             <button id="btnSaveBackend" type="button"
               class="min-h-11 rounded-xl bg-gold px-4 text-sm font-bold text-ink hover:bg-gold-bright transition">
@@ -753,6 +756,9 @@
               Health
             </button>
           </div>
+          <p class="text-[11px] text-cream-2/70 leading-relaxed">
+            Leave blank for relative <code class="text-gold-bright">/api</code> routing (Vercel rewrites), or enter your live FastAPI backend origin (e.g. <code class="text-gold-bright">https://backend.railway.app</code>). You can also pass <code class="text-gold-bright">?backend=https://...</code> in the browser URL.
+          </p>
         </div>
 
         <!-- 5. Raw Telemetry JSON Payload -->

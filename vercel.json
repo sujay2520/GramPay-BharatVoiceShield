@@ -2,16 +2,44 @@
   "version": 2,
   "public": true,
   "name": "grampay-bharatvoice-shield",
-  "builds": [
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
     {
-      "src": "Frontend/**",
-      "use": "@vercel/static"
+      "source": "/(farmer|judge|split)",
+      "destination": "/Frontend/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/Frontend/$1"
     }
   ],
-  "routes": [
+  "headers": [
     {
-      "src": "/(.*)",
-      "dest": "/Frontend/$1"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization, X-Requested-With"
+        }
+      ]
+    },
+    {
+      "source": "/Frontend/(audio|data_audio)/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
     }
   ]
 }

@@ -15,10 +15,63 @@
  * - Live Audit Log Table: /api/audit?limit=30 with auto & manual refresh
  */
 
-// ========== 1. CONFIGURATION ==========
-const BACKEND_URL = (typeof window !== "undefined" && window.location.origin && window.location.origin.startsWith("http") && window.location.port === "8000")
-  ? window.location.origin
-  : "http://localhost:8000";
+// ========== 1. CONFIGURATION & VERCEL/CLOUD GATEWAY RESOLUTION ==========
+function cleanBackendUrl(url) {
+  if (!url) return "";
+  const trimmed = String(url).trim();
+  if (trimmed === "/" || trimmed.toLowerCase() === "relative" || trimmed.toLowerCase() === "self") return "";
+  return trimmed.replace(/\/+$/, "");
+}
+
+function resolveInitialBackendUrl() {
+  if (typeof window === "undefined") return "http://localhost:8000";
+
+  // 1. URL Query Parameter override: ?backend=https://... or ?api=... or ?backend=relative
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const param = params.get("backend") || params.get("api");
+    if (param !== null) {
+      const cleaned = cleanBackendUrl(param);
+      try {
+        localStorage.setItem("unclone_backend_url", cleaned || "relative");
+      } catch (e) {}
+      return cleaned;
+    }
+  } catch (e) {}
+
+  // 2. LocalStorage persistence from previous user / judge configuration
+  try {
+    const saved = localStorage.getItem("unclone_backend_url");
+    if (saved !== null && saved !== "") {
+      return cleanBackendUrl(saved);
+    }
+  } catch (e) {}
+
+  // 3. Global Window Injection (e.g., from index.html or CI script)
+  if (typeof window.GRAMPAY_BACKEND_URL === "string" && window.GRAMPAY_BACKEND_URL.trim() !== "") {
+    return cleanBackendUrl(window.GRAMPAY_BACKEND_URL);
+  }
+
+  // 4. Same-origin detection:
+  if (window.location.origin && window.location.origin.startsWith("http")) {
+    // If served directly by FastAPI backend on port 8000
+    if (window.location.port === "8000") {
+      return window.location.origin;
+    }
+    // If local dev server (port 3000, 5500, 8080, etc.), default to local backend on 8000
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return "http://localhost:8000";
+    }
+    // Deployed on Vercel / HTTPS cloud domain:
+    // Default to relative API routing ("") so requests like fetch(`${BACKEND_URL}/api/...`)
+    // route seamlessly through Vercel rewrites or the hosting domain without mixed-content errors.
+    return "";
+  }
+
+  return "http://localhost:8000";
+}
+
+let BACKEND_URL = resolveInitialBackendUrl();
 
 // ========== 2. APPLICATION STATE ==========
 let mediaRecorder = null;
@@ -201,14 +254,17 @@ function setHealthBadge(ok, detectifReachable, details) {
       `;
     }
     if (text) text.textContent = "DetectifAI reachable";
+    badge.title = `Backend Gateway: ${BACKEND_URL || "Relative (/api)"} (DetectifAI Live). Click to configure.`;
   } else if (ok === true) {
     badge.classList.add("health-unknown");
     if (dot) dot.innerHTML = `<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-wait"></span>`;
     if (text) text.textContent = "Backend up · DetectifAI unreachable";
+    badge.title = `Backend Gateway: ${BACKEND_URL || "Relative (/api)"} (DetectifAI unreachable). Click to configure.`;
   } else {
     badge.classList.add("health-fail");
     if (dot) dot.innerHTML = `<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-alert"></span>`;
     if (text) text.textContent = "Unreachable. Gate stays closed.";
+    badge.title = `Backend Gateway: ${BACKEND_URL || "Relative (/api)"} (Unreachable). Click to configure live backend URL.`;
   }
 }
 
@@ -1397,18 +1453,32 @@ $("presetPmKisan")?.addEventListener("click", () => {
 
 // Backend URL & Health check buttons
 $("btnSaveBackend")?.addEventListener("click", () => {
-  const url = $("backendUrlInput")?.value.trim();
-  if (url) {
-    BACKEND_URL = url;
-    localStorage.setItem("unclone_backend_url", url);
-    showOverlay("Connecting to " + url + "…");
-    apiHealth().finally(hideOverlay);
+  const inputVal = $("backendUrlInput")?.value;
+  const url = cleanBackendUrl(inputVal);
+  BACKEND_URL = url;
+  try {
+    localStorage.setItem("unclone_backend_url", url || "relative");
+  } catch (e) {}
+  if ($("backendUrlInput")) {
+    $("backendUrlInput").value = BACKEND_URL;
   }
+  showOverlay("Connecting to " + (url || "Relative /api") + "…");
+  apiHealth().finally(hideOverlay);
 });
 
 $("btnCheckHealth")?.addEventListener("click", () => {
   showOverlay("Checking health…");
   apiHealth().finally(hideOverlay);
+});
+
+// Click Health Badge to quickly inspect/configure Backend URL
+$("healthBadge")?.addEventListener("click", () => {
+  setView("judge");
+  const input = $("backendUrlInput");
+  if (input) {
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
+    input.focus();
+  }
 });
 
 // 2. Senior / Farmer Audio Recording & File Handling
@@ -1866,10 +1936,21 @@ $("costAssumption")?.addEventListener("change", () => {
     $("currentSpeakerLabel").textContent = "Ramesh Patel (Kisan Account)";
   }
 
-  // Initialize Active View (defaults to farmer simple view)
+  // Initialize Active View (defaults to farmer simple view, supports ?view=judge, #judge, or path routing)
   try {
-    const savedView = localStorage.getItem("unclone_active_view") || "farmer";
-    setView(savedView);
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewParam = urlParams.get("view") || urlParams.get("tab") || window.location.hash.replace("#", "");
+    const path = window.location.pathname.toLowerCase();
+    if (viewParam && ["farmer", "judge", "split"].includes(viewParam.toLowerCase())) {
+      setView(viewParam.toLowerCase());
+    } else if (path.includes("judge")) {
+      setView("judge");
+    } else if (path.includes("split")) {
+      setView("split");
+    } else {
+      const savedView = localStorage.getItem("unclone_active_view") || "farmer";
+      setView(savedView);
+    }
   } catch (e) {
     setView("farmer");
   }
