@@ -736,30 +736,40 @@
           <p id="credResult" class="text-xs font-mono text-cream-2 break-all"></p>
         </div>
 
-        <!-- 4. Backend Gateway Connection URL -->
-        <div class="rounded-2xl bg-ink-soft p-4 space-y-2">
-          <div class="flex items-center justify-between">
-            <label class="block text-xs font-bold tracking-wider text-cream-2 uppercase">
-              Backend Gateway URL
-            </label>
-            <span class="text-[11px] text-cream-2/70 font-mono">Relative /api or custom URL</span>
+        <!-- 4. Backend Gateway Connection URL (Advanced Collapsible) -->
+        <details class="group rounded-2xl bg-ink-soft p-4 space-y-3 border border-ink/40">
+          <summary class="cursor-pointer text-xs font-bold tracking-wider text-cream-2 uppercase select-none flex items-center justify-between list-none">
+            <span class="flex items-center gap-2">
+              <span>⚙️</span>
+              <span>Advanced Gateway Routing</span>
+              <span class="rounded bg-safe/20 px-1.5 py-0.5 text-[10px] font-semibold text-safe">Auto-Integrated</span>
+            </span>
+            <span class="text-xs text-gold-bright group-open:rotate-180 transition">▼</span>
+          </summary>
+          <div class="pt-2 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="block text-xs font-bold tracking-wider text-cream-2 uppercase">
+                Gateway Origin
+              </label>
+              <span class="text-[11px] text-cream-2/70 font-mono">Relative /api or custom URL</span>
+            </div>
+            <div class="flex gap-2">
+              <input id="backendUrlInput" value="" placeholder="Relative /api or https://your-backend.railway.app or http://localhost:8000"
+                class="min-h-11 flex-1 rounded-xl border border-ink bg-ink px-3 text-sm text-cream outline-none focus:border-gold font-mono" />
+              <button id="btnSaveBackend" type="button"
+                class="min-h-11 rounded-xl bg-gold px-4 text-sm font-bold text-ink hover:bg-gold-bright transition">
+                Save
+              </button>
+              <button id="btnCheckHealth" type="button"
+                class="min-h-11 rounded-xl border border-cream-2/40 px-3 text-sm font-semibold text-cream hover:bg-ink-soft transition">
+                Health
+              </button>
+            </div>
+            <p class="text-[11px] text-cream-2/70 leading-relaxed">
+              Default uses self-contained automatic gateway routing. Optionally enter a custom FastAPI backend origin (e.g. <code class="text-gold-bright">http://localhost:8000</code>).
+            </p>
           </div>
-          <div class="flex gap-2">
-            <input id="backendUrlInput" value="" placeholder="Relative /api or https://your-backend.railway.app or http://localhost:8000"
-              class="min-h-11 flex-1 rounded-xl border border-ink bg-ink px-3 text-sm text-cream outline-none focus:border-gold font-mono" />
-            <button id="btnSaveBackend" type="button"
-              class="min-h-11 rounded-xl bg-gold px-4 text-sm font-bold text-ink hover:bg-gold-bright transition">
-              Save
-            </button>
-            <button id="btnCheckHealth" type="button"
-              class="min-h-11 rounded-xl border border-cream-2/40 px-3 text-sm font-semibold text-cream hover:bg-ink-soft transition">
-              Health
-            </button>
-          </div>
-          <p class="text-[11px] text-cream-2/70 leading-relaxed">
-            Leave blank for relative <code class="text-gold-bright">/api</code> routing (Vercel rewrites), or enter your live FastAPI backend origin (e.g. <code class="text-gold-bright">https://backend.railway.app</code>). You can also pass <code class="text-gold-bright">?backend=https://...</code> in the browser URL.
-          </p>
-        </div>
+        </details>
 
         <!-- 5. Raw Telemetry JSON Payload -->
         <div>
