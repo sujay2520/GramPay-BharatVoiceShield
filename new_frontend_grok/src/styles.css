@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #10211c;
+  --color-ink-soft: #1c332b;
+  --color-cream: #f4efe6;
+  --color-cream-2: #e7e0d2;
+  --color-paper: #fbf8f2;
+  --color-gold: #a6843d;
+  --color-gold-bright: #c4a15a;
+  --color-safe: #1b6b45;
+  --color-safe-bg: #e5f4eb;
+  --color-alert: #9b1c1c;
+  --color-alert-bg: #fde8e6;
+  --color-wait: #8a5a12;
+  --color-wait-bg: #f8edd6;
+  --color-line: #d8d0c2;
+  --color-muted: #5c675f;
+  --color-fg: #14211c;
+  --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --radius: 1.25rem;
+}
+
+@layer base {
+  html, body { min-height: 100%; }
+  body {
+    background: var(--color-cream);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-alert) 45%, transparent); }
+  100% { box-shadow: 0 0 0 18px transparent; }
+}
+.rec-pulse { animation: pulse-ring 1.1s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rec-pulse { animation: none; }
+}

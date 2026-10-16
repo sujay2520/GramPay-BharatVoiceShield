@@ -1,0 +1,69 @@
+# ==============================================================================
+# Render Blueprint - Persistent Deployment Specification
+# Application: UnClone Gate (Track 3: UNCLONE Agents)
+# Zero-Trust BFSI Voice Security & Cost Optimization Gateway
+# ==============================================================================
+
+version: "1"
+
+services:
+  - type: web
+    name: unclone-gate-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter          # Starter plan supports attached persistent disks
+    region: oregon
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    # Persistent storage for SQLite audit logs and tamper-evident ledger
+    disk:
+      name: unclone-audit-data
+      mountPath: /app/data
+      sizeGB: 1
+
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0
+
+      # DetectifAI Platform Credentials
+      - key: DETECTIF_BASE_URL
+        value: https://api.detectif.ai/v1
+      - key: DETECTIF_API_KEY
+        sync: false        # Supply live API key in Render Dashboard Secrets
+      - key: DETECTIF_TIMEOUT_SECONDS
+        value: "5.0"
+
+      # NVIDIA Nemotron LLM Configuration
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_API_KEY
+        sync: false        # Supply NVIDIA Build API key in Render Dashboard Secrets
+      - key: NEMOTRON_MODEL
+        value: nvidia/nemotron-3.5-super-vl-120b-a12b
+
+      # Cryptographic Credentials & CORS Policy
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: CREDENTIAL_VALIDITY_SECONDS
+        value: "300"
+      - key: ALLOWED_ORIGIN
+        value: "*"
+
+      # Cost Optimization Model (INR)
+      - key: ASSUMED_COST_PER_MIN_INR
+        value: "10.0"
+      - key: EST_CALL_SECONDS_SAVED_PER_BLOCK
+        value: "120.0"
+
+      # Dual-Gate Security Matrix Thresholds
+      - key: MATCH_HIGH
+        value: "0.85"
+      - key: SYNTH_HIGH
+        value: "0.50"
+      - key: SYNTH_LOW
+        value: "0.20"

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "public": true,
+  "name": "grampay-bharatvoice-shield",
+  "builds": [
+    {
+      "src": "Frontend/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/Frontend/$1"
+    }
+  ]
+}

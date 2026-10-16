@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>UnClone Agent Gate | DetectifAI</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            slate: { 950: '#0b1120' }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+
+    <!-- Header -->
+    <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 border-b border-slate-800 pb-5">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-emerald-400 tracking-tight">UnClone Agent Gate</h1>
+        <p class="text-slate-400 text-sm mt-1">Track 3 · Voice Agent Security & Cost Gateway · Powered by DetectifAI</p>
+      </div>
+      <div id="healthBadge" class="px-4 py-2 rounded-lg text-sm font-semibold border flex items-center gap-2 bg-slate-900 border-slate-700 text-slate-400">
+        <span id="healthDot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+        <span id="healthText">Checking…</span>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- ===================== LEFT: Senior View ===================== -->
+      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col">
+        <h2 class="text-lg md:text-xl font-bold text-cyan-400 mb-4 flex items-center gap-2">
+          <span class="text-2xl">👴</span> Senior Citizen Shield
+        </h2>
+
+        <!-- Giant Status Card -->
+        <div id="statusCard" class="flex-1 p-6 rounded-2xl bg-slate-800 border-2 border-slate-700 text-center mb-6 transition-all duration-300 min-h-[180px] flex flex-col justify-center">
+          <div id="statusEmoji" class="text-5xl mb-3">🛡️</div>
+          <h3 id="statusTitle" class="text-xl md:text-2xl font-bold text-slate-200">System Ready</h3>
+          <p id="statusReason" class="text-slate-400 text-sm md:text-base mt-2 max-w-md mx-auto leading-relaxed">
+            Tap and speak, or upload a short clip. The gate will check your voice before any bank action.
+          </p>
+        </div>
+
+        <!-- Verified Agent Badge -->
+        <div class="mb-6 p-4 rounded-xl bg-slate-800/80 border border-slate-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-slate-300">Verified Agent Badge</span>
+            <span id="badgeLabel" class="text-xs px-2 py-1 rounded bg-slate-700 text-slate-400">—</span>
+          </div>
+          <p id="badgeReason" class="text-xs text-slate-500">Issue or verify a credential to see status.</p>
+        </div>
+
+        <!-- Tap & Speak / Record -->
+        <div class="space-y-3">
+          <label class="block text-sm font-medium text-slate-300">Live Voice (3–8 s)</label>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <button id="btnRecord" type="button"
+              class="flex-1 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-bold text-lg py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 select-none">
+              <span id="recordIcon">🎙️</span>
+              <span id="recordLabel">Tap and Speak</span>
+            </button>
+            <button id="btnStop" type="button" disabled
+              class="px-5 py-4 rounded-xl bg-slate-700 text-slate-400 font-semibold disabled:opacity-40">
+              Stop
+            </button>
+          </div>
+          <p id="recordHint" class="text-xs text-slate-500 text-center">Hold or toggle · browser will ask for microphone</p>
+
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-700"></div></div>
+            <div class="relative flex justify-center text-xs"><span class="bg-slate-900 px-2 text-slate-500">or upload file</span></div>
+          </div>
+
+          <input type="file" id="audioFileSenior" accept="audio/*,.wav,.webm,.mp3,.ogg,.m4a"
+            class="w-full text-sm text-slate-300 file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-500" />
+
+          <div class="flex gap-2">
+            <select id="actionSelect" class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm">
+              <option value="CHECK_BALANCE">Check Balance (low risk)</option>
+              <option value="TRANSFER_FUNDS">Transfer Funds (high risk)</option>
+            </select>
+            <input id="amountInput" type="number" placeholder="Amount ₹" min="0" step="100"
+              class="w-28 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm" />
+          </div>
+
+          <button id="btnCheck" type="button"
+            class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3.5 rounded-xl transition shadow-md">
+            Run Gate Check
+          </button>
+          <button id="btnAgentTurn" type="button"
+            class="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 rounded-xl transition">
+            Full Agent Turn (gate → STT → LLM)
+          </button>
+        </div>
+      </section>
+
+      <!-- ===================== RIGHT: Judge Console ===================== -->
+      <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl font-mono text-sm flex flex-col gap-5">
+        <h2 class="text-lg md:text-xl font-bold text-purple-400 flex items-center gap-2">
+          <span class="text-2xl">📊</span> Judge Console
+        </h2>
+
+        <!-- Enroll Box -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Speaker Enrollment</h3>
+          <input type="text" id="enrollName" placeholder="Name (e.g. Mrs. Sharma)"
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm" />
+          <div class="flex gap-2">
+            <button id="btnEnrollRecord" type="button"
+              class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm">
+              🎙️ Record for Enroll
+            </button>
+            <button id="btnEnrollStop" type="button" disabled
+              class="px-4 py-2.5 rounded-lg bg-slate-700 text-slate-400 disabled:opacity-40 text-sm">Stop</button>
+          </div>
+          <input type="file" id="audioFileEnroll" accept="audio/*,.wav,.webm,.mp3,.ogg,.m4a"
+            class="w-full text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white" />
+          <button id="btnEnroll" type="button"
+            class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-bold py-2.5 rounded-lg">
+            Enroll Speaker
+          </button>
+          <p id="enrollResult" class="text-xs text-slate-400 break-all"></p>
+        </div>
+
+        <!-- Metrics & Gauges -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Live Metrics</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-400">Synthetic</span>
+                <span id="gaugeSynthVal" class="text-emerald-400">—</span>
+              </div>
+              <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div id="gaugeSynthBar" class="h-full bg-emerald-500 transition-all duration-500" style="width:0%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-400">Match</span>
+                <span id="gaugeMatchVal" class="text-cyan-400">—</span>
+              </div>
+              <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div id="gaugeMatchBar" class="h-full bg-cyan-500 transition-all duration-500" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-between border-t border-slate-800 pt-2 text-xs">
+            <span class="text-slate-400">Decision</span>
+            <span id="metricDecision" class="font-bold text-yellow-400">—</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400">Tool</span>
+            <span id="metricTool" class="text-yellow-400">LOCKED</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400">Latency (det / ver)</span>
+            <span id="metricLatency" class="text-slate-300">—</span>
+          </div>
+        </div>
+
+        <!-- Cost Meter -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+          <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Cost Meter</h3>
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400">Steps skipped</span>
+            <span id="costSteps">0</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400">Seconds avoided</span>
+            <span id="costSeconds">0</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-slate-400">Est. INR saved</span>
+            <span id="costInr" class="text-emerald-400 font-bold">₹0.00</span>
+          </div>
+          <div class="flex items-center gap-2 mt-2">
+            <label class="text-xs text-slate-500 whitespace-nowrap">₹ / min assumption</label>
+            <input id="costAssumption" type="number" value="8" min="1" step="1"
+              class="w-20 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs" />
+            <button id="btnRefreshStats" type="button" class="text-xs text-cyan-400 hover:underline">Refresh stats</button>
+          </div>
+          <p id="costAssumptionText" class="text-[10px] text-slate-500">Assumption: Rs 8 per min (editable)</p>
+        </div>
+
+        <!-- Credential Controls -->
+        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
+          <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Agent Credential</h3>
+          <div class="flex flex-wrap gap-2">
+            <button id="btnIssueCred" type="button" class="text-xs bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded">Issue</button>
+            <button id="btnVerifyCred" type="button" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded">Verify</button>
+            <button id="btnReplayCred" type="button" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded">Replay (should reject)</button>
+          </div>
+          <input id="credInput" type="text" placeholder="Paste credential string"
+            class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs mt-1" />
+          <p id="credResult" class="text-xs text-slate-400 break-all"></p>
+        </div>
+
+        <!-- Raw JSON -->
+        <div class="flex-1 min-h-0">
+          <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-1">Raw Response</h3>
+          <pre id="jsonLog" class="bg-slate-950 p-3 rounded-lg text-[11px] text-slate-400 h-40 overflow-y-auto border border-slate-800 whitespace-pre-wrap break-words">Waiting for API response…</pre>
+        </div>
+
+        <!-- Audit Table -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Audit Log</h3>
+            <button id="btnRefreshAudit" type="button" class="text-xs text-cyan-400 hover:underline">Refresh</button>
+          </div>
+          <div class="overflow-x-auto max-h-48 overflow-y-auto border border-slate-800 rounded-lg">
+            <table class="w-full text-[11px]">
+              <thead class="bg-slate-800 sticky top-0">
+                <tr class="text-left text-slate-400">
+                  <th class="p-2">Time</th>
+                  <th class="p-2">Decision</th>
+                  <th class="p-2">Synth</th>
+                  <th class="p-2">Match</th>
+                  <th class="p-2">Tool</th>
+                </tr>
+              </thead>
+              <tbody id="auditBody" class="text-slate-300">
+                <tr><td colspan="5" class="p-3 text-center text-slate-500">No entries yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer / Spinner overlay -->
+    <div id="overlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl p-8 text-center shadow-2xl">
+        <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p id="overlayText" class="text-slate-200 font-medium">Working…</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

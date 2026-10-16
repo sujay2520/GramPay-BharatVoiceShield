@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "public": true,
+  "name": "grampay-frontend",
+  "cleanUrls": true,
+  "trailingSlash": false
+}
