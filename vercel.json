@@ -1,7 +1,4 @@
 {
-  "version": 2,
-  "public": true,
-  "name": "grampay-bharatvoice-shield",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
