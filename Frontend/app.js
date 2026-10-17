@@ -3568,6 +3568,15 @@ function initCallerPhoneControls() {
     };
   }
 
+  // Wire up clean reset button on Phone
+  const callerReset = $("callerBtnReset");
+  if (callerReset) {
+    callerReset.onclick = () => {
+      setStatusCard(null);
+      if ($("btnReset")) $("btnReset").click();
+    };
+  }
+
   // Wire up subtle Test Clone Attack button on Phone 1
   const callerClone = $("callerBtnClone");
   if (callerClone) {
