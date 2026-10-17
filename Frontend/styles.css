@@ -309,11 +309,9 @@ button:disabled,
 @keyframes tabFadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -371,8 +369,7 @@ button:disabled,
   transition: background-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
               color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .status-approve {
@@ -461,22 +458,19 @@ button:disabled,
    Glowing Animations: .rec-pulse & .glow-verified
    ========================================================================== */
 
-/* .rec-pulse: Pulsing crimson alert glow indicating active microphone recording */
+/* .rec-pulse: Pulsing crimson alert glow indicating active microphone recording (no layout jitter) */
 @keyframes rec-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(155, 28, 28, 0.75),
                 0 0 14px 2px rgba(155, 28, 28, 0.4);
-    transform: scale(1);
   }
   45% {
-    box-shadow: 0 0 0 15px rgba(155, 28, 28, 0),
-                0 0 26px 6px rgba(155, 28, 28, 0.22);
-    transform: scale(1.02);
+    box-shadow: 0 0 0 14px rgba(155, 28, 28, 0),
+                0 0 24px 4px rgba(155, 28, 28, 0.22);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(155, 28, 28, 0),
                 0 0 8px 0 rgba(155, 28, 28, 0);
-    transform: scale(1);
   }
 }
 
@@ -488,19 +482,16 @@ button:disabled,
   border-color: var(--alert) !important;
 }
 
-/* Pulsating Speak button for Senior Citizens (Age 70+) */
+/* Pulsating Speak button for Senior Citizens (Age 70+) (no layout jitter) */
 @keyframes speak-pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(16, 33, 28, 0.45), 0 8px 24px rgba(16, 33, 28, 0.25);
-    transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 16px rgba(16, 33, 28, 0), 0 12px 32px rgba(16, 33, 28, 0.35);
-    transform: scale(1.02);
+    box-shadow: 0 0 0 14px rgba(16, 33, 28, 0), 0 10px 28px rgba(16, 33, 28, 0.35);
   }
   100% {
     box-shadow: 0 0 0 0 rgba(16, 33, 28, 0), 0 8px 24px rgba(16, 33, 28, 0.25);
-    transform: scale(1);
   }
 }
 
@@ -641,7 +632,7 @@ pre::-webkit-scrollbar,
 
 /* Desktop Judge Console sticky */
 @media (min-width: 1024px) {
-  section.bg-ink {
+  section.bg-ink:not(body.mode-console section.bg-ink) {
     position: sticky;
     top: 1.5rem;
     align-self: start;
@@ -649,3 +640,533 @@ pre::-webkit-scrollbar,
     overflow-y: auto;
   }
 }
+
+/* Default: Hide Stage Demo modes in standard desktop view */
+#callerPhoneView,
+#judgeConsoleView {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   1. Mode: Caller (Physical Mobile Phone Card View)
+   -------------------------------------------------------------------------- */
+
+/* Hide standard view, header, Judge Overview, Quick Demo Section, and Technical Telemetry/JSON Logs */
+body.mode-caller #standardView,
+body.mode-caller header,
+body.mode-caller #judgeOverviewSection,
+body.mode-caller #quickDemoSection,
+body.mode-caller #judgeConsoleView,
+body.mode-caller #panelJudge,
+body.mode-caller #jsonLog,
+body.mode-caller #btnCopyJson,
+body.mode-caller .telemetry-log,
+body.mode-caller .technical-telemetry,
+body.mode-caller [data-telemetry],
+body.mode-caller #credInput,
+body.mode-caller #btnRefreshAudit,
+body.mode-caller details:has(#backendUrlInput),
+body.mode-caller details:has(#credInput),
+body.mode-caller .view-tabs-container,
+body.mode-caller .tabs-nav-container,
+body.mode-caller .view-toggle-bar,
+body.mode-caller #tabFarmer,
+body.mode-caller #tabJudge,
+body.mode-caller #tabSplit,
+body.mode-caller #costAssumption,
+body.mode-caller #costAssumptionContainer {
+  display: none !important;
+}
+
+/* Center #callerPhoneView as a clean mobile card (max-w-md mx-auto) */
+body.mode-caller {
+  background-color: var(--cream);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0.75rem 1rem 2rem;
+}
+
+body.mode-caller #workspaceGrid,
+body.mode-caller main {
+  max-width: 28rem !important; /* max-w-md: 448px */
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+  display: block !important;
+  padding: 0 !important;
+}
+
+body.mode-caller #callerPhoneView,
+body.mode-caller #panelFarmer {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: 28rem !important; /* max-w-md */
+  margin-left: auto !important;
+  margin-right: auto !important;
+  background-color: var(--paper) !important;
+  border: 2px solid var(--line) !important;
+  border-radius: 1.75rem !important;
+  box-shadow: 0 16px 36px -6px rgba(16, 33, 28, 0.12), 0 4px 12px -2px rgba(16, 33, 28, 0.06) !important;
+  padding: 1.25rem 1.25rem 1.5rem !important;
+  gap: 1rem !important;
+  box-sizing: border-box !important;
+}
+
+/* High-Contrast Styling: Center Status Card */
+body.mode-caller #callerStatusCard,
+body.mode-caller #statusCard,
+body.mode-caller .status-card {
+  width: 100% !important;
+  min-height: 180px !important;
+  border-radius: 1.5rem !important;
+  border: 3px solid var(--ink) !important;
+  background-color: var(--paper) !important;
+  color: var(--ink) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 1.25rem 1rem !important;
+  box-shadow: 0 4px 16px rgba(16, 33, 28, 0.08) !important;
+  transform: none !important;
+}
+
+body.mode-caller #callerStatusCard.status-approve,
+body.mode-caller #statusCard.status-approve {
+  background-color: #0b5e35 !important;
+  color: #ffffff !important;
+  border: 4px solid #10b981 !important;
+  box-shadow: 0 10px 30px rgba(11, 94, 53, 0.35) !important;
+}
+body.mode-caller #callerStatusCard.status-approve #statusTitle,
+body.mode-caller #statusCard.status-approve #statusTitle,
+body.mode-caller #callerStatusCard.status-approve h3,
+body.mode-caller #statusCard.status-approve h3 {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+}
+body.mode-caller #callerStatusCard.status-approve #statusReason,
+body.mode-caller #statusCard.status-approve #statusReason,
+body.mode-caller #callerStatusCard.status-approve p,
+body.mode-caller #statusCard.status-approve p {
+  color: #e6f7ef !important;
+  font-weight: 600 !important;
+}
+
+body.mode-caller #callerStatusCard.status-block,
+body.mode-caller #statusCard.status-block {
+  background-color: #8b1818 !important;
+  color: #ffffff !important;
+  border: 4px solid #ef4444 !important;
+  box-shadow: 0 10px 30px rgba(139, 24, 24, 0.35) !important;
+}
+body.mode-caller #callerStatusCard.status-block #statusTitle,
+body.mode-caller #statusCard.status-block #statusTitle,
+body.mode-caller #callerStatusCard.status-block h3,
+body.mode-caller #statusCard.status-block h3 {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+}
+body.mode-caller #callerStatusCard.status-block #statusReason,
+body.mode-caller #statusCard.status-block #statusReason,
+body.mode-caller #callerStatusCard.status-block p,
+body.mode-caller #statusCard.status-block p {
+  color: #fee2e2 !important;
+  font-weight: 600 !important;
+}
+
+body.mode-caller #callerStatusCard.status-stepup,
+body.mode-caller #statusCard.status-stepup {
+  background-color: #fef3c7 !important;
+  color: #78350f !important;
+  border: 4px solid #f59e0b !important;
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.25) !important;
+}
+body.mode-caller #callerStatusCard.status-stepup #statusTitle,
+body.mode-caller #statusCard.status-stepup #statusTitle,
+body.mode-caller #callerStatusCard.status-stepup h3,
+body.mode-caller #statusCard.status-stepup h3 {
+  color: #78350f !important;
+  font-weight: 900 !important;
+}
+body.mode-caller #callerStatusCard.status-stepup #statusReason,
+body.mode-caller #statusCard.status-stepup #statusReason,
+body.mode-caller #callerStatusCard.status-stepup p,
+body.mode-caller #statusCard.status-stepup p {
+  color: #92400e !important;
+  font-weight: 600 !important;
+}
+
+body.mode-caller #callerStatusCard.status-ready,
+body.mode-caller #statusCard.status-ready {
+  background-color: #ffffff !important;
+  color: var(--ink) !important;
+  border: 3px solid var(--ink) !important;
+}
+
+/* High-Contrast Styling: 3 Language Pills */
+body.mode-caller #langSelectorBar,
+body.mode-caller .lang-pills-bar {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+}
+
+body.mode-caller .lang-btn,
+body.mode-caller [data-lang] {
+  min-height: 52px !important;
+  border-radius: 1rem !important;
+  padding: 0.5rem 0.25rem !important;
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  border: 2px solid var(--ink) !important;
+  background-color: #ffffff !important;
+  color: var(--ink) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  gap: 0.25rem !important;
+  box-shadow: 0 2px 6px rgba(16, 33, 28, 0.08) !important;
+  transform: none !important;
+}
+
+body.mode-caller .lang-btn.active,
+body.mode-caller [data-lang].active {
+  background-color: var(--ink) !important;
+  color: #ffffff !important;
+  border: 3px solid var(--ink) !important;
+  box-shadow: 0 4px 12px rgba(16, 33, 28, 0.25) !important;
+}
+
+body.mode-caller .lang-btn .lang-check,
+body.mode-caller [data-lang] .lang-check {
+  color: #34d399 !important;
+  font-weight: 900 !important;
+  font-size: 1.25rem !important;
+}
+
+/* High-Contrast Styling: Big Mic Button */
+body.mode-caller #btnRecord,
+body.mode-caller .mic-btn-large,
+body.mode-caller [data-action="record"] {
+  min-height: 76px !important;
+  width: 100% !important;
+  border-radius: 1.25rem !important;
+  background-color: var(--ink) !important;
+  color: #ffffff !important;
+  border: 3px solid var(--ink) !important;
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.75rem !important;
+  box-shadow: 0 6px 20px rgba(16, 33, 28, 0.2) !important;
+  cursor: pointer !important;
+  transform: none !important;
+}
+
+body.mode-caller #btnRecord:hover,
+body.mode-caller .mic-btn-large:hover {
+  background-color: var(--ink-soft) !important;
+  transform: none !important;
+}
+
+body.mode-caller #btnRecord.recording,
+body.mode-caller #btnRecord.rec-pulse,
+body.mode-caller .mic-btn-large.recording {
+  background-color: #dc2626 !important;
+  border-color: #991b1b !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.35) !important;
+  transform: none !important;
+}
+
+body.mode-caller #recordIcon,
+body.mode-caller .mic-btn-large .mic-icon {
+  font-size: 2rem !important;
+}
+
+body.mode-caller #btnStop {
+  min-height: 52px !important;
+  border-radius: 1rem !important;
+  border: 2px solid var(--line-strong) !important;
+  background-color: var(--cream-2) !important;
+  color: var(--ink) !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  transform: none !important;
+}
+
+/* High-Contrast Styling: Compact Enroll Button */
+body.mode-caller #btnEnrollRecord,
+body.mode-caller #btnEnroll,
+body.mode-caller .enroll-btn-compact,
+body.mode-caller [data-action="enroll"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.375rem !important;
+  min-height: 40px !important;
+  padding: 0.375rem 0.875rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  border-radius: 0.75rem !important;
+  border: 2px solid var(--ink) !important;
+  background-color: #ffffff !important;
+  color: var(--ink) !important;
+  box-shadow: 0 2px 4px rgba(16, 33, 28, 0.08) !important;
+  cursor: pointer !important;
+  transform: none !important;
+}
+
+body.mode-caller #btnEnrollRecord:hover,
+body.mode-caller #btnEnroll:hover,
+body.mode-caller .enroll-btn-compact:hover {
+  background-color: var(--cream-2) !important;
+  transform: none !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   2. Mode: Console (Projector & Judge Telemetry Display)
+   -------------------------------------------------------------------------- */
+
+/* Hide Standard View, Header, Caller Phone View, and Caller Recording Controls */
+body.mode-console #standardView,
+body.mode-console header,
+body.mode-console #callerPhoneView,
+body.mode-console #panelFarmer,
+body.mode-console #btnRecord,
+body.mode-console #btnStop,
+body.mode-console #btnCheck,
+body.mode-console #previewContainer,
+body.mode-console #recordTimerText,
+body.mode-console #recordHint,
+body.mode-console .caller-recording-controls,
+body.mode-console .caller-controls,
+body.mode-console #deviceSelectorBar,
+body.mode-console #phone1AuthenticBanner,
+body.mode-console #phone2AttackerBanner,
+body.mode-console #phone2CloneNotice,
+body.mode-console details:has(#audioFileSenior) {
+  display: none !important;
+}
+
+/* Base Canvas & Containers for High-Contrast Projector View */
+body.mode-console {
+  background-color: #070e0b !important;
+  color: #fbf8f2 !important;
+  min-height: 100vh !important;
+  padding: 1.5rem !important;
+}
+
+body.mode-console #workspaceGrid,
+body.mode-console main {
+  max-width: 90rem !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* Show #judgeConsoleView with 4 large, high-contrast cards (readable from 10 feet away) */
+body.mode-console #judgeConsoleView,
+body.mode-console #panelJudge {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  max-width: 90rem !important;
+  margin: 0 auto !important;
+  position: static !important;
+  max-height: none !important;
+  overflow: visible !important;
+  background-color: #0b1512 !important;
+  border: 2px solid #233b31 !important;
+  border-radius: 1.5rem !important;
+  padding: 2rem !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+  gap: 1.75rem !important;
+}
+
+/* 4 Large High-Contrast Cards Grid */
+body.mode-console .console-4-cards,
+body.mode-console .judge-4-cards,
+body.mode-console #judgeConsoleGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+}
+
+/* Projector-Readable Large Cards */
+body.mode-console .console-card,
+body.mode-console .judge-card-large,
+body.mode-console #judgeConsoleView .rounded-2xl.bg-ink-soft,
+body.mode-console #panelJudge .rounded-2xl.bg-ink-soft {
+  background-color: #12211c !important;
+  border: 2px solid #2a473b !important;
+  border-radius: 1.25rem !important;
+  padding: 1.5rem !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Clean Large Typography: Decision Banner (h2 text-3xl font-black) */
+body.mode-console .decision-banner,
+body.mode-console #metricDecisionBanner,
+body.mode-console #statusCardBanner,
+body.mode-console #panelJudge h2,
+body.mode-console #judgeConsoleView h2,
+body.mode-console #panelJudge .decision-title,
+body.mode-console #judgeConsoleView .decision-title {
+  font-size: 2rem !important; /* text-3xl */
+  line-height: 2.25rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.025em !important;
+  color: #ffffff !important;
+  margin-bottom: 0.5rem !important;
+}
+
+body.mode-console #metricDecision,
+body.mode-console .decision-badge {
+  font-size: 2rem !important; /* text-3xl */
+  line-height: 2.25rem !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+body.mode-console .decision-approved,
+body.mode-console #metricDecision.text-safe {
+  color: #34d399 !important; /* Bright Emerald */
+  text-shadow: 0 0 24px rgba(52, 211, 153, 0.5) !important;
+}
+
+body.mode-console .decision-blocked,
+body.mode-console #metricDecision.text-alert {
+  color: #f87171 !important; /* Bright Red */
+  text-shadow: 0 0 24px rgba(248, 113, 113, 0.5) !important;
+}
+
+/* Clean Large Typography: Scores (text-5xl font-mono font-black) */
+body.mode-console .score-value,
+body.mode-console .text-5xl-score,
+body.mode-console #gaugeSynthVal,
+body.mode-console #gaugeMatchVal,
+body.mode-console #judgeCreditsVal {
+  font-size: 3rem !important; /* text-5xl: 48px */
+  line-height: 1 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.03em !important;
+  color: #ffffff !important;
+}
+
+body.mode-console #gaugeSynthVal {
+  color: #fca5a5 !important;
+}
+
+body.mode-console #gaugeMatchVal {
+  color: #6ee7b7 !important;
+}
+
+body.mode-console #judgeCreditsVal {
+  color: #fde047 !important;
+}
+
+/* Clean Large Typography: Tool Gate (text-2xl font-bold) */
+body.mode-console .tool-gate,
+body.mode-console .tool-gate-status,
+body.mode-console #metricTool,
+body.mode-console #metricToolLockIcon {
+  font-size: 1.5rem !important; /* text-2xl: 24px */
+  line-height: 2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.025em !important;
+  color: #ffffff !important;
+}
+
+body.mode-console #metricToolLockIcon {
+  font-size: 1.75rem !important;
+}
+
+/* Clean 5-Row Recent Events Table with High Contrast */
+body.mode-console table,
+body.mode-console .audit-table,
+body.mode-console .events-table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 2px solid #2a473b !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+  background-color: #0b1512 !important;
+}
+
+body.mode-console table thead th,
+body.mode-console .events-table th {
+  background-color: #162922 !important;
+  color: #fbf8f2 !important;
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 0.875rem 1.25rem !important;
+  border-bottom: 2px solid #2a473b !important;
+}
+
+body.mode-console table tbody td,
+body.mode-console .events-table td {
+  padding: 0.875rem 1.25rem !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #182e25 !important;
+  color: #f1f5f9 !important;
+}
+
+body.mode-console table tbody tr:nth-child(even) {
+  background-color: #0f1d18 !important;
+}
+
+body.mode-console table tbody tr:nth-child(odd) {
+  background-color: #0b1512 !important;
+}
+
+body.mode-console table tbody tr:hover {
+  background-color: #172d24 !important;
+}
+
+body.mode-console #panelJudge .max-h-48,
+body.mode-console #judgeConsoleView .max-h-48,
+body.mode-console .events-table-wrapper {
+  max-height: 26rem !important;
+  overflow-y: auto !important;
+  border-radius: 1rem !important;
+  border: 2px solid #2a473b !important;
+}
+
+/* Jitter-Free Interactive Stability for Live Stage Demo */
+body.mode-caller button,
+body.mode-caller [role="button"],
+body.mode-console button,
+body.mode-console [role="button"] {
+  transform: none !important;
+}
+
+body.mode-caller button:hover,
+body.mode-caller [role="button"]:hover,
+body.mode-console button:hover,
+body.mode-console [role="button"]:hover {
+  transform: none !important;
+}
+
+body.mode-caller button:active,
+body.mode-caller [role="button"]:active,
+body.mode-console button:active,
+body.mode-console [role="button"]:active {
+  transform: none !important;
+}
+

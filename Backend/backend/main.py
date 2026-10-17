@@ -19,7 +19,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, HTMLResponse, FileResponse
 from pydantic import BaseModel
 
 from backend.config import ALLOWED_ORIGIN, NVIDIA_API_KEY
@@ -824,12 +824,7 @@ async def get_latest_state_endpoint(since: Optional[str] = Query(None)):
     events = get_events_since(since_event_id=since, limit=50)
     stats = get_contract_stats(GLOBAL_ASSUMED_RS_PER_MIN, GLOBAL_ASSUMED_MINUTES)
 
-    credits_remaining = 4950
-    try:
-        credits_data = detectif_client.get_credits()
-        credits_remaining = credits_data.get("available") or 4950
-    except Exception:
-        pass
+    credits_remaining = detectif_client.remaining_credits if detectif_client.remaining_credits is not None else 4950
 
     return {
         "events": events,
@@ -1826,15 +1821,88 @@ async def demo_quick_test_endpoint(
         )
 
 # ==============================================================================
-# 7. Frontend Static Mounting
+# 7. Frontend Direct Route Handlers (Fast, non-blocking on Windows/OneDrive)
 # ==============================================================================
-from pathlib import Path
-from fastapi.staticfiles import StaticFiles
-
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "Frontend"
 if not (FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists()):
     FRONTEND_DIR = Path(__file__).resolve().parent.parent / "Frontend"
+if not (FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists()):
+    FRONTEND_DIR = Path("Frontend").resolve()
 
-if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse)
+async def serve_index():
+    index_file = FRONTEND_DIR / "index.html"
+    if not index_file.exists():
+        raise HTTPException(status_code=404, detail="index.html not found")
+    return HTMLResponse(content=index_file.read_text(encoding="utf-8"), media_type="text/html")
+
+
+@app.get("/app.js")
+async def serve_app_js():
+    file_path = FRONTEND_DIR / "app.js"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="app.js not found")
+    return Response(content=file_path.read_text(encoding="utf-8"), media_type="application/javascript")
+
+
+@app.get("/styles.css")
+async def serve_styles_css():
+    file_path = FRONTEND_DIR / "styles.css"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="styles.css not found")
+    return Response(content=file_path.read_text(encoding="utf-8"), media_type="text/css")
+
+
+@app.get("/strings.js")
+async def serve_strings_js():
+    file_path = FRONTEND_DIR / "strings.js"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="strings.js not found")
+    return Response(content=file_path.read_text(encoding="utf-8"), media_type="application/javascript")
+
+
+@app.get("/audio_recorder.js")
+async def serve_audio_recorder_js():
+    file_path = FRONTEND_DIR / "audio_recorder.js"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="audio_recorder.js not found")
+    return Response(content=file_path.read_text(encoding="utf-8"), media_type="application/javascript")
+
+
+@app.get("/GramPay_Executive_Summary_and_Architecture.pdf")
+async def serve_pdf():
+    pdf_path = FRONTEND_DIR / "GramPay_Executive_Summary_and_Architecture.pdf"
+    if not pdf_path.exists():
+        alt_pdf = Path(__file__).resolve().parent.parent / "GramPay_Executive_Summary_and_Architecture.pdf"
+        if alt_pdf.exists():
+            pdf_path = alt_pdf
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="GramPay_Executive_Summary_and_Architecture.pdf not found")
+    return Response(content=pdf_path.read_bytes(), media_type="application/pdf")
+
+
+@app.get("/audio/{filename}")
+async def serve_audio_file(filename: str):
+    file_path = FRONTEND_DIR / "audio" / filename
+    if not file_path.exists():
+        file_path = FRONTEND_DIR / "data_audio" / filename
+    if not file_path.exists():
+        file_path = Path(__file__).resolve().parent.parent / "data_audio" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    return Response(content=file_path.read_bytes(), media_type="audio/wav")
+
+
+@app.get("/data_audio/{filename}")
+async def serve_data_audio_file(filename: str):
+    file_path = FRONTEND_DIR / "data_audio" / filename
+    if not file_path.exists():
+        file_path = FRONTEND_DIR / "audio" / filename
+    if not file_path.exists():
+        file_path = Path(__file__).resolve().parent.parent / "data_audio" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    return Response(content=file_path.read_bytes(), media_type="audio/wav")
 

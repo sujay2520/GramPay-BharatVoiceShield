@@ -77,6 +77,64 @@
   <main class="min-h-screen px-4 py-5 md:px-8 md:py-8">
 
     <!-- ========================================================================== -->
+    <!-- TOP INTRO BANNER & 1-TAP ROLE SWITCHER                                      -->
+    <!-- ========================================================================== -->
+    <section id="topRoleSwitcherContainer" class="mx-auto mb-5 max-w-6xl rounded-2xl border-2 border-line bg-paper p-3.5 sm:p-4 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <!-- Title & 4-Step Flow -->
+        <div class="space-y-1.5">
+          <div class="flex items-center gap-2">
+            <span class="size-6 rounded-lg bg-ink text-gold-bright flex items-center justify-center font-black text-xs shrink-0">GP</span>
+            <h2 class="text-sm sm:text-base font-extrabold text-ink tracking-tight font-sans">
+              GramPay (BharatVoice Shield) &mdash; <span class="text-safe">Pre-PIN Voice Biometric Gate</span> <span class="text-xs font-semibold text-muted">(Powered by DetectifAI)</span>
+            </h2>
+          </div>
+          <!-- 4-Step Pill Flow -->
+          <div class="flex flex-wrap items-center gap-1.5 text-[11px] sm:text-xs font-bold text-ink">
+            <span class="rounded-lg bg-cream px-2 py-0.5 border border-line">1. Enroll Voice (5s)</span>
+            <span class="text-muted">&rarr;</span>
+            <span class="rounded-lg bg-cream px-2 py-0.5 border border-line">2. Speak Command (KN/HI/EN)</span>
+            <span class="text-muted">&rarr;</span>
+            <span class="rounded-lg bg-cream px-2 py-0.5 border border-line">3. DetectifAI Dual Check</span>
+            <span class="text-muted">&rarr;</span>
+            <span class="rounded-lg bg-safe-bg text-safe px-2 py-0.5 border border-safe/30">4. Pay ₹1,000 or Block Clone</span>
+          </div>
+        </div>
+
+        <!-- 4 Mode Switcher Buttons (1-Tap Mode Switching) -->
+        <div class="flex flex-wrap items-center gap-1.5 shrink-0" id="roleSwitcherPills">
+          <button type="button" id="pillModeSplit"
+            class="mode-switcher-pill active inline-flex items-center gap-1.5 rounded-xl border-2 border-ink bg-ink text-paper px-3 py-1.5 text-xs sm:text-sm font-bold shadow-xs hover:opacity-95 transition cursor-pointer"
+            data-target-mode="split" title="Side-by-Side: Caller on Left, Judge Console on Right">
+            <span>🖥️</span>
+            <span>Split View (Default)</span>
+          </button>
+          <button type="button" id="pillModePhone1"
+            class="mode-switcher-pill inline-flex items-center gap-1.5 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-ink px-3 py-1.5 text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer"
+            data-target-mode="phone1" title="Physical Phone 1: Enrolled Farmer (Ramesh Patel)">
+            <span>📱</span>
+            <span>Phone 1: Farmer</span>
+          </button>
+          <button type="button" id="pillModePhone2"
+            class="mode-switcher-pill inline-flex items-center gap-1.5 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-alert px-3 py-1.5 text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer"
+            data-target-mode="phone2" title="Physical Phone 2: Clone Attacker / Test Clip">
+            <span>🧪</span>
+            <span>Phone 2: Clone Test</span>
+          </button>
+          <button type="button" id="pillModeConsole"
+            class="mode-switcher-pill inline-flex items-center gap-1.5 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-ink px-3 py-1.5 text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer"
+            data-target-mode="console" title="Projector: Judge Telemetry Console Only">
+            <span>📊</span>
+            <span>Judge Console</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STANDARD FULL VIEW (Used by default / developer / tests) -->
+    <div id="standardView">
+
+    <!-- ========================================================================== -->
     <!-- 1. TOP HEADER & TELEMETRY INDICATORS                                       -->
     <!-- ========================================================================== -->
     <header class="mx-auto mb-5 flex max-w-6xl flex-col gap-4 lg:flex-row lg:items-end lg:justify-between border-b border-line pb-5">
@@ -1108,8 +1166,216 @@
 
       </section>
     </div>
+    </div> <!-- /standardView -->
 
-    <!-- Tier-2 Active Challenge Modal Dialog -->
+    <!-- ========================================================================== -->
+    <!-- STAGE DEMO: PHONE CALLER VIEW (?mode=caller) - MAX 4 ELEMENTS ONLY        -->
+    <!-- ========================================================================== -->
+    <div id="callerPhoneView" class="hidden flex-col items-center justify-between min-h-[85vh] max-w-md mx-auto py-4 px-2">
+      <!-- (a) Top Bar: Verified Bank Agent Badge + 3 Language Pills -->
+      <div class="w-full flex items-center justify-between gap-2 border-b-2 border-line pb-4 mb-4">
+        <div class="inline-flex items-center gap-2 rounded-full bg-safe-bg border-2 border-safe/40 px-3.5 py-1.5 shadow-2xs">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
+          </span>
+          <span class="text-xs sm:text-sm font-extrabold text-safe tracking-wide">🛡️ Verified Bank Agent</span>
+        </div>
+        <div class="inline-flex rounded-2xl border-2 border-line bg-paper p-1 shadow-2xs" id="callerLangBar">
+          <button type="button" class="caller-lang-btn active rounded-xl px-3 py-1.5 text-sm font-black transition border-2 border-ink bg-ink text-paper" data-lang="kn">ಕನ್ನಡ</button>
+          <button type="button" class="caller-lang-btn rounded-xl px-3 py-1.5 text-sm font-bold transition border-2 border-transparent text-ink hover:bg-cream-2" data-lang="hi">हिन्दी</button>
+          <button type="button" class="caller-lang-btn rounded-xl px-3 py-1.5 text-sm font-bold transition border-2 border-transparent text-ink hover:bg-cream-2" data-lang="en">EN</button>
+        </div>
+      </div>
+
+      <!-- (b) ONE Large Status / Instruction Card (Displays 4 Challenge Words during EXTRA_CHECK) -->
+      <div id="callerStatusCard" class="status-ready w-full my-auto rounded-3xl border-3 border-line bg-paper p-6 sm:p-8 text-center shadow-lg transition-all duration-300 flex flex-col justify-center items-center min-h-[280px]">
+        <div id="callerStatusEmoji" class="size-20 rounded-full bg-cream flex items-center justify-center text-5xl mb-4 border-2 border-line shadow-xs">
+          🛡️
+        </div>
+        <h2 id="callerStatusTitle" class="font-display text-2xl sm:text-3xl font-black text-ink leading-tight">
+          ಮಾತನಾಡಿ ಪಾವತಿಸಿ
+        </h2>
+        <p id="callerStatusReason" class="text-base sm:text-lg text-muted mt-2 font-medium leading-relaxed">
+          ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ"
+        </p>
+
+        <!-- EXTRA_CHECK: 4 Dynamic Challenge Words in Huge Text -->
+        <div id="callerChallengeBox" class="hidden mt-4 w-full">
+          <div class="p-4 bg-wait-bg/90 border-3 border-wait rounded-2xl shadow-sm">
+            <p class="text-xs font-black text-wait uppercase tracking-wider mb-2">⚡ ಈ 4 ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ / Say 4 Words:</p>
+            <div id="callerChallengeWords" class="text-3xl sm:text-4xl font-black text-wait tracking-wide py-2 leading-relaxed font-sans">
+              ಹಸಿರು &nbsp; ಮಳೆ &nbsp; ಕಮಲ &nbsp; ನವಿಲು
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- (c) ONE Large "Tap to Speak" Mic Button -->
+      <div class="w-full my-6 flex flex-col items-center">
+        <button id="callerBtnRecord" type="button"
+          class="w-full max-w-sm min-h-[80px] py-4 px-6 rounded-3xl bg-ink hover:bg-ink-soft active:scale-[0.98] text-paper flex items-center justify-center gap-4 transition-all shadow-xl hover:shadow-2xl border-3 border-ink focus-visible:ring-4 cursor-pointer">
+          <span id="callerBtnRecordIcon" class="text-3xl sm:text-4xl shrink-0">🎙️</span>
+          <span id="callerBtnRecordLabel" class="text-xl sm:text-2xl font-black tracking-wide font-sans">
+            ಮಾತನಾಡಿ (Tap to Speak)
+          </span>
+        </button>
+        <span id="callerBtnRecordTimer" class="mt-2 text-xs font-mono font-bold text-muted">00:00.0s</span>
+      </div>
+
+      <!-- (d) Compact Footer: Enroll Voice + Consented Clone Clip for phone2 -->
+      <div class="w-full pt-4 border-t-2 border-line/80 flex items-center justify-between gap-3">
+        <button id="callerBtnEnroll" type="button"
+          class="flex-1 py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs sm:text-sm font-bold text-ink transition flex items-center justify-center gap-1.5 shadow-2xs">
+          <span>👤</span>
+          <span>Enroll Voice (5s)</span>
+        </button>
+        <button id="callerBtnClone" type="button"
+          class="hidden flex-1 py-2.5 px-3 rounded-xl border-2 border-alert/50 bg-alert-bg hover:bg-alert-bg/80 text-xs sm:text-sm font-bold text-alert transition flex items-center justify-center gap-1.5 shadow-2xs">
+          <span>🚨</span>
+          <span>Send Consented Clone Clip</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================== -->
+    <!-- STAGE DEMO: LAPTOP JUDGE CONSOLE (?mode=console) - 4 GIANT CARDS          -->
+    <!-- ========================================================================== -->
+    <div id="judgeConsoleView" class="hidden flex-col gap-6 max-w-6xl mx-auto py-6 px-4">
+      
+      <!-- Card 1: Full-Width Decision Banner (Readable from 10 feet away) -->
+      <div id="consoleDecisionBanner" class="w-full rounded-3xl border-4 border-line bg-paper p-6 sm:p-8 text-center shadow-lg transition-all duration-300">
+        <div class="flex items-center justify-center gap-3">
+          <span id="consoleBannerDot" class="size-4 rounded-full bg-muted"></span>
+          <h1 id="consoleBannerText" class="font-display text-3xl sm:text-5xl font-black tracking-wide text-ink uppercase">
+            ⚪ STANDBY · AWAITING CALLER VOICE ORDER
+          </h1>
+        </div>
+      </div>
+
+      <!-- Card 2: Two Giant Score Cards with Real Measured ms Latency -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Score Card 1: Deepfake Synthetic Score -->
+        <div class="rounded-3xl border-3 border-line bg-paper p-6 sm:p-8 shadow-md flex flex-col justify-between min-h-[220px]">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs sm:text-sm font-black tracking-widest text-muted uppercase">DetectifAI Aletheia Engine</span>
+              <span id="consoleDetLatency" class="text-xs sm:text-sm font-mono font-bold px-3 py-1 rounded-full bg-cream border border-line text-ink">
+                ⚡ -- ms
+              </span>
+            </div>
+            <h3 class="text-base sm:text-lg font-bold text-ink">Deepfake Synthetic Voice Score</h3>
+          </div>
+          <div class="my-3">
+            <div id="consoleSynthScore" class="font-mono text-6xl sm:text-7xl font-black text-ink">
+              --%
+            </div>
+          </div>
+          <div class="text-xs font-semibold text-muted flex items-center justify-between border-t border-line/60 pt-3">
+            <span>Authentic threshold: &lt; 30%</span>
+            <span>Clone threshold: &ge; 50%</span>
+          </div>
+        </div>
+
+        <!-- Score Card 2: Speaker Biometric Match -->
+        <div class="rounded-3xl border-3 border-line bg-paper p-6 sm:p-8 shadow-md flex flex-col justify-between min-h-[220px]">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs sm:text-sm font-black tracking-widest text-muted uppercase">DetectifAI Eidos Engine</span>
+              <span id="consoleVerLatency" class="text-xs sm:text-sm font-mono font-bold px-3 py-1 rounded-full bg-cream border border-line text-ink">
+                ⚡ -- ms
+              </span>
+            </div>
+            <h3 class="text-base sm:text-lg font-bold text-ink">Speaker Biometric Match</h3>
+          </div>
+          <div class="my-3">
+            <div id="consoleMatchScore" class="font-mono text-6xl sm:text-7xl font-black text-ink">
+              --%
+            </div>
+          </div>
+          <div class="text-xs font-semibold text-muted flex items-center justify-between border-t border-line/60 pt-3">
+            <span>Verified match: &ge; 80%</span>
+            <span>Target: Ramesh Patel</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Tool Gate Status (LOCKED vs EXECUTED) + Spoken Transcript/Translation -->
+      <div class="rounded-3xl border-3 border-line bg-paper p-6 sm:p-8 shadow-md space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-line pb-4">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl sm:text-3xl">🛡️</span>
+            <div>
+              <span class="text-xs font-black tracking-widest text-muted uppercase">NPCI 123Pay / Hello! UPI Action Gate</span>
+              <h2 class="text-xl sm:text-2xl font-black text-ink font-display">Tool Execution Status</h2>
+            </div>
+          </div>
+          <div id="consoleToolStatusBadge" class="rounded-2xl px-5 py-2 text-base sm:text-lg font-black tracking-wide border-2 bg-cream text-muted border-line flex items-center gap-2">
+            <span id="consoleToolLockIcon">🔒</span>
+            <span id="consoleToolStatusText">HARD-LOCKED</span>
+          </div>
+        </div>
+
+        <!-- Spoken Transcript / Translation (Stays blank on BLOCK to prove LLM skipped!) -->
+        <div class="rounded-2xl border-2 border-line bg-cream/60 p-4 sm:p-5 space-y-2">
+          <div class="flex items-center justify-between text-xs font-bold text-muted uppercase tracking-wider">
+            <span>Spoken Voice Transcript &amp; Translation:</span>
+            <span id="consoleLlmBypassNote" class="font-mono font-bold text-safe"></span>
+          </div>
+          <div id="consoleTranscriptBox" class="text-lg sm:text-xl font-bold text-ink min-h-[36px] flex items-center">
+            <span class="text-muted font-normal italic">Awaiting speech audio...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Cost & Live Credits Bar + Clean 5-Row Recent Events Table -->
+      <div class="rounded-3xl border-3 border-line bg-paper p-6 sm:p-8 shadow-md space-y-6">
+        <!-- Top 3 Metrics Ribbon -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="rounded-2xl border-2 border-line bg-cream p-4 text-center">
+            <span class="text-xs font-black text-muted uppercase tracking-wider block">Paid LLM Steps Skipped</span>
+            <span id="consoleStepsSkipped" class="font-mono text-3xl sm:text-4xl font-black text-safe mt-1 block">0</span>
+          </div>
+          <div class="rounded-2xl border-2 border-line bg-cream p-4 text-center">
+            <span class="text-xs font-black text-muted uppercase tracking-wider block">Est. Compute Saved</span>
+            <span id="consoleInrSaved" class="font-mono text-3xl sm:text-4xl font-black text-safe mt-1 block">₹0</span>
+          </div>
+          <div class="rounded-2xl border-2 border-gold/40 bg-ink p-4 text-center">
+            <span class="text-xs font-black text-gold-bright uppercase tracking-wider block">Live DetectifAI Credits</span>
+            <span id="consoleLiveCredits" class="font-mono text-3xl sm:text-4xl font-black text-cream mt-1 block">4,800</span>
+          </div>
+        </div>
+
+        <!-- Clean 5-Row Recent Events Table -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xs sm:text-sm font-black text-muted uppercase tracking-wider">Live Verified Event Stream (Last 5 Events)</h4>
+            <span class="text-xs font-mono font-bold text-safe flex items-center gap-1.5">
+              <span class="size-2 rounded-full bg-safe animate-pulse"></span> Streaming 1,000ms
+            </span>
+          </div>
+          <div class="overflow-x-auto rounded-2xl border-2 border-line">
+            <table class="w-full text-left text-sm font-mono">
+              <thead class="bg-cream border-b-2 border-line font-sans font-bold text-ink">
+                <tr>
+                  <th class="p-3">Time</th>
+                  <th class="p-3">Speaker</th>
+                  <th class="p-3">Decision</th>
+                  <th class="p-3">Deepfake %</th>
+                  <th class="p-3">Match %</th>
+                  <th class="p-3">Action Gate</th>
+                </tr>
+              </thead>
+              <tbody id="consoleEventsTableBody" class="divide-y divide-line text-ink">
+                <tr>
+                  <td colspan="6" class="p-4 text-center text-muted font-sans font-medium">No calls evaluated yet in this session.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="challengeModal" class="fixed inset-0 bg-ink/80 hidden items-center justify-center z-50 p-4 backdrop-blur-xs">
       <div class="bg-paper border border-line rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-ink">
         <div class="flex items-center justify-between mb-4 border-b border-line pb-3">

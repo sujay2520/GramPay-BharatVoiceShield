@@ -413,6 +413,10 @@ class DetectifClient:
                 "base_url": self.base_url,
             }
 
+        now = time.time()
+        if hasattr(self, "_last_health_ts") and (now - self._last_health_ts < 5.0) and hasattr(self, "_last_health_result"):
+            return self._last_health_result
+
         start_time = time.perf_counter()
         try:
             url = self._url("/health")
@@ -425,7 +429,7 @@ class DetectifClient:
                 status = raw_json.get("status")
                 inference = raw_json.get("inference")
                 is_healthy = status == "ok" and inference != "unavailable"
-                return is_healthy, {
+                res = is_healthy, {
                     "reachable": is_healthy,
                     "status": status,
                     "version": raw_json.get("version"),
@@ -435,20 +439,29 @@ class DetectifClient:
                     "latency_ms": latency,
                     "raw": raw_json,
                 }
+                self._last_health_ts = now
+                self._last_health_result = res
+                return res
             elif resp.status_code in (401, 403):
-                return False, {
+                res = False, {
                     "reachable": False,
                     "reason": f"DetectifAI authentication rejected with HTTP {resp.status_code}. Please verify DETECTIF_API_KEY.",
                     "status_code": resp.status_code,
                     "latency_ms": latency,
                 }
+                self._last_health_ts = now
+                self._last_health_result = res
+                return res
             else:
-                return False, {
+                res = False, {
                     "reachable": False,
                     "reason": f"DetectifAI /health returned HTTP {resp.status_code}",
                     "status_code": resp.status_code,
                     "latency_ms": latency,
                 }
+                self._last_health_ts = now
+                self._last_health_result = res
+                return res
         except requests.RequestException as exc:
             return False, {"reachable": False, "error": str(exc)}
 
@@ -473,7 +486,7 @@ class DetectifClient:
     # ==========================================================================
     # 2. Account Credits Balance (GET /v1/credits)
     # ==========================================================================
-    def get_credits(self) -> Dict[str, Any]:
+    def get_credits(self, force_refresh: bool = False) -> Dict[str, Any]:
         """GET /v1/credits - Returns account plan, available credits, and reserved credits.
         Requires scope: credits:read.
         OpenAPI 3.1.0 response schema CreditsObject:
@@ -492,6 +505,10 @@ class DetectifClient:
                 "DETECTIF_API_KEY is not configured in environment. "
                 "Set your API key in .env to query live credits balance."
             )
+
+        now = time.time()
+        if not force_refresh and hasattr(self, "_last_credits_ts") and (now - self._last_credits_ts < 10.0) and hasattr(self, "_last_credits_result"):
+            return dict(self._last_credits_result)
 
         url = self._url("/credits")
         headers = self._get_headers()
@@ -514,7 +531,7 @@ class DetectifClient:
             reserve_protected = bool(remaining is not None and remaining >= self.credit_reserve_floor)
             circuit_breaker_active = bool(remaining is not None and remaining <= self.credit_reserve_floor)
 
-            return {
+            res = {
                 "plan": raw_json.get("plan"),
                 "unlimited": bool(raw_json.get("unlimited", False)),
                 "available": raw_json.get("available"),
@@ -530,6 +547,9 @@ class DetectifClient:
                 "raw": raw_json,
                 "latency_ms": latency_ms,
             }
+            self._last_credits_ts = now
+            self._last_credits_result = res
+            return res
         except requests.RequestException as exc:
             raise DetectifAPIError(f"DetectifAI GET /v1/credits failed or timed out: {exc}")
 

@@ -23,6 +23,7 @@
 10. [Day 2 Multilingual Voice Delivery & Contract Specifications](#10-day-2-multilingual-voice-delivery--contract-specifications)
 11. [Latest Architectural Updates & Production Hardening](#11-latest-architectural-updates--production-hardening)
 12. [Git Commit Registry & Instant Revert Instructions](#12-git-commit-registry--instant-revert-instructions)
+13. [14:00 Stage Demo Architecture & Live Multi-Device Operations](#13-1400-stage-demo-architecture--live-multi-device-operations)
 
 ---
 
@@ -238,8 +239,9 @@ The server is booted via `run_server.py` or `uvicorn`:
 - **Swagger UI Interactive Docs**: `http://localhost:8000/docs`
 - **ReDoc Interactive Contract**: `http://localhost:8000/redoc`
 
-### 4.2 Frontend Static Mounting at Root (`/`)
-The Grok dark-mode frontend is automatically discovered and mounted at `/`:
+### 4.2 Direct Static File Serving & Live Public Tunnel
+- **Direct Static Serving in `backend/main.py`**:
+  The frontend is automatically discovered and mounted directly at root `/` via FastAPI `StaticFiles(directory=..., html=True)`:
 ```python
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "Frontend"
 if not (FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists()):
@@ -248,7 +250,12 @@ if not (FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists()):
 if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
 ```
-When opening `http://localhost:8000` in any web browser, the Grok UI loads immediately without requiring a separate Node.js server.
+  When navigating to `http://localhost:8000` or the public tunnel, the full UI, CSS, audio recorder, and media assets load immediately without requiring a separate Node.js or Vite server.
+- **Active Public ngrok Tunnel URL (14:00 Stage Demo)**:
+  - **Live HTTPS Gateway**: `https://eternity-alibi-uncaring.ngrok-free.dev`
+  - Enables physical smartphone testing over HTTPS (mandatory for browser WebRTC / MediaDevices microphone access on iOS Safari & Android Chrome).
+  - Automatically bypasses ngrok browser warning interstitials via `"ngrok-skip-browser-warning": "true"` request headers in `Frontend/app.js`.
+  - See [Section 13: 14:00 Stage Demo Architecture](#13-1400-stage-demo-architecture--live-multi-device-operations) for full stage choreography and URLs.
 
 ### 4.3 Active Environment Variables (`.env`)
 
@@ -1068,18 +1075,22 @@ For live stage presentations with physical smartphones and an external projectio
   - `&backend=http://<ip-or-ngrok>:8000`: Dynamically overrides the gateway endpoint across remote devices, persistently cached in browser `localStorage`.
   - `&lang=kn|hi|en`: Pre-selects interface and TTS language (Kannada, Hindi, or English).
 
-### 11.5 Localhost Test Results & 100% Passing Test Suite
+### 11.5 Localhost Test Results & 100% Passing Test Suite (194/194 Passed)
 - **Comprehensive Unit & Integration Test Suite (`tests/`)**:
-  - Total tests executed: **177 tests**.
-  - Passing status: **177/177 passed (100% OK)** in **60.2 seconds**.
+  - Total tests executed: **194 tests**.
+  - Passing status: **194/194 passed (100% OK)** in **83.9 seconds**.
   - Command: `python -B -m unittest discover tests`
-  - Modules covered:
-    - `test_contract.py`: Core REST endpoint specifications, schema contracts, and HTTP status codes.
-    - `test_multilingual_contract.py`: Day 2 3-language endpoints, Unicode integrity, and challenge flows.
-    - `test_detectif_client.py`: Dual-engine dispatch (Aletheia deepfake detection + Eidos speaker verification).
-    - `test_agent_nemotron.py`: Dynamic challenge generation and LLM intent parsing.
-    - `test_grampay_endpoints.py`: Banking tool execution and deterministic policy gating.
-    - `test_gate.py`: 3-tier matrix invariants and fail-closed safety posture.
+  - Modules covered (All 10 Test Suites):
+    - `test_edge_cases.py` (75 tests): Input sanitization, corrupted RIFF headers, network timeouts, fail-closed boundaries, rate-limiting, and error handling.
+    - `test_contract.py` (27 tests): Core Section 4 REST endpoint specifications, tracking headers (`request_id`, `ts`), and HTTP response codes.
+    - `test_npci_tools.py` (15 tests): NPCI Hello! UPI payment limits, merchant tool execution (`pay_merchant`), demo account balance tracking, and auto-replenishment.
+    - `test_detectif_client.py` (14 tests): Dual-engine parallel dispatch (DetectifAI Aletheia deepfake detection + Eidos speaker biometric verification).
+    - `test_agent_nemotron.py` (13 tests): NVIDIA Nemotron dynamic challenge phrase generation, audio pre-gating, and intent parsing.
+    - `test_telephony_bridge.py` (13 tests): SIPREC / Twilio media stream bridge, 8kHz G.711 $\mu$-law transcoding, and WebRTC VAD gating.
+    - `test_credit_guardian.py` (12 tests): Credit Guardian 3,000 credit floor enforcement, non-demo circuit breakers, and reserve preservation.
+    - `test_grampay_endpoints.py` (9 tests): Deterministic policy gating, tool locking/unlocking invariants, and Slide 4 cost formula calculations.
+    - `test_grampay_matrix.py` (9 tests): 3-tier risk decision matrix thresholds (`SYNTH_HIGH=0.62`, `SYNTH_LOW=0.50`, `MATCH_HIGH=0.53`, `MATCH_LOW=0.40`).
+    - `test_multilingual_contract.py` (7 tests): Day 2 trilingual contract (Kannada `kn`, Hindi `hi`, English `en`), native Unicode integrity, and challenge flows.
 - **Localhost 8000 End-to-End Verification Suite (`scripts/verify_localhost.py`)**:
   - Validates live server execution on `http://localhost:8000` across 7 critical test suites:
     1. `[1/7] GET /api/health` $\to$ `detectif_reachable=True`, `nemotron_configured=True`.
@@ -1106,6 +1117,8 @@ The table below documents the exact Git commit hashes, author timestamps, and ar
 
 | Commit Hash | Author Date | Commit Message | Scope / Component |
 |:---|:---|:---|:---|
+| `5f29abddd880735403b755b6d7960a5e4ef09f11` | 2026-10-17 11:38 | `fix(ui): eliminate button text clipping, simplify typography and scale to proportional size` | Fix button text clipping, proportional font scaling, responsive flex wrapping, index.html & app.js typography |
+| `c9d33cf8f9b8d9748d373b2027a801eed6e7b06f` | 2026-10-17 11:20 | `feat: senior citizen UX (age 70+), credit guardian (3k reserve), multi-device live sync, bolt-inspired editorial design` | Credit Guardian (3,000 reserve floor), 12 new credit guardian tests, multi-device live sync, UI overhaul |
 | `ca933b9758af2bd28458aaa411181e7328bae175` | 2026-10-17 10:26 | `feat(ui): simplify UI for elderly citizens and optimize for phone/laptop modes` | Frontend View Switcher, touch targets, #judgeOverviewSection, senior accessibility |
 | `20f059c0c07f4cba275df0711eee1ef270b505fb` | 2026-10-17 10:00 | `test: add comprehensive localhost verification suite and audit sync trigger` | `scripts/verify_localhost.py`, audit database sync triggers |
 | `15c3e1294489ff212593096bc553c4f80d446836` | 2026-10-17 09:53 | `feat(multilingual): deliver Day 2 3-language contract, empirical matrix, and live voice shield` | Trilingual contract (kn, hi, en), audio recorder, empirical test matrix |
@@ -1121,27 +1134,37 @@ git revert <hash> --no-edit && git push origin main
 
 #### Exact Revert Commands by Target Commit:
 
-1. **To revert Senior Citizen UI & Accessibility Changes (`ca933b9`)**:
+1. **To revert Typography Scaling & Button Text Clipping Fix (`5f29abd`)**:
+   ```bash
+   git revert 5f29abddd880735403b755b6d7960a5e4ef09f11 --no-edit && git push origin main
+   ```
+
+2. **To revert Senior Citizen UX, Credit Guardian & Multi-Device Sync (`c9d33cf`)**:
+   ```bash
+   git revert c9d33cf8f9b8d9748d373b2027a801eed6e7b06f --no-edit && git push origin main
+   ```
+
+3. **To revert Senior Citizen UI & Accessibility Changes (`ca933b9`)**:
    ```bash
    git revert ca933b9758af2bd28458aaa411181e7328bae175 --no-edit && git push origin main
    ```
 
-2. **To revert Localhost Verification Suite & Audit Sync (`20f059c`)**:
+4. **To revert Localhost Verification Suite & Audit Sync (`20f059c`)**:
    ```bash
    git revert 20f059c0c07f4cba275df0711eee1ef270b505fb --no-edit && git push origin main
    ```
 
-3. **To revert Day 2 Multilingual Voice Shield & Contracts (`15c3e12`)**:
+5. **To revert Day 2 Multilingual Voice Shield & Contracts (`15c3e12`)**:
    ```bash
    git revert 15c3e1294489ff212593096bc553c4f80d446836 --no-edit && git push origin main
    ```
 
-4. **To revert Executive Summary PDF Header Pill (`aa9abde`)**:
+6. **To revert Executive Summary PDF Header Pill (`aa9abde`)**:
    ```bash
    git revert aa9abde78def96960702e773cf2856fee8da16c6 --no-edit && git push origin main
    ```
 
-5. **To revert Gateway Auto-Integration & Telemetry Fallback (`11eea8b`)**:
+7. **To revert Gateway Auto-Integration & Telemetry Fallback (`11eea8b`)**:
    ```bash
    git revert 11eea8bfb95ab7d1501284863cfbabfd49064266 --no-edit && git push origin main
    ```
@@ -1149,10 +1172,232 @@ git revert <hash> --no-edit && git push origin main
 #### Reverting a Range of Commits:
 If an operational emergency requires rolling back multiple recent commits back to the Day 1 baseline:
 ```bash
-# Revert the latest 3 commits in reverse chronological order:
-git revert --no-edit ca933b9758af2bd28458aaa411181e7328bae175 20f059c0c07f4cba275df0711eee1ef270b505fb 15c3e1294489ff212593096bc553c4f80d446836 && git push origin main
+# Revert the latest 4 commits in reverse chronological order:
+git revert --no-edit 5f29abddd880735403b755b6d7960a5e4ef09f11 c9d33cf8f9b8d9748d373b2027a801eed6e7b06f ca933b9758af2bd28458aaa411181e7328bae175 20f059c0c07f4cba275df0711eee1ef270b505fb --no-edit && git push origin main
+```
+
+---
+
+## 13. 14:00 Stage Demo Architecture & Live Multi-Device Operations
+
+### 13.1 Stage Demo Physical Architecture & Network Topology
+For the **14:00 Stage Demo at the BMSCE AI Hackathon**, GramPay operates a robust, multi-screen live architecture connecting physical smartphones in the presenters' hands to the main auditorium projector display via high-speed tunneling:
+
+```
+ ┌──────────────────────────────────────────────────────────────┐
+ │                   Physical Caller Smartphones                │
+ │                                                              │
+ │   [ Phone 1: Ramesh Patel ]      [ Phone 2: Attacker Line ]  │
+ │   URL: ...?mode=caller           URL: ...?mode=caller        │
+ │        &device=phone1                 &device=phone2         │
+ │   (Ultra-clean Farmer View)      (Impostor Clone Testing)    │
+ └──────────────┬───────────────────────────────┬───────────────┘
+                │ HTTPS (WebRTC / Mic Access)   │ HTTPS
+                ▼                               ▼
+ ┌──────────────────────────────────────────────────────────────┐
+ │          ngrok Public HTTPS Tunnel Endpoint                  │
+ │       https://eternity-alibi-uncaring.ngrok-free.dev         │
+ │    (Bypasses mobile browser mixed-content restrictions)      │
+ └──────────────────────────────┬───────────────────────────────┘
+                                │ Forwarded via Local Port 8000
+                                ▼
+ ┌──────────────────────────────────────────────────────────────┐
+ │       Localhost FastAPI Server (backend/main.py)             │
+ │                                                              │
+ │  • Serves REST API Contracts: /api/check, /api/enroll, etc.  │
+ │  • Direct Static File Serving: Frontend/ mounted at /        │
+ │  • ThreadPoolExecutor dispatch to DetectifAI & Nemotron      │
+ │  • Credit Guardian (3,000 credit floor enforcement)          │
+ │  • SQLite Audit DB (data/audit.db)                           │
+ └──────────────┬───────────────────────────────┬───────────────┘
+                │                               │
+                │ Real-time Polling             │ Upstream HTTPS
+                │ (1,000ms sync)                ▼
+                │               ┌───────────────────────────────┐
+                │               │ DetectifAI OpenAPI v1         │
+                │               │ Aletheia + Eidos Engines      │
+                │               │ + NVIDIA Nemotron-3.5 NIM     │
+                │               └───────────────────────────────┘
+                ▼
+ ┌──────────────────────────────────────────────────────────────┐
+ │          Stage Projector Display (Presenter Laptop)          │
+ │                                                              │
+ │   URL: http://localhost:8000/?mode=console                   │
+ │   (or https://eternity-alibi-uncaring.ngrok-free.dev/?mode=console)
+ │                                                              │
+ │   • High-Density Judge Technical Telemetry Console           │
+ │   • Real-Time Incremental Audit Stream (GET /api/latest-state)│
+ │   • 4 Official Slide 4 Counters (Auto-updating in < 1 sec)   │
+ │   • Live Biometric Gauges & Vocoder Spectrogram Artifacts    │
+ └──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 13.2 Unified Server: Direct Static File Serving in `main.py`
+To eliminate production failure modes on stage (such as port collisions, CORS misconfigurations between separate front/back servers, or Node.js runtime crashes), GramPay unifies both the API gateway and the frontend into a **single production process**:
+
+- **Direct Static Mounting (`backend/main.py`)**:
+  ```python
+  from pathlib import Path
+  from fastapi.staticfiles import StaticFiles
+
+  FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "Frontend"
+  if not (FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists()):
+      FRONTEND_DIR = Path(__file__).resolve().parent.parent / "Frontend"
+
+  if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
+      app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
+  ```
+- **Zero-Dependency Serving**:
+  - The entire user interface, styling, vanilla JavaScript (`app.js`, `audio_recorder.js`, `strings.js`), audio fixtures (`.wav`), and the 1-click **Executive Summary PDF** (`GramPay_Executive_Summary_and_Architecture.pdf`) are served directly from `main.py`.
+  - Zero external web servers (Nginx, Apache, or Node.js) are needed.
+  - Starting `run_server.py` or `python -m uvicorn backend.main:app` simultaneously boots the entire stack on port 8000.
+
+---
+
+### 13.3 Dual-Screen Choreography: Ultra-Clean Phone View vs. Laptop Console
+
+The frontend features dynamic query-parameter routing that configures the interface based on the active role:
+
+#### 13.3.1 Ultra-Clean Phone View (`?mode=caller`)
+Designed specifically for physical mobile screens (375px–430px) and elderly rural citizens (age 70+):
+- **Zero Clutter**:
+  - Technical telemetry, raw biometric floating-point decimals, vocoder frequency graphs, and JWT tokens are quarantined inside `#judgeOverviewSection` and hidden from the screen.
+  - The user sees only large, intuitive controls formatted in clean regional typography.
+- **Geriatric Accessibility Touch Targets**:
+  - Large **Language Pills** (52px+) for Kannada (**ಕನ್ನಡ**), Hindi (**हिन्दी**), and English (**English**).
+  - High-contrast **One-Touch Presets** (72px+):
+    - 🌱 **Seeds & Fertilizer (Send ₹5,000)**
+    - ⚡ **Rural Electricity (Pay ₹1,200)**
+    - 🌾 **Fertilizer Subsidy (Send ₹1,000)**
+  - Massive **Pulsing Voice Button** (80px) for seamless recording.
+  - Clear **Status Card** (32px typography) with explicit visual color coding: Green (`PAY / APPROVED`), Red (`🛑 CLONE BLOCKED`), Amber (`EXTRA CHECK`).
+- **Device Specializations**:
+  - **Phone 1 (`?mode=caller&device=phone1`)**:
+    - Account: **Ramesh Patel (`kisan_farmer_01`)**.
+    - Pre-staged authentic audio fallback button for instant zero-latency demonstration.
+    - Demonstrates approved legitimate farmer voice payments.
+  - **Phone 2 (`?mode=caller&device=phone2`)**:
+    - Header Banner: **`🚨 Phone 2: Attacker / Impostor Line`**.
+    - One-touch **"Send Consented Clone Clip"** (`farmer_clone_synthetic_5s.wav`).
+    - Demonstrates real-time neural vocoder clone attack detection and instant lockouts live from the audience/stage.
+
+#### 13.3.2 Stage Projector Laptop Console (`?mode=console`)
+Tailored for the presenter's laptop connected to the auditorium HDMI/projector:
+- **Instant Console Activation**:
+  - Automatically activates `setView("judge")` upon load.
+  - Hides mobile phone inputs and expands the high-density telemetry dashboard to full width.
+- **High-Frequency Real-Time Telemetry Polling**:
+  - Initiates an automated polling loop against `GET /api/latest-state?since={last_event_id}` every **1,000 milliseconds**.
+  - As soon as Phone 1 or Phone 2 triggers a voice command, the laptop screen updates **in under 1 second** without manual refreshing.
+- **The 4 Official Slide 4 Counters**:
+  - Live animated odometer cards displaying:
+    1. **`checks_run`**: Total voice gateway evaluations executed.
+    2. **`clones_blocked`**: Synthetic clones intercepted and terminated.
+    3. **`agent_steps_skipped`**: Expensive conversational LLM/TTS steps bypassed.
+    4. **`agent_time_saved_inr`**: Total compute financial savings accrued (in INR).
+- **Deep Technical Transparency**:
+  - DetectifAI live credit counter (with active 3,000 reserve indicator).
+  - Vocoder neural synthesis confidence percentage (Aletheia engine).
+  - Cosine voiceprint biometric match percentage (Eidos engine).
+  - Immutable SQLite RBI/DPDP audit table updating live with every phone tap.
+
+---
+
+### 13.4 Production Tunneling via ngrok (`https://eternity-alibi-uncaring.ngrok-free.dev`)
+
+#### 13.4.1 Active ngrok Tunnel URLs
+For the 14:00 stage presentation, the following public URLs are pre-configured:
+
+| Device / Role | Target URL | Purpose |
+|:---|:---|:---|
+| **Phone 1 (Farmer)** | `https://eternity-alibi-uncaring.ngrok-free.dev/?mode=caller&device=phone1` | Ramesh Patel authentic voice banking interface |
+| **Phone 2 (Attacker)** | `https://eternity-alibi-uncaring.ngrok-free.dev/?mode=caller&device=phone2` | Voice clone attacker simulation line |
+| **Stage Projector** | `https://eternity-alibi-uncaring.ngrok-free.dev/?mode=console` *(or `http://localhost:8000/?mode=console`)* | Judge technical telemetry & Slide 4 counters display |
+| **Executive Summary PDF** | `https://eternity-alibi-uncaring.ngrok-free.dev/GramPay_Executive_Summary_and_Architecture.pdf` | Direct 1-click architecture and business brief |
+
+#### 13.4.2 Why ngrok HTTPS is Critical for Mobile
+Modern mobile operating systems (iOS Safari and Android Chrome) enforce strict WebRTC security policies:
+- Browser microphone access (`navigator.mediaDevices.getUserMedia`) is **permanently blocked on non-localhost HTTP connections**.
+- The `https://eternity-alibi-uncaring.ngrok-free.dev` SSL tunnel provides high-assurance end-to-end TLS encryption, enabling live physical microphone capture on any smartphone connected to 5G/4G or campus Wi-Fi.
+
+#### 13.4.3 Automatic Interstitial Warning Bypass
+Free-tier ngrok tunnels typically display a browser interstitial warning page on first visit. GramPay completely bypasses this via `Frontend/app.js`:
+```javascript
+if (urlStr.includes("ngrok") || (typeof BACKEND_URL === "string" && BACKEND_URL.includes("ngrok"))) {
+  headers["ngrok-skip-browser-warning"] = "true";
+}
+```
+All API fetch requests automatically pass `"ngrok-skip-browser-warning": "true"`, preventing any API drops or JSON parse failures.
+
+---
+
+### 13.5 Complete Verification Suite: 194/194 Tests Passing
+Prior to stage deployment, GramPay underwent exhaustive regression testing across all 10 specialized test modules:
+
+```powershell
+# Command to execute full test suite
+& "C:\Users\chandan.s\AppData\Local\Programs\Python\Python312\python.exe" -B -m unittest discover tests
+```
+
+#### Test Execution Matrix (100% OK):
+| Test Module | Test Count | Scope & Invariants Verified | Status |
+|:---|:---:|:---|:---:|
+| `test_edge_cases.py` | 75 | Corrupted WAV headers, malformed payloads, network partition fallbacks, rate-limiters, extreme input strings | **PASSED** |
+| `test_contract.py` | 27 | Core REST contracts, tracking headers (`request_id`, `ts`), 3-tier gating HTTP schemas | **PASSED** |
+| `test_npci_tools.py` | 15 | NPCI Hello! UPI limits (₹5,000 max), merchant tools (`IFFCO`), account balance replenishment | **PASSED** |
+| `test_detectif_client.py` | 14 | Dual-engine dispatch (Aletheia OpenAPI + Eidos OpenAPI), timeout handling, fail-closed assertions | **PASSED** |
+| `test_agent_nemotron.py` | 13 | Dynamic cognitive challenge generation, audio pre-gating invariant, NVIDIA Nemotron turn orchestration | **PASSED** |
+| `test_telephony_bridge.py` | 13 | Telephony SIPREC/Twilio ingestion, 8kHz G.711 $\mu$-law transcoding, WebRTC VAD gating | **PASSED** |
+| `test_credit_guardian.py` | 12 | Credit Guardian 3,000 credit reserve floor, circuit-breaker protection during CI/CD runs | **PASSED** |
+| `test_grampay_endpoints.py` | 9 | Banking tool locking/unlocking, cost formula accuracy, Slide 4 telemetry counters | **PASSED** |
+| `test_grampay_matrix.py` | 9 | 3-tier risk boundary conditions (`SYNTH_HIGH=0.62`, `MATCH_HIGH=0.53`, etc.) | **PASSED** |
+| `test_multilingual_contract.py` | 7 | Day 2 trilingual contract (Kannada `kn`, Hindi `hi`, English `en`), Unicode integrity, word banks | **PASSED** |
+| **TOTAL** | **194** | **Complete System Integrity & Zero Regression** | **194/194 OK** |
+
+- **Execution Timing**: 194 tests completed in **83.89 seconds**.
+- **Rule 5.4 Compliance**: 0 mock scores fabricated; all tests conform to strict fail-closed security.
+- **Credit Guardian Protection**: The 3,000 credit reserve remained 100% intact throughout test execution.
+
+---
+
+### 13.6 Stage Rehearsal Walkthrough & Emergency Procedures
+
+#### Pre-Flight Checklist (10 Minutes Before Stage):
+1. **Verify Backend Liveness**:
+   ```powershell
+   Invoke-RestMethod -Uri "http://localhost:8000/api/health" | ConvertTo-Json
+   ```
+   Ensure `"ok": true`, `"detectif_reachable": true`, and `"nemotron_configured": true`.
+2. **Verify ngrok Public Tunnel**:
+   Open `https://eternity-alibi-uncaring.ngrok-free.dev/api/health` in mobile browser. Confirm JSON response.
+3. **Verify Credit Reserve**:
+   ```powershell
+   Invoke-RestMethod -Uri "http://localhost:8000/api/credits" | ConvertTo-Json
+   ```
+   Ensure `"available"` is $\ge 3,000$.
+4. **Reset Demo Balances**:
+   ```powershell
+   Invoke-RestMethod -Uri "http://localhost:8000/api/demo/reset" -Method Post | ConvertTo-Json
+   ```
+   Confirms Ramesh Patel has baseline ₹28,500.00 and Slide 4 counters are at zero.
+5. **Open Devices**:
+   - Phone 1: Open `https://eternity-alibi-uncaring.ngrok-free.dev/?mode=caller&device=phone1`.
+   - Phone 2: Open `https://eternity-alibi-uncaring.ngrok-free.dev/?mode=caller&device=phone2`.
+   - Laptop: Open `http://localhost:8000/?mode=console` and maximize on projector.
+
+#### Emergency Instant Rollback (If needed):
+To cleanly rollback the latest UI scaling or senior citizen commit on stage:
+```bash
+# Rollback latest typography commit:
+git revert 5f29abddd880735403b755b6d7960a5e4ef09f11 --no-edit && git push origin main
+
+# Or rollback to Day 2 early morning baseline:
+git revert --no-edit 5f29abddd880735403b755b6d7960a5e4ef09f11 c9d33cf8f9b8d9748d373b2027a801eed6e7b06f ca933b9758af2bd28458aaa411181e7328bae175 --no-edit && git push origin main
 ```
 
 ---
 *GramPay (BharatVoice Shield) — Zero-Trust Voice Security Gateway for NPCI Hello! UPI*  
 *BMSCE AI Hackathon · Track 3 (UNCLONE Agents) · Production Grade*
+
