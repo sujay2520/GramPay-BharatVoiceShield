@@ -66,8 +66,16 @@ def prepare_audio_for_detectif(
         
     info = inspect_wav_header(audio_bytes)
     
-    # If already a valid WAV, return directly
-    if info.get("format") == "wav":
+    # Keep suitable WAV unchanged. Convert telephony 8 kHz, stereo, and other
+    # WAV variants to the same 16 kHz mono PCM format used by the browser mic.
+    if (
+        info.get("format") == "wav"
+        and info.get("channels") == 1
+        and info.get("sample_width") == 2
+        and info.get("sample_rate") == 16000
+    ):
+        if (info.get("duration_seconds") or 0) < 3.0:
+            raise AudioValidationError("Voice sample must contain at least 3 seconds of audio.")
         return audio_bytes, "audio/wav", original_filename if original_filename.endswith(".wav") else "input.wav"
         
     # Prefer system ffmpeg, with a portable bundled binary as fallback.
@@ -88,12 +96,22 @@ def prepare_audio_for_detectif(
             
             cmd = [
                 ffmpeg_exe, "-y", "-i", in_path,
-                "-ar", "16000", "-ac", "1", "-f", "wav", out_path
+                "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", "-f", "wav", out_path
             ]
             res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
             if res.returncode == 0 and Path(out_path).exists():
                 with open(out_path, "rb") as out_f:
                     converted_bytes = out_f.read()
+                converted_info = inspect_wav_header(converted_bytes)
+                if (
+                    converted_info.get("format") != "wav"
+                    or converted_info.get("sample_rate") != 16000
+                    or converted_info.get("channels") != 1
+                    or converted_info.get("sample_width") != 2
+                ):
+                    raise AudioValidationError("Audio conversion did not produce 16 kHz mono PCM WAV.")
+                if (converted_info.get("duration_seconds") or 0) < 3.0:
+                    raise AudioValidationError("Voice sample must contain at least 3 seconds of audio.")
                 return converted_bytes, "audio/wav", "converted.wav"
             detail = res.stderr.decode("utf-8", errors="replace")[-300:]
             raise AudioValidationError(f"Could not decode this audio file. {detail}")
@@ -109,17 +127,7 @@ def prepare_audio_for_detectif(
             if out_path:
                 Path(out_path).unlink(missing_ok=True)
 
-    # Fallback: pass with best detected content type
-    ext = Path(original_filename).suffix.lower()
-    mime_map = {
-        ".wav": "audio/wav",
-        ".mp3": "audio/mpeg",
-        ".ogg": "audio/ogg",
-        ".webm": "audio/webm",
-        ".m4a": "audio/mp4",
-        ".mp4": "audio/mp4"
-    }
-    mime_type = mime_map.get(ext, "application/octet-stream")
-    if mime_type == "application/octet-stream":
-        raise AudioValidationError("Unsupported audio format. Upload WAV, MP3, M4A, MP4, OGG, or WebM audio.")
-    return audio_bytes, mime_type, original_filename
+    raise AudioValidationError(
+        "Audio conversion is unavailable. Install ffmpeg or imageio-ffmpeg, then try again; "
+        "unconverted audio is not sent to the voice service."
+    )

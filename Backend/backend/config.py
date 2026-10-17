@@ -17,7 +17,7 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 # DetectifAI Platform Settings (Single source of truth)
 DETECTIF_API_KEY = os.getenv("DETECTIF_API_KEY", "").strip()
 DETECTIF_BASE_URL = os.getenv("DETECTIF_BASE_URL", "https://platform.detectif.ai/v1").rstrip("/")
-DETECTIF_TIMEOUT_SECONDS = float(os.getenv("DETECTIF_TIMEOUT_SECONDS", "5.0"))
+DETECTIF_TIMEOUT_SECONDS = float(os.getenv("DETECTIF_TIMEOUT_SECONDS", "20.0"))
 
 # NVIDIA Nemotron LLM Settings (Single source of truth)
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "").strip()

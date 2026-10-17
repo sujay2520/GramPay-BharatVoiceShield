@@ -10,16 +10,12 @@ Conforms strictly to:
   * Deterministic fail-closed error handling on any API fault, timeout, or missing field.
 """
 
-import hashlib
-import io
 import logging
 import math
 import os
 import re
-import struct
 import time
 import uuid
-import wave
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
@@ -27,15 +23,12 @@ from backend.config import (
     DETECTIF_API_KEY,
     DETECTIF_BASE_URL,
     DETECTIF_TIMEOUT_SECONDS,
+    CREDIT_RESERVE_FLOOR,
     MATCH_HIGH,
     SYNTH_HIGH,
 )
 
 logger = logging.getLogger("detectif_client")
-
-# Credit Guardian Reserve Floor: preserve at least 3,000 credits for live judge presentations
-CREDIT_RESERVE_FLOOR = 3000
-
 
 class DetectifAPIError(Exception):
     """Raised when an interaction with DetectifAI fails, times out, or returns invalid telemetry.
@@ -86,8 +79,6 @@ class DetectifClient:
             if initial_credits is not None
             else (int(os.getenv("DETECTIF_INITIAL_CREDITS")) if os.getenv("DETECTIF_INITIAL_CREDITS") else None)
         )
-        self.demo_mode: bool = False
-        self._response_cache: Dict[str, Dict[str, Any]] = {}
 
     def _update_tracked_credits(self, credits_info: Any) -> None:
         """Tracks remaining credits from DetectifAI responses or /v1/credits."""
@@ -106,21 +97,7 @@ class DetectifClient:
             self.remaining_credits = int(credits_info)
 
     def is_circuit_breaker_active(self, is_demo: bool = False) -> bool:
-        """Determines if the Credit Guardian circuit breaker is active.
-        Circuit breaker activates when remaining credits <= CREDIT_RESERVE_FLOOR (3000)
-        during automated non-demo runs, guaranteeing that 3,000 credits remain 100% safe
-        for live judge presentations.
-        """
-        # Demo runs bypass the circuit breaker to allow live evaluations for judges
-        if is_demo or self.demo_mode:
-            return False
-        if os.getenv("LIVE_DEMO", "").lower() in ("1", "true", "yes"):
-            return False
-        if os.getenv("DEMO_MODE", "").lower() in ("1", "true", "yes"):
-            return False
-        if os.getenv("UNCLONE_DEMO", "").lower() in ("1", "true", "yes"):
-            return False
-
+        """Returns true when the configured credit reserve prohibits provider calls."""
         # Forced circuit breaker testing flag
         if os.getenv("FORCE_CIRCUIT_BREAKER", "").lower() in ("1", "true", "yes"):
             return True
@@ -131,196 +108,13 @@ class DetectifClient:
 
         return False
 
-    def _get_cached_or_fixture_detection(
-        self,
-        audio_bytes: bytes,
-        filename: str = "audio.wav",
-    ) -> Dict[str, Any]:
-        """Returns a high-fidelity cached response or acoustic fixture baseline.
-        Activated by Credit Guardian when remaining credits <= CREDIT_RESERVE_FLOOR
-        during automated non-demo runs to guarantee 3,000 credits are preserved for judge demos.
-        """
-        cache_key = f"detect:{hashlib.sha256(audio_bytes).hexdigest()}"
-        if cache_key in self._response_cache:
-            cached = dict(self._response_cache[cache_key])
-            cached["idempotent_replay"] = True
-            cached["circuit_breaker_active"] = True
-            return cached
-
-        fname = (filename or "").lower()
-        is_clone = any(k in fname for k in ("clone", "synth", "fake", "deepfake", "attack"))
-        duration_sec = 5.0
-
-        try:
-            with io.BytesIO(audio_bytes) as bio:
-                with wave.open(bio, "rb") as wf:
-                    n = wf.getnframes()
-                    sr = wf.getframerate()
-                    duration_sec = round(n / float(sr), 2)
-                    data = wf.readframes(min(n, 16000))
-                    if n >= 4000:
-                        samples = struct.unpack(f"<{len(data)//2}h", data)
-                        k = int(4000.0 / sr * len(samples))
-                        re_val = sum(s * math.cos(2 * math.pi * k * i / len(samples)) for i, s in enumerate(samples))
-                        im_val = sum(s * math.sin(2 * math.pi * k * i / len(samples)) for i, s in enumerate(samples))
-                        mag_4k = math.sqrt(re_val * re_val + im_val * im_val) / len(samples)
-                        if mag_4k > 80.0:
-                            is_clone = True
-        except Exception:
-            pass
-
-        if is_clone:
-            verdict = "fake"
-            score = 0.945
-            is_synthetic = True
-        else:
-            verdict = "real"
-            score = 0.082
-            is_synthetic = False
-
-        res = {
-            "verdict": verdict,
-            "score": score,
-            "threshold": 0.62,
-            "is_synthetic": is_synthetic,
-            "synthetic_score": score,
-            "decided_by": "main_model",
-            "duration_seconds": duration_sec,
-            "segments": [{"start": 0.0, "end": duration_sec, "score": score}],
-            "operation_id": f"op_guard_{uuid.uuid4().hex[:16]}",
-            "request_id": f"req_guard_{uuid.uuid4().hex[:16]}",
-            "idempotent_replay": False,
-            "credits": {"charged": 0, "balance": self.remaining_credits if self.remaining_credits is not None else self.credit_reserve_floor},
-            "model": {"name": "aletheia-wavlm", "version": "wavlm-distill-v2"},
-            "raw": {
-                "verdict": verdict,
-                "score": score,
-                "is_synthetic": is_synthetic,
-                "credit_guardian": True,
-                "reserve_floor": self.credit_reserve_floor,
-            },
-            "latency_ms": 25,
-            "circuit_breaker_active": True,
-        }
-        self._response_cache[cache_key] = res
-        return dict(res)
-
-    def _get_cached_or_fixture_verification(
-        self,
-        audio_bytes: bytes,
-        speaker_id: str,
-        filename: str = "verify.wav",
-        detect_deepfake: bool = False,
-    ) -> Dict[str, Any]:
-        """Returns a high-fidelity cached response or acoustic fixture baseline for verification.
-        Preserves 3,000 live credits for judge demos.
-        """
-        sid_raw = (speaker_id or "senior_user_01").strip()
-        clean_speaker_id = re.sub(r"[^A-Za-z0-9_.:-]", "_", sid_raw)[:64] or "speaker_01"
-        cache_key = f"verify:{clean_speaker_id}:{hashlib.sha256(audio_bytes).hexdigest()}"
-        if cache_key in self._response_cache:
-            cached = dict(self._response_cache[cache_key])
-            cached["idempotent_replay"] = True
-            cached["circuit_breaker_active"] = True
-            return cached
-
-        fname = (filename or "").lower()
-        sid_lower = clean_speaker_id.lower()
-        is_imposter = any(k in fname for k in ("imposter", "unknown")) or ("imposter" in sid_lower)
-        duration_sec = 5.0
-
-        try:
-            with io.BytesIO(audio_bytes) as bio:
-                with wave.open(bio, "rb") as wf:
-                    n = wf.getnframes()
-                    sr = wf.getframerate()
-                    duration_sec = round(n / float(sr), 2)
-                    data = wf.readframes(min(n, 8000))
-                    if n >= 4000:
-                        samples = struct.unpack(f"<{len(data)//2}h", data)
-                        lag_130 = int(sr / 130.0)
-                        lag_210 = int(sr / 210.0)
-                        if len(samples) > max(lag_130, lag_210):
-                            c130 = sum(samples[i] * samples[i + lag_130] for i in range(min(4000, len(samples) - lag_130)))
-                            c210 = sum(samples[i] * samples[i + lag_210] for i in range(min(4000, len(samples) - lag_210)))
-                            if c210 > 0 and c130 < c210 and "senior" in sid_lower:
-                                is_imposter = True
-        except Exception:
-            pass
-
-        if is_imposter:
-            decision = "no_match"
-            similarity = 0.310
-            matched = False
-        else:
-            decision = "match"
-            similarity = 0.885
-            matched = True
-
-        res = {
-            "decision": decision,
-            "similarity": similarity,
-            "threshold": 0.53,
-            "matched": matched,
-            "match_score": similarity,
-            "speaker_id": clean_speaker_id,
-            "deepfake": None,
-            "duration_seconds": duration_sec,
-            "credits": {"charged": 0, "balance": self.remaining_credits if self.remaining_credits is not None else self.credit_reserve_floor},
-            "model": {"name": "eidos-voiceprint", "version": "eidos-ecapa-tdnn-v1"},
-            "operation_id": f"op_guard_{uuid.uuid4().hex[:16]}",
-            "request_id": f"req_guard_{uuid.uuid4().hex[:16]}",
-            "idempotent_replay": False,
-            "raw": {
-                "decision": decision,
-                "similarity": similarity,
-                "matched": matched,
-                "credit_guardian": True,
-                "reserve_floor": self.credit_reserve_floor,
-            },
-            "latency_ms": 28,
-            "circuit_breaker_active": True,
-        }
-        self._response_cache[cache_key] = res
-        return dict(res)
-
-    def _get_cached_or_fixture_enrollment(
-        self,
-        audio_bytes: bytes,
-        speaker_id: Optional[str] = None,
-        display_name: Optional[str] = None,
-        filename: str = "enroll.wav",
-    ) -> Dict[str, Any]:
-        """Returns a high-fidelity cached response or fixture baseline for enrollment."""
-        sid_raw = (speaker_id or "senior_user_01").strip()
-        clean_speaker_id = re.sub(r"[^A-Za-z0-9_.:-]", "_", sid_raw)[:64] or "speaker_01"
-        clean_display_name = (display_name or sid_raw)[:128]
-        cache_key = f"enroll:{clean_speaker_id}:{hashlib.sha256(audio_bytes).hexdigest()}"
-        if cache_key in self._response_cache:
-            cached = dict(self._response_cache[cache_key])
-            cached["idempotent_replay"] = True
-            cached["circuit_breaker_active"] = True
-            return cached
-
-        res = {
-            "speaker_id": clean_speaker_id,
-            "display_name": clean_display_name,
-            "name": clean_display_name,
-            "samples": 1,
-            "enrolled": True,
-            "quality": {"speech_seconds": 5.0, "duration_seconds": 5.0},
-            "credits": {"charged": 0, "balance": self.remaining_credits if self.remaining_credits is not None else self.credit_reserve_floor},
-            "model": {"name": "eidos-enroll", "version": "v1"},
-            "operation_id": f"op_guard_{uuid.uuid4().hex[:16]}",
-            "request_id": f"req_guard_{uuid.uuid4().hex[:16]}",
-            "idempotent_replay": False,
-            "raw": {"speaker_id": clean_speaker_id, "enrolled": True, "credit_guardian": True},
-            "detectif_raw": {"speaker_id": clean_speaker_id, "enrolled": True},
-            "latency_ms": 30,
-            "circuit_breaker_active": True,
-        }
-        self._response_cache[cache_key] = res
-        return dict(res)
+    def _ensure_live_analysis_allowed(self, operation: str, is_demo: bool = False) -> None:
+        """Never return a fabricated result when live analysis is blocked."""
+        if self.is_circuit_breaker_active(is_demo=is_demo):
+            raise DetectifAPIError(
+                f"Live DetectifAI {operation} was not run because the credit reserve "
+                f"floor ({self.credit_reserve_floor}) is active; no voice classification is available."
+            )
 
     def _url(self, endpoint: str) -> str:
         """Constructs full URL guaranteeing the /v1 prefix defined in OpenAPI 3.1.0."""
@@ -570,7 +364,7 @@ class DetectifClient:
             audio_bytes: Raw audio bytes (WAV, MP3, FLAC, OGG/Opus, WebM, M4A/AAC, AIFF).
             filename: Audio file name (e.g. 'audio.wav').
             idempotency_key: Optional UUID idempotency key; auto-generated if omitted.
-            is_demo: Set to True for live judge demonstrations to bypass circuit breaker.
+            is_demo: Legacy compatibility parameter; it does not bypass the credit reserve.
 
         Parses strictly per OpenAPI 3.1.0 DeepfakeResponse:
             result.verdict: 'real' | 'fake' | 'not_sure'
@@ -588,15 +382,7 @@ class DetectifClient:
             raise DetectifAPIError("Empty audio buffer provided for deepfake detection.")
 
         # Credit Guardian Circuit Breaker Check
-        if self.is_circuit_breaker_active(is_demo=is_demo):
-            logger.warning(
-                "CREDIT GUARDIAN WARNING: Live credits (%s) <= floor (%s). "
-                "Circuit breaker active during automated non-demo run. "
-                "Returning high-fidelity cached/fixture baseline to preserve 3,000 credits for live judge presentations.",
-                self.remaining_credits,
-                self.credit_reserve_floor,
-            )
-            return self._get_cached_or_fixture_detection(audio_bytes, filename)
+        self._ensure_live_analysis_allowed("deepfake detection", is_demo=is_demo)
 
         url = self._url("/deepfake/detect")
         idem_key = idempotency_key or str(uuid.uuid4())
@@ -646,6 +432,8 @@ class DetectifClient:
                         score = float(alt_score)
 
                 threshold = float(res_obj.get("threshold", 0.62))
+                if not math.isfinite(threshold) or not 0.0 <= threshold <= 1.0:
+                    raise DetectifAPIError("DetectifAI returned an invalid deepfake threshold.", raw_json=raw_json)
 
                 is_synth_val = res_obj.get("is_synthetic")
                 if is_synth_val is not None:
@@ -657,17 +445,44 @@ class DetectifClient:
                 else:
                     is_synthetic = False
 
-                # Rule 5.4 deterministic check: fail closed if no valid score or verdict
-                if score is None and verdict is None:
+                # Never manufacture a probability from a categorical verdict.
+                if score is None:
                     raise DetectifAPIError(
-                        f"DetectifAI response did not contain valid deepfake metrics (verdict/score): {raw_json}",
+                        f"DetectifAI response did not contain the numeric deepfake score required for classification: {raw_json}",
                         status_code=resp.status_code,
                         raw_body=resp.text,
                         raw_json=raw_json,
                     )
-
-                if score is None:
-                    score = 1.0 if is_synthetic else 0.0
+                if not math.isfinite(score) or not 0.0 <= score <= 1.0:
+                    raise DetectifAPIError(
+                        "DetectifAI returned a deepfake score outside the valid [0, 1] range.",
+                        status_code=resp.status_code,
+                        raw_body=resp.text,
+                        raw_json=raw_json,
+                    )
+                if verdict == "not_sure":
+                    raise DetectifAPIError(
+                        "DetectifAI could not determine whether this audio is real or synthetic.",
+                        status_code=resp.status_code,
+                        raw_body=resp.text,
+                        raw_json=raw_json,
+                    )
+                score_classification = score >= threshold
+                if verdict in ("real", "fake") and (verdict == "fake") != score_classification:
+                    raise DetectifAPIError(
+                        "DetectifAI returned conflicting deepfake verdict and score fields.",
+                        status_code=resp.status_code,
+                        raw_body=resp.text,
+                        raw_json=raw_json,
+                    )
+                if is_synth_val is not None and bool(is_synth_val) != score_classification:
+                    raise DetectifAPIError(
+                        "DetectifAI returned conflicting is_synthetic and score fields.",
+                        status_code=resp.status_code,
+                        raw_body=resp.text,
+                        raw_json=raw_json,
+                    )
+                is_synthetic = verdict == "fake" if verdict else (bool(is_synth_val) if is_synth_val is not None else score >= threshold)
 
                 # Track credits from response
                 if "credits" in raw_json:
@@ -692,8 +507,6 @@ class DetectifClient:
                     "raw": raw_json,
                     "latency_ms": latency_ms,
                 }
-                cache_key = f"detect:{hashlib.sha256(audio_bytes).hexdigest()}"
-                self._response_cache[cache_key] = ret_dict
                 return ret_dict
             except requests.RequestException as exc:
                 last_error = exc
@@ -726,7 +539,7 @@ class DetectifClient:
             speaker_name: Alias for speaker_id / display_name for backward compatibility.
             filename: Audio file name (e.g. 'enroll.wav').
             idempotency_key: Optional UUID idempotency key; auto-generated if omitted.
-            is_demo: Set to True for live judge demonstrations to bypass circuit breaker.
+            is_demo: Legacy compatibility parameter; it does not bypass the credit reserve.
 
         Parses strictly per OpenAPI 3.1.0 EnrollResponse:
             speaker.speaker_id: str
@@ -751,15 +564,7 @@ class DetectifClient:
         clean_display_name = (display_name or speaker_name or sid_raw)[:128]
 
         # Credit Guardian Circuit Breaker Check
-        if self.is_circuit_breaker_active(is_demo=is_demo):
-            logger.warning(
-                "CREDIT GUARDIAN WARNING: Live credits (%s) <= floor (%s). "
-                "Circuit breaker active during automated non-demo run. "
-                "Returning high-fidelity cached/fixture baseline to preserve 3,000 credits for live judge presentations.",
-                self.remaining_credits,
-                self.credit_reserve_floor,
-            )
-            return self._get_cached_or_fixture_enrollment(audio_bytes, clean_speaker_id, clean_display_name, filename)
+        self._ensure_live_analysis_allowed("speaker enrollment", is_demo=is_demo)
 
         url = self._url("/speakers/enroll")
         idem_key = idempotency_key or str(uuid.uuid4())
@@ -826,8 +631,6 @@ class DetectifClient:
                     "detectif_raw": raw_json,
                     "latency_ms": latency_ms,
                 }
-                cache_key = f"enroll:{clean_speaker_id}:{hashlib.sha256(audio_bytes).hexdigest()}"
-                self._response_cache[cache_key] = ret_dict
                 return ret_dict
             except requests.RequestException as exc:
                 last_error = exc
@@ -860,7 +663,7 @@ class DetectifClient:
             detect_deepfake: Optional flag to run joint deepfake detection (needs scope deepfake:detect).
             filename: Audio file name (e.g. 'verify.wav').
             idempotency_key: Optional UUID idempotency key; auto-generated if omitted.
-            is_demo: Set to True for live judge demonstrations to bypass circuit breaker.
+            is_demo: Legacy compatibility parameter; it does not bypass the credit reserve.
 
         Parses strictly per OpenAPI 3.1.0 VerifyResponse:
             result.decision: 'match' | 'no_match'
@@ -888,15 +691,7 @@ class DetectifClient:
             clean_speaker_id = "speaker_01"
 
         # Credit Guardian Circuit Breaker Check
-        if self.is_circuit_breaker_active(is_demo=is_demo):
-            logger.warning(
-                "CREDIT GUARDIAN WARNING: Live credits (%s) <= floor (%s). "
-                "Circuit breaker active during automated non-demo run. "
-                "Returning high-fidelity cached/fixture baseline to preserve 3,000 credits for live judge presentations.",
-                self.remaining_credits,
-                self.credit_reserve_floor,
-            )
-            return self._get_cached_or_fixture_verification(audio_bytes, clean_speaker_id, filename, detect_deepfake)
+        self._ensure_live_analysis_allowed("speaker verification", is_demo=is_demo)
 
         url = self._url("/speakers/verify")
         idem_key = idempotency_key or str(uuid.uuid4())
@@ -936,22 +731,36 @@ class DetectifClient:
                         similarity = float(alt_sim)
 
                 threshold = float(res_obj.get("threshold", 0.53))
+                if not math.isfinite(threshold) or not -1.0 <= threshold <= 1.0:
+                    raise DetectifAPIError("DetectifAI returned an invalid speaker-match threshold.", raw_json=raw_json)
 
                 if decision is None and similarity is not None:
                     decision = "match" if similarity >= threshold else "no_match"
 
-                # Rule 5.4 deterministic check: fail closed if no decision or similarity
-                if similarity is None and decision is None:
+                # Never turn a categorical match result into an invented score.
+                if similarity is None:
                     raise DetectifAPIError(
-                        f"DetectifAI response did not contain valid verification metrics (decision/similarity): {raw_json}",
+                        f"DetectifAI response did not contain a numeric speaker similarity required for verification: {raw_json}",
+                        status_code=resp.status_code,
+                        raw_body=resp.text,
+                        raw_json=raw_json,
+                    )
+                if not math.isfinite(similarity) or not -1.0 <= similarity <= 1.0:
+                    raise DetectifAPIError(
+                        "DetectifAI returned speaker similarity outside the valid [-1, 1] range.",
+                        status_code=resp.status_code,
+                        raw_body=resp.text,
+                        raw_json=raw_json,
+                    )
+                if decision in ("match", "no_match") and (decision == "match") != (similarity >= threshold):
+                    raise DetectifAPIError(
+                        "DetectifAI returned conflicting speaker decision and similarity fields.",
                         status_code=resp.status_code,
                         raw_body=resp.text,
                         raw_json=raw_json,
                     )
 
-                matched = (decision == "match") if decision else (similarity is not None and similarity >= threshold)
-                if similarity is None:
-                    similarity = 1.0 if matched else -1.0
+                matched = (decision == "match") if decision else similarity >= threshold
 
                 # Track credits from response
                 if "credits" in raw_json:
@@ -976,8 +785,6 @@ class DetectifClient:
                     "raw": raw_json,
                     "latency_ms": latency_ms,
                 }
-                cache_key = f"verify:{clean_speaker_id}:{hashlib.sha256(audio_bytes).hexdigest()}"
-                self._response_cache[cache_key] = ret_dict
                 return ret_dict
             except requests.RequestException as exc:
                 last_error = exc

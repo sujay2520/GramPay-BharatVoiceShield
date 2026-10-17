@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, HTMLResponse
 from pydantic import BaseModel
 
-from backend.config import ALLOWED_ORIGIN, NVIDIA_API_KEY
+from backend.config import ALLOWED_ORIGIN, NVIDIA_API_KEY, SYNTH_HIGH, SYNTH_LOW, MATCH_HIGH
 from backend.audio_prep import prepare_audio_for_detectif, AudioValidationError
 from backend.detectif_client import detectif_client, DetectifAPIError, CREDIT_RESERVE_FLOOR
 from backend.gate import evaluate_gate
@@ -354,13 +354,13 @@ async def check_audio_endpoint(
         if api_error or synth_score is None or match_score is None:
             decision = "BLOCK"
             reason_key = "api_error"
-        elif synth_score >= 0.62:
+        elif detection_res.get("verdict") == "fake" or detection_res.get("is_synthetic") is True or synth_score >= float(detection_res.get("threshold", SYNTH_HIGH)):
             decision = "BLOCK"
             reason_key = "synthetic_blocked"
-        elif synth_score >= 0.50:
+        elif synth_score >= SYNTH_LOW:
             decision = "EXTRA_CHECK"
             reason_key = "uncertain_challenge"
-        elif match_score < 0.53:
+        elif match_score < float(verification_res.get("threshold", MATCH_HIGH)):
             decision = "EXTRA_CHECK"
             reason_key = "speaker_mismatch"
         else:
@@ -422,7 +422,7 @@ async def check_audio_endpoint(
             "decision": decision,
             "reason_key": reason_key,
             "detection": {
-                "is_synthetic": detection_res.get("is_synthetic") if detection_res.get("is_synthetic") is not None else ((synth_score >= 0.62) if synth_score is not None else None),
+                "is_synthetic": detection_res.get("is_synthetic") if detection_res.get("is_synthetic") is not None else ((synth_score >= float(detection_res.get("threshold", SYNTH_HIGH))) if synth_score is not None else None),
                 "synthetic_score": synth_score,
                 "latency_ms": detection_res.get("latency_ms", 0),
                 "raw": detection_res.get("raw", {})
@@ -569,10 +569,10 @@ async def submit_challenge_endpoint(
         if api_error or synth_score is None or match_score is None:
             decision = "BLOCK"
             reason_key = "challenge_failed"
-        elif synth_score >= 0.62:
+        elif detection_res.get("verdict") == "fake" or detection_res.get("is_synthetic") is True or synth_score >= float(detection_res.get("threshold", SYNTH_HIGH)):
             decision = "BLOCK"
             reason_key = "synthetic_blocked"
-        elif synth_score < 0.50 and match_score >= 0.50:
+        elif synth_score < SYNTH_LOW and match_score >= float(verification_res.get("threshold", MATCH_HIGH)):
             decision = "PAY"
             reason_key = "approved"
         else:
@@ -605,7 +605,7 @@ async def submit_challenge_endpoint(
             "decision": decision,
             "reason_key": reason_key,
             "detection": {
-                "is_synthetic": detection_res.get("is_synthetic") if detection_res.get("is_synthetic") is not None else ((synth_score >= 0.62) if synth_score is not None else None),
+                "is_synthetic": detection_res.get("is_synthetic") if detection_res.get("is_synthetic") is not None else ((synth_score >= float(detection_res.get("threshold", SYNTH_HIGH))) if synth_score is not None else None),
                 "synthetic_score": synth_score,
                 "latency_ms": detection_res.get("latency_ms", 0),
                 "raw": detection_res.get("raw", {})
