@@ -181,6 +181,13 @@ def init_db():
                     if col_name not in existing_cols:
                         cursor.execute(f"ALTER TABLE audit_logs ADD COLUMN {col_name} {col_type}")
 
+        # Ensure historical cost consistency in stored data
+        cursor.execute("""
+            UPDATE audit_logs
+            SET est_inr = ROUND((seconds_avoided / 60.0) * 10.0, 2)
+            WHERE seconds_avoided > 0 AND abs(est_inr - (seconds_avoided / 60.0 * 10.0)) > 0.01
+        """)
+
         # Trigger ensuring id and request_id are never NULL (synced from rowid and event_id)
         cursor.execute("""
             CREATE TRIGGER IF NOT EXISTS audit_logs_sync_compat AFTER INSERT ON audit_logs
@@ -243,7 +250,7 @@ def log_audit_event(
 
     steps_skipped = int(cost.get("agent_steps_skipped", cost.get("steps_skipped", 0)))
     seconds_avoided = float(cost.get("agent_seconds_avoided", cost.get("seconds_avoided", 0.0)))
-    est_inr = float(cost.get("est_inr", 0.0))
+    est_inr = float(cost.get("est_inr", round((seconds_avoided / 60.0) * ASSUMED_COST_PER_MIN_INR, 2)))
 
     # Resolve active challenge telemetry
     c_dict = active_challenge or kwargs.get("challenge") or {}
@@ -259,12 +266,13 @@ def log_audit_event(
     if c_verdict is None:
         c_verdict = c_dict.get("verdict") or kwargs.get("verdict")
 
-    event_id = kwargs.get("event_id") or request_id or f"req_{int(time.time()*1000)}"
+    # Ensure unique primary key for every logged audit event
+    event_id = kwargs.get("event_id") or f"{request_id}_{int(time.time()*1000000)}"
 
     with sqlite3.connect(SQLITE_DB_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT OR REPLACE INTO audit_logs (
+            INSERT INTO audit_logs (
                 event_id, ts, device, source, lang, decision, reason_key,
                 synthetic_score, match_score, detection_latency_ms, verification_latency_ms,
                 gate_overhead_ms, response_delay_ms, transcript_text, transcript_english,
@@ -350,21 +358,21 @@ def get_recent_audit_logs(limit: int = 50) -> List[Dict[str, Any]]:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT id, request_id, event_id, ts, speaker_id, action, decision, reason,
+            SELECT rowid as db_rowid, id, request_id, event_id, ts, speaker_id, action, decision, reason,
                    synthetic_score, match_score, is_synthetic, matched,
                    latency_ms, tool_status, steps_skipped, seconds_avoided, est_inr,
                    challenge_latency_ms, challenge_verdict,
                    active_challenge_latency_ms, active_challenge_verdict
             FROM audit_logs
-            ORDER BY COALESCE(id, rowid) DESC
+            ORDER BY rowid DESC
             LIMIT ?
         """, (limit,))
         rows = cursor.fetchall()
         result = []
         for r in rows:
             d = dict(r)
-            if d.get("id") is None and "rowid" in d:
-                d["id"] = d["rowid"]
+            if d.get("id") is None:
+                d["id"] = d.get("db_rowid")
             # Add contract keys from Blueprint Section 4
             d["time"] = d["ts"]
             d["latency"] = d["latency_ms"]
@@ -426,7 +434,7 @@ def get_telemetry_stats(limit: int = 50) -> Dict[str, Any]:
         total_step_up = int(row[4] or 0)
         steps_skipped = int(row[5] or 0)
         seconds_avoided = float(row[6] or 0.0)
-        est_inr = round(float(row[7] or 0.0), 2)
+        est_inr = round((seconds_avoided / 60.0) * ASSUMED_COST_PER_MIN_INR, 2)
 
         detailed_logs = get_recent_audit_logs(limit=limit)
 
@@ -528,8 +536,8 @@ def record_contract_event(event_dict: Optional[Dict[str, Any]] = None, **kwargs:
 
     tool_status = event.get("tool_status") if event.get("tool_status") is not None else tool.get("status", "LOCKED")
     steps_skipped = int(event.get("steps_skipped") if event.get("steps_skipped") is not None else cost.get("steps_skipped", cost.get("agent_steps_skipped", 0)))
-    est_inr = float(event.get("est_inr") if event.get("est_inr") is not None else cost.get("est_inr", 0.0))
-    seconds_avoided = float(event.get("seconds_avoided") if event.get("seconds_avoided") is not None else cost.get("seconds_avoided", (120.0 if steps_skipped else 0.0)))
+    seconds_avoided = float(event.get("seconds_avoided") if event.get("seconds_avoided") is not None else cost.get("seconds_avoided", cost.get("agent_seconds_avoided", steps_skipped * 120.0)))
+    est_inr = float(event.get("est_inr") if event.get("est_inr") is not None else cost.get("est_inr", round((seconds_avoided / 60.0) * ASSUMED_COST_PER_MIN_INR, 2)))
     credits_remaining = event.get("credits_remaining")
     badge = event.get("badge")
 
