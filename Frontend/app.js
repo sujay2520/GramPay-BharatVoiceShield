@@ -2198,33 +2198,41 @@ window.btnQuickChallenge = handleHeroCase3;
 $("presetFertilizer")?.addEventListener("click", () => {
   if ($("actionSelect")) $("actionSelect").value = "TRANSFER_FUNDS";
   if ($("amountInput")) $("amountInput").value = "1000";
-  const label = currentLang === "kn" ? "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ" : currentLang === "hi" ? "इफको खाद को 1,000 रुपये भेजें" : "Send ₹1,000 Fertilizer";
-  if ($("recordLabel")) $("recordLabel").textContent = label;
-  setStatusCard(null, `ಉದಾಹರಣೆ: "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ". ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ.`);
+  setStatusCard(null, currentLang === "kn"
+    ? `ಉದಾಹರಣೆ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ: "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ". ಮಾತನಾಡಲು ಗುಂಡಿಯನ್ನು ಒತ್ತಿ.`
+    : (currentLang === "hi"
+      ? `उदाहरण चुना गया: "इफको खाद को 1,000 रुपये भेजें"। बोलने के लिए बटन दबाएं।`
+      : `Preset Selected: "Send ₹1,000 Fertilizer". Tap to speak.`));
 });
 
 $("presetFuel")?.addEventListener("click", () => {
   if ($("actionSelect")) $("actionSelect").value = "TRANSFER_FUNDS";
   if ($("amountInput")) $("amountInput").value = "2500";
-  const label = currentLang === "kn" ? "ಟ್ರ್ಯಾಕ್ಟರ್ ಡೀಸೆಲ್‌ಗೆ 2,500 ರೂ ಕಳುಹಿಸಿ" : currentLang === "hi" ? "ट्रैक्टर डीजल को 2,500 रुपये भेजें" : "Send ₹2,500 Fuel";
-  if ($("recordLabel")) $("recordLabel").textContent = label;
-  setStatusCard(null, `ಉದಾಹರಣೆ: "ಟ್ರ್ಯಾಕ್ಟರ್ ಡೀಸೆಲ್‌ಗೆ 2,500 ರೂ ಕಳುಹಿಸಿ". ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ.`);
+  setStatusCard(null, currentLang === "kn"
+    ? `ಉದಾಹರಣೆ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ: "ಟ್ರ್ಯಾಕ್ಟರ್ ಡೀಸೆಲ್‌ಗೆ 2,500 ರೂ ಕಳುಹಿಸಿ". ಮಾತನಾಡಲು ಗುಂಡಿಯನ್ನು ಒತ್ತಿ.`
+    : (currentLang === "hi"
+      ? `उदाहरण चुना गया: "ट्रैक्टर डीजल को 2,500 रुपये भेजें"। बोलने के लिए बटन दबाएं।`
+      : `Preset Selected: "Send ₹2,500 Fuel". Tap to speak.`));
 });
 
 $("presetBalance")?.addEventListener("click", () => {
   if ($("actionSelect")) $("actionSelect").value = "CHECK_BALANCE";
   if ($("amountInput")) $("amountInput").value = "0";
-  const label = currentLang === "kn" ? "ಕಿಸಾನ್ ಬ್ಯಾಲೆನ್ಸ್ ಪರಿಶೀಲಿಸಿ" : currentLang === "hi" ? "किसान बैलेंस चेक करें" : "Check Kisan Balance";
-  if ($("recordLabel")) $("recordLabel").textContent = label;
-  setStatusCard(null, `ಉದಾಹರಣೆ: "ಕಿಸಾನ್ ಖಾತೆಯ ಬ್ಯಾಲೆನ್ಸ್ ನೋಡಿ". ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ.`);
+  setStatusCard(null, currentLang === "kn"
+    ? `ಉದಾಹರಣೆ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ: "ಕಿಸಾನ್ ಖಾತೆಯ ಬ್ಯಾಲೆನ್ಸ್ ನೋಡಿ". ಮಾತನಾಡಲು ಗುಂಡಿಯನ್ನು ಒತ್ತಿ.`
+    : (currentLang === "hi"
+      ? `उदाहरण चुना गया: "किसान बैलेंस चेक करें"। बोलने के लिए बटन दबाएं।`
+      : `Preset Selected: "Check Kisan Balance". Tap to speak.`));
 });
 
 $("presetPmKisan")?.addEventListener("click", () => {
   if ($("actionSelect")) $("actionSelect").value = "PAY_UPI";
   if ($("amountInput")) $("amountInput").value = "2000";
-  const label = currentLang === "kn" ? "ಪಿಎಂ-ಕಿಸಾನ್ ₹2,000" : currentLang === "hi" ? "पीएम-किसान ₹2,000" : "PM-Kisan ₹2,000";
-  if ($("recordLabel")) $("recordLabel").textContent = label;
-  setStatusCard(null, "Scenario: PM-Kisan Samman Nidhi DBT Subsidy of ₹2,000. Tap the giant button to speak.");
+  setStatusCard(null, currentLang === "kn"
+    ? `ಪಿಎಂ-ಕಿಸಾನ್ ಸಬ್ಸಿಡಿ ₹2,000. ಮಾತನಾಡಲು ಗುಂಡಿಯನ್ನು ಒತ್ತಿ.`
+    : (currentLang === "hi"
+      ? `पीएम-किसान सब्सिडी ₹2,000। बोलने के लिए बटन दबाएं।`
+      : `PM-Kisan Subsidy ₹2,000. Tap to speak.`));
 });
 
 // Backend URL & Health check buttons
@@ -2775,9 +2783,12 @@ function setLanguage(lang) {
     }
   }
 
-  // Update primary Speak button label
+  // Update primary Speak button label (Clean, single language, no clipping)
   if ($("recordLabel")) {
-    $("recordLabel").textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ / TAP TO SPEAK" : currentLang === "hi" ? "बोलिए / TAP TO SPEAK" : "Tap and speak to pay";
+    $("recordLabel").textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ (Tap to Speak)" : currentLang === "hi" ? "बोलिए (Tap to Speak)" : "Tap to Speak";
+  }
+  if ($("stopLabel")) {
+    $("stopLabel").textContent = currentLang === "kn" ? "ನಿಲ್ಲಿಸಿ (Stop)" : currentLang === "hi" ? "रोकें (Stop)" : "Stop";
   }
 
   // Update TTS Replay button label

@@ -18,6 +18,9 @@ ENV/
 *.db
 *.db-journal
 *.log
+cloudflared.exe
+ngrok.exe
+ngrok_url.txt
 
 # OS artifacts
 .DS_Store
