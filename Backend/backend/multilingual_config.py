@@ -9,9 +9,7 @@ Deterministic Word Banks (NOT described as LLM-generated):
 - Everyday rural words familiar to farmers across Karnataka, Uttar Pradesh, and pan-India.
 - Random selection of 4 words via standard crypto/random sampling.
 
-Critical Fix 1:
-- Caches the initial payment command audio during EXTRA_CHECK so that once Tier-2 challenge
-  passes in /api/challenge/submit, the original payment audio can be transcribed and executed.
+Pending follow-up checks keep the initial voice sample and profile bound together.
 """
 
 import os
@@ -32,17 +30,17 @@ MULTILINGUAL_CONFIG: Dict[str, Dict[str, Any]] = {
         "enroll_prompt": "ನನ್ನ ಧ್ವನಿಯನ್ನು ಗ್ರಾಮಪೇ ಸುರಕ್ಷತೆಗಾಗಿ ನೋಂದಾಯಿಸುತ್ತಿದ್ದೇನೆ",
         "speak_cta": "ಮಾತನಾಡಲು ಇಲ್ಲಿ ಒತ್ತಿರಿ (ಉದಾ: ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1000 ರೂಪಾಯಿ ಕಳುಹಿಸಿ)",
         "checking": "ಧ್ವನಿಯನ್ನು ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ...",
-        "challenge_title": "ಹೆಚ್ಚುವರಿ ಧ್ವನಿ ಪರಿಶೀಲನೆ: ದಯವಿಟ್ಟು ಈ 4 ಪದಗಳನ್ನು ಸ್ಪಷ್ಟವಾಗಿ ಹೇಳಿ",
+        "challenge_title": "ಹೆಚ್ಚುವರಿ ಧ್ವನಿ ಪರಿಶೀಲನೆ: ಮತ್ತೊಂದು ಸ್ಪಷ್ಟ ಧ್ವನಿ ಮಾದರಿ ನೀಡಿ",
         "challenge_prefix": "ದಯವಿಟ್ಟು ಈ ನಾಲ್ಕು ಪದಗಳನ್ನು ಜೋರಾಗಿ ಹೇಳಿ:",
         "word_bank": [
             "ಹಸಿರು", "ಮಳೆ", "ಕಮಲ", "ನವಿಲು", "ಸೂರ್ಯ", "ನದಿ",
             "ಬೆಟ್ಟ", "ಮಾವು", "ಭೂಮಿ", "ಬೆಳಕು", "ಹೂವು", "ಮರ"
         ],
         "reasons": {
-            "approved": "ನೈಜ ಧ್ವನಿ ಮತ್ತು ಖಾತೆದಾರರ ಗುರುತು ದೃಢಪಟ್ಟಿದೆ. ₹1,000 ಪಾವತಿಗೆ ಅನುಮತಿ ನೀಡಲಾಗಿದೆ.",
+            "approved": "ನೈಜ ಧ್ವನಿ ಮತ್ತು ಖಾತೆದಾರರ ಗುರುತು ದೃಢಪಟ್ಟಿದೆ. ಯಾವುದೇ ಪಾವತಿ ಮಾಡಲಾಗಿಲ್ಲ.",
             "synthetic_blocked": "ಎಚ್ಚರಿಕೆ: ನಕಲಿ (AI) ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ. ಪಾವತಿಯನ್ನು ತಡೆಯಲಾಗಿದೆ.",
             "speaker_mismatch": "ಧ್ವನಿ ಹೊಂದಾಣಿಕೆಯಾಗಿಲ್ಲ. ಹೆಚ್ಚುವರಿ ಪರಿಶೀಲನೆ ಅಗತ್ಯವಿದೆ.",
-            "uncertain_challenge": "ಧ್ವನಿ ಅಸ್ಪಷ್ಟವಾಗಿದೆ. ದಯವಿಟ್ಟು ಕೆಳಗಿನ 4 ಪದಗಳನ್ನು ಹೇಳಿ.",
+            "uncertain_challenge": "ಮತ್ತೊಂದು ಧ್ವನಿ ಮಾದರಿ ಅಗತ್ಯವಿದೆ. ಮೈಕ್ ಒತ್ತಿ ಸಹಜವಾಗಿ ಮಾತನಾಡಿ.",
             "challenge_failed": "ಮರು-ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ. ಪಾವತಿಯನ್ನು ತಡೆಯಲಾಗಿದೆ.",
             "api_error": "ತಾಂತ್ರಿಕ ದೋಷ: ಸುರಕ್ಷತೆಗಾಗಿ ಪಾವತಿಯನ್ನು ತಡೆಯಲಾಗಿದೆ."
         }
@@ -54,17 +52,17 @@ MULTILINGUAL_CONFIG: Dict[str, Dict[str, Any]] = {
         "enroll_prompt": "मैं ग्रामपे सुरक्षा के लिए अपनी आवाज़ दर्ज कर रहा हूँ",
         "speak_cta": "बोलने के लिए दबाएँ (उदा: इफको खाद को 1000 रुपये भेजें)",
         "checking": "आवाज़ की जाँच हो रही है...",
-        "challenge_title": "अतिरिक्त सुरक्षा जाँच: कृपया ये 4 शब्द साफ़ बोलें",
+        "challenge_title": "अतिरिक्त आवाज़ जाँच: एक और साफ़ आवाज़ का नमूना दें",
         "challenge_prefix": "सुरक्षा जाँच के लिए कृपया ये चार शब्द बोलें:",
         "word_bank": [
             "हरा", "बादल", "कमल", "मोर", "सूरज", "नदी",
             "पहाड़", "आम", "धरती", "उजाला", "फूल", "पानी"
         ],
         "reasons": {
-            "approved": "असली आवाज़ और पहचान प्रमाणित। ₹1,000 भुगतान स्वीकृत।",
+            "approved": "असली आवाज़ और पहचान प्रमाणित। कोई भुगतान नहीं किया गया।",
             "synthetic_blocked": "सावधान: नकली (AI) आवाज़ पकड़ी गई। भुगतान रोक दिया गया है।",
             "speaker_mismatch": "आवाज़ मेल नहीं खाई। अतिरिक्त जाँच आवश्यक है।",
-            "uncertain_challenge": "आवाज़ स्पष्ट नहीं है। कृपया नीचे दिए गए 4 शब्द बोलें।",
+            "uncertain_challenge": "एक और आवाज़ का नमूना चाहिए। माइक दबाकर स्वाभाविक रूप से बोलें।",
             "challenge_failed": "सुरक्षा जाँच विफल। भुगतान रोक दिया गया है।",
             "api_error": "सर्वर त्रुटि: सुरक्षा के लिए भुगतान बंद कर दिया गया है।"
         }
@@ -76,17 +74,17 @@ MULTILINGUAL_CONFIG: Dict[str, Dict[str, Any]] = {
         "enroll_prompt": "I am enrolling my voice for GramPay security",
         "speak_cta": "Tap and speak (e.g., Send Rs. 1,000 to IFFCO Fertilizer)",
         "checking": "Checking voice...",
-        "challenge_title": "Extra security check: Please say these 4 words clearly",
+        "challenge_title": "Extra voice check: Record another clear sample",
         "challenge_prefix": "For your security, please repeat these four words:",
         "word_bank": [
             "green", "monsoon", "lotus", "peacock", "sunrise", "river",
             "mango", "mountain", "garden", "lantern", "forest", "harvest"
         ],
         "reasons": {
-            "approved": "Real voice and enrolled speaker verified. Rs. 1,000 payment unlocked.",
+            "approved": "Real voice and enrolled speaker verified. No payment was made.",
             "synthetic_blocked": "Blocked: Synthetic AI voice detected. Payment tool remains locked.",
             "speaker_mismatch": "Speaker voiceprint mismatch. Extra verification required.",
-            "uncertain_challenge": "Uncertain audio score. Please repeat the 4 challenge words below.",
+            "uncertain_challenge": "Another voice sample is needed. Tap the mic and speak naturally.",
             "challenge_failed": "Challenge verification failed. Payment tool remains locked.",
             "api_error": "Verification unavailable (fail-closed). Payment tool remains locked."
         }
@@ -164,7 +162,7 @@ def get_localized_reason(reason_key: str, lang: Optional[str] = "kn") -> str:
 
 
 # ==============================================================================
-# Critical Fix 1: In-Memory / Temporary Storage for First Payment Command Audio
+# In-Memory / Temporary Storage for a Pending Voice Check
 # ==============================================================================
 _PENDING_CHALLENGES: Dict[str, Dict[str, Any]] = {}
 _CACHE_LOCK = threading.Lock()
@@ -180,10 +178,10 @@ def save_pending_challenge(
     device: str = "phone1",
     source: str = "live_mic"
 ) -> None:
-    """Stores the initial payment command audio during EXTRA_CHECK.
+    """Stores the initial voice audio during EXTRA_CHECK.
 
-    When /api/check returns EXTRA_CHECK, this stores the first audio bytes
-    so when /api/challenge/submit passes, STT can process the original payment command.
+    This binds the follow-up to the first audio, speaker profile, and language.
+    The app does not use this data to execute a payment.
     """
     clean_lang = normalize_lang(lang)
     file_path = _TEMP_DIR / f"{challenge_id}.wav"

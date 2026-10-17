@@ -7,6 +7,7 @@ Deterministic fail-closed behavior on all error paths.
 
 import time
 import uuid
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -44,7 +45,6 @@ from backend.multilingual_config import (
     get_pending_challenge,
     remove_pending_challenge
 )
-from backend.stt_intent import extract_intent_and_transcript
 
 # Day 2 Global Editable Assumptions (Defaults: Rs 10/min, 2 minutes saved)
 
@@ -381,7 +381,7 @@ async def check_audio_endpoint(
         if decision == "EXTRA_CHECK":
             ch_data = generate_challenge_words(norm_lang)
             ch_id = ch_data["challenge_id"]
-            # Fix 1: Cache first payment audio bytes on server
+            # Bind this follow-up check to the first voice recording and profile.
             save_pending_challenge(
                 challenge_id=ch_id,
                 audio_bytes=raw_bytes,
@@ -399,16 +399,9 @@ async def check_audio_endpoint(
             steps_skipped = 0
 
         elif decision == "PAY":
-            # Approved: Transcribe and parse financial intent
-            intent_res = extract_intent_and_transcript(raw_bytes, norm_lang)
-            transcript_payload = {
-                "text": intent_res["text"],
-                "english": intent_res["english"]
-            }
-            intent_payload = {
-                "amount": intent_res["amount"],
-                "payee": intent_res["payee"]
-            }
+            # This endpoint verifies voice identity only. No speech-to-text or
+            # downstream payment integration is configured, so never invent an
+            # order transcript, amount, or payee.
             tool_status = "VOICE_VERIFIED"
             steps_skipped = 0
 
@@ -497,13 +490,17 @@ async def submit_challenge_endpoint(
     speaker_id: str = Form("senior_user_01"),
     response_delay_ms: Optional[float] = Form(None)
 ):
-    """Evaluates the spoken challenge phrase audio.
-    
-    Critical Fix 1 Implementation:
-    If challenge passes (decision=PAY), runs STT + intent on the original FIRST payment audio!
-    Never blocks on response_delay_ms; records it as telemetry only.
+    """Rechecks a pending caller voice challenge without executing a payment.
+
+    Response delay is recorded as telemetry only. Challenges are bound to the
+    original speaker profile and expire after two minutes.
     """
     meta = make_metadata()
+    if not re.fullmatch(r"ch_[a-f0-9]{12}", challenge_id or ""):
+        return JSONResponse(
+            status_code=410,
+            content={**meta, "error": "This voice challenge is invalid or expired. Start a new voice check.", "fail_closed": True}
+        )
     audio_upload = audio or file
     if not audio_upload:
         return JSONResponse(
@@ -511,12 +508,22 @@ async def submit_challenge_endpoint(
             content={**meta, "error": "Missing audio file in form data", "fail_closed": True}
         )
 
-    # Retrieve cached first payment audio
+    # Look up the pending first-pass voice check for this caller/profile.
     cached_first = get_pending_challenge(challenge_id)
-    lang = cached_first.get("lang", "kn") if cached_first else "kn"
-    device = cached_first.get("device", "phone1") if cached_first else "phone1"
-    source = cached_first.get("source", "live_mic") if cached_first else "live_mic"
-    first_audio_bytes = cached_first.get("audio_bytes") if cached_first else None
+    if not cached_first or time.time() - float(cached_first.get("created_at", 0)) > 120:
+        remove_pending_challenge(challenge_id)
+        return JSONResponse(
+            status_code=410,
+            content={**meta, "error": "This voice challenge expired. Start a new voice check.", "fail_closed": True}
+        )
+    if speaker_id != cached_first.get("speaker_id"):
+        return JSONResponse(
+            status_code=403,
+            content={**meta, "error": "The voice challenge belongs to a different voice profile.", "fail_closed": True}
+        )
+    lang = cached_first.get("lang", "kn")
+    device = cached_first.get("device", "phone1")
+    source = cached_first.get("source", "live_mic")
     event_id = meta["request_id"]
 
     try:
@@ -578,17 +585,8 @@ async def submit_challenge_endpoint(
         intent_payload = None
 
         if decision == "PAY":
-            # Pass: Transcribe the FIRST saved payment audio
-            audio_to_transcribe = first_audio_bytes or raw_challenge_bytes
-            intent_res = extract_intent_and_transcript(audio_to_transcribe, lang)
-            transcript_payload = {
-                "text": intent_res["text"],
-                "english": intent_res["english"]
-            }
-            intent_payload = {
-                "amount": intent_res["amount"],
-                "payee": intent_res["payee"]
-            }
+            # Challenge approval is a voice check only. Do not derive fake
+            # transaction details from a canned transcript.
             tool_status = "VOICE_VERIFIED"
             steps_skipped = 0
         else:
@@ -793,7 +791,7 @@ ACTIVE_CHALLENGES: Dict[str, Dict[str, Any]] = {}
 
 @app.post("/api/challenge/generate")
 async def generate_challenge_endpoint(request: Request):
-    """Tier 2: Generates a dynamic phonetically-rich verification phrase via NVIDIA Nemotron."""
+    """Return a localized four-word prompt for an optional second voice sample."""
     meta = make_metadata()
     try:
         content_type = request.headers.get("content-type", "")
