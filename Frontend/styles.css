@@ -757,8 +757,11 @@ body.mode-caller main {
   padding: 0 !important;
 }
 
-body.mode-caller #callerPhoneView,
 body.mode-caller #panelFarmer {
+  display: none !important;
+}
+
+body.mode-caller #callerPhoneView {
   display: flex !important;
   flex-direction: column !important;
   width: 100% !important;
@@ -772,6 +775,46 @@ body.mode-caller #panelFarmer {
   padding: 1.25rem 1.25rem 1.5rem !important;
   gap: 1rem !important;
   box-sizing: border-box !important;
+}
+
+body.mode-caller #callerPhoneView {
+  min-height: 0 !important;
+  gap: 0.5rem !important;
+  padding: 0.75rem !important;
+}
+
+body.mode-caller #callerStatusCard {
+  min-height: 120px !important;
+  padding: 0.75rem !important;
+}
+
+body.mode-caller #callerStatusEmoji {
+  width: 3rem !important;
+  height: 3rem !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 2rem !important;
+}
+
+body.mode-caller #callerBtnRecord {
+  min-height: 3.75rem !important;
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+body.mode-caller #callerBtnEnroll {
+  padding-top: 0.45rem !important;
+  padding-bottom: 0.45rem !important;
+}
+
+body.mode-caller #callerPhoneView > div:first-child {
+  margin-bottom: 0.25rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+body.mode-caller #callerPhoneView > div:nth-of-type(3) {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.25rem !important;
+  padding-top: 0.5rem !important;
 }
 
 /* High-Contrast Styling: Center Status Card */

@@ -885,7 +885,7 @@
     </div> <!-- /standardView -->
 
     <!-- Farmer voice interface -->
-    <div id="callerPhoneView" class="hidden flex-col items-center justify-between min-h-[85vh] max-w-md mx-auto py-4 px-2">
+    <div id="callerPhoneView" class="hidden flex-col items-center justify-between min-h-[65vh] max-w-md mx-auto py-3 px-2">
       <!-- (a) Top Bar: Voice Profile Status + Language Pills -->
       <div class="w-full flex items-center justify-between gap-2 border-b-2 border-line pb-4 mb-4">
         <div class="inline-flex items-center gap-2 rounded-full bg-safe-bg border-2 border-safe/40 px-3.5 py-1.5 shadow-2xs">
@@ -893,7 +893,7 @@
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
           </span>
-          <span id="callerAgentBadge" class="text-xs sm:text-sm font-extrabold text-safe tracking-wide">Voice profile status</span>
+          <span id="callerAgentBadge" class="text-xs sm:text-sm font-extrabold text-safe tracking-wide">Account holder profile</span>
         </div>
         <div class="inline-flex rounded-2xl border-2 border-line bg-paper p-1 shadow-2xs" id="callerLangBar">
           <button type="button" class="caller-lang-btn active rounded-xl px-3 py-1.5 text-sm font-black transition border-2 border-ink bg-ink text-paper" data-lang="kn">ಕನ್ನಡ</button>
@@ -911,7 +911,7 @@
           ನಿಮ್ಮ ಧ್ವನಿ ಪರಿಶೀಲಿಸಿ / Check your voice
         </h2>
         <p id="callerStatusReason" class="text-base sm:text-lg text-muted mt-2 font-medium leading-relaxed">
-          ಪ್ರಾರಂಭಿಸಲು ಮಾತನಾಡಿ ಗುಂಡಿ ಒತ್ತಿ / Tap the microphone and speak naturally.
+          ಮೈಕ್ ಒತ್ತಿ ಮಾತನಾಡಿ; ನಿಲ್ಲಿಸಲು ಮತ್ತೆ ಒತ್ತಿ. / Tap to speak; tap again to stop and check.
         </p>
 
         <!-- EXTRA_CHECK: 4 Dynamic Challenge Words in Huge Text -->
@@ -940,9 +940,8 @@
         <button id="callerBtnEnroll" type="button"
           class="w-full py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs sm:text-sm font-bold text-ink transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer">
           <span>👤</span>
-          <span id="callerEnrollLabel">Enroll voice profile (15+ seconds)</span>
+          <span id="callerEnrollLabel">Set up voice profile</span>
         </button>
-        <p id="callerEnrollHint" class="text-[11px] text-muted text-center">Tap once to start recording; tap again to stop and submit the voice sample to DetectifAI Eidos.</p>
       </div>
     </div>
 

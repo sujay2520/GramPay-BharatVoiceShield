@@ -366,7 +366,7 @@ function setStatusCard(decision, reason) {
       cCard.classList.add("status-ready");
       if (cEmoji) cEmoji.textContent = "🛡️";
       if (cTitle) cTitle.textContent = lang === "kn" ? "ಮಾತನಾಡಿ ಪಾವತಿಸಿ" : (lang === "hi" ? "बोलकर भुगतान करें" : "Speak to Pay");
-      if (cReason) cReason.textContent = reason || (lang === "kn" ? "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಸ್ಪಷ್ಟವಾಗಿ ಮಾತನಾಡಿ." : (lang === "hi" ? "बटन दबाकर स्पष्ट रूप से बोलें।" : "Tap the microphone and speak clearly."));
+      if (cReason) cReason.textContent = reason || (lang === "kn" ? "ಮಾತನಾಡಲು ಮೈಕ್ ಒತ್ತಿ; ನಿಲ್ಲಿಸಲು ಮತ್ತೆ ಒತ್ತಿ." : (lang === "hi" ? "बोलने के लिए माइक दबाएँ; रोकने के लिए फिर दबाएँ।" : "Tap the mic to speak; tap again to stop and check."));
       if (cBox) cBox.classList.add("hidden");
     } else if (d === "APPROVE" || d === "APPROVED") {
       cCard.classList.add("status-approve");
@@ -2538,10 +2538,20 @@ function initCallerPhoneControls() {
         } else {
           await stopRecording();
         }
-        // Automatically submit live voice order for gate check after stopping
-        setTimeout(() => {
-          if ($("btnCheck")) $("btnCheck").click();
-        }, 350);
+        // Wait until the recorder has emitted and stored the final WAV.
+        const submitWhenReady = () => {
+          if (isRecording) return setTimeout(submitWhenReady, 50);
+          if (!currentBlob || currentBlob.size < 44) {
+            showError("No voice audio was captured. Allow microphone access and try again.", true);
+            return;
+          }
+          if (seniorElapsedSec < 3) {
+            showError("Please speak for at least 3 seconds, then tap again to check your voice.", true);
+            return;
+          }
+          $("btnCheck")?.click();
+        };
+        submitWhenReady();
       } else {
         if (btnRec) {
           btnRec.click();

@@ -4,7 +4,6 @@ Ensures uploaded audio complies with DetectifAI input requirements (telephony 8k
 
 import io
 import wave
-import struct
 import shutil
 import subprocess
 import tempfile
@@ -71,9 +70,16 @@ def prepare_audio_for_detectif(
     if info.get("format") == "wav":
         return audio_bytes, "audio/wav", original_filename if original_filename.endswith(".wav") else "input.wav"
         
-    # Check for ffmpeg conversion if browser sent WebM, MP3, or OGG
+    # Prefer system ffmpeg, with a portable bundled binary as fallback.
     ffmpeg_exe = shutil.which("ffmpeg")
+    if not ffmpeg_exe:
+        try:
+            import imageio_ffmpeg
+            ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        except (ImportError, RuntimeError):
+            ffmpeg_exe = None
     if ffmpeg_exe:
+        in_path = out_path = None
         try:
             with tempfile.NamedTemporaryFile(suffix=".input", delete=False) as in_f:
                 in_f.write(audio_bytes)
@@ -84,15 +90,24 @@ def prepare_audio_for_detectif(
                 ffmpeg_exe, "-y", "-i", in_path,
                 "-ar", "16000", "-ac", "1", "-f", "wav", out_path
             ]
-            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
             if res.returncode == 0 and Path(out_path).exists():
                 with open(out_path, "rb") as out_f:
                     converted_bytes = out_f.read()
-                Path(in_path).unlink(missing_ok=True)
-                Path(out_path).unlink(missing_ok=True)
                 return converted_bytes, "audio/wav", "converted.wav"
-        except Exception:
-            pass  # Fall back to passing raw bytes with appropriate mime type
+            detail = res.stderr.decode("utf-8", errors="replace")[-300:]
+            raise AudioValidationError(f"Could not decode this audio file. {detail}")
+        except subprocess.TimeoutExpired as exc:
+            raise AudioValidationError("Audio conversion timed out. Please choose a shorter clip.") from exc
+        except AudioValidationError:
+            raise
+        except Exception as exc:
+            raise AudioValidationError(f"Audio conversion failed: {exc}") from exc
+        finally:
+            if in_path:
+                Path(in_path).unlink(missing_ok=True)
+            if out_path:
+                Path(out_path).unlink(missing_ok=True)
 
     # Fallback: pass with best detected content type
     ext = Path(original_filename).suffix.lower()
@@ -101,7 +116,10 @@ def prepare_audio_for_detectif(
         ".mp3": "audio/mpeg",
         ".ogg": "audio/ogg",
         ".webm": "audio/webm",
-        ".m4a": "audio/mp4"
+        ".m4a": "audio/mp4",
+        ".mp4": "audio/mp4"
     }
     mime_type = mime_map.get(ext, "application/octet-stream")
+    if mime_type == "application/octet-stream":
+        raise AudioValidationError("Unsupported audio format. Upload WAV, MP3, M4A, MP4, OGG, or WebM audio.")
     return audio_bytes, mime_type, original_filename
