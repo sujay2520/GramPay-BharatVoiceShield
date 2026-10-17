@@ -244,6 +244,19 @@
     }
 
     /**
+     * Checks whether microphone recording is supported in the current browsing context.
+     * @returns {boolean}
+     */
+    isSupported() {
+      return !!(
+        typeof navigator !== 'undefined' &&
+        navigator.mediaDevices &&
+        typeof navigator.mediaDevices.getUserMedia === 'function' &&
+        AudioContextClass
+      );
+    }
+
+    /**
      * Alias for start() to fulfill architecture requirement startPcmRecording().
      * @returns {Promise<void>}
      */
@@ -536,6 +549,10 @@
 
   PcmAudioRecorder.isRecording = function () {
     return defaultRecorder.isRecording();
+  };
+
+  PcmAudioRecorder.isSupported = function () {
+    return defaultRecorder.isSupported();
   };
 
   PcmAudioRecorder.startPcmRecording = function () {

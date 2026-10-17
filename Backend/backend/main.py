@@ -1934,3 +1934,29 @@ async def serve_data_audio_file(filename: str):
         raise HTTPException(status_code=404, detail="Audio file not found")
     return Response(content=file_path.read_bytes(), media_type="audio/wav")
 
+
+@app.get("/clips/{file_path:path}")
+async def serve_clips_file(file_path: str):
+    p = FRONTEND_DIR / "clips" / file_path
+    if not p.exists():
+        p = Path(__file__).resolve().parent.parent / "clips" / file_path
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="Audio clip not found")
+    return Response(content=p.read_bytes(), media_type="audio/wav")
+
+
+@app.get("/api/demo-audio/{filename}")
+async def serve_api_demo_audio(filename: str):
+    candidates = [
+        FRONTEND_DIR / "audio" / filename,
+        FRONTEND_DIR / "data_audio" / filename,
+        Path(__file__).resolve().parent.parent / "data_audio" / filename,
+        Path(__file__).resolve().parent.parent / "clips" / "kn" / "genuine" / filename,
+        Path(__file__).resolve().parent.parent / "clips" / "kn" / "clone" / filename,
+    ]
+    for p in candidates:
+        if p.exists():
+            return Response(content=p.read_bytes(), media_type="audio/wav")
+    raise HTTPException(status_code=404, detail="Demo audio file not found")
+
+

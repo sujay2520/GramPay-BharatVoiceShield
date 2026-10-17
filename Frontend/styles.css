@@ -654,6 +654,7 @@ pre::-webkit-scrollbar,
 /* Hide standard view, header, Judge Overview, Quick Demo Section, and Technical Telemetry/JSON Logs */
 body.mode-caller #standardView,
 body.mode-caller header,
+body.mode-caller #topRoleSwitcherContainer,
 body.mode-caller #judgeOverviewSection,
 body.mode-caller #quickDemoSection,
 body.mode-caller #judgeConsoleView,
@@ -939,6 +940,7 @@ body.mode-caller .enroll-btn-compact:hover {
 /* Hide Standard View, Header, Caller Phone View, and Caller Recording Controls */
 body.mode-console #standardView,
 body.mode-console header,
+body.mode-console #topRoleSwitcherContainer,
 body.mode-console #callerPhoneView,
 body.mode-console #panelFarmer,
 body.mode-console #btnRecord,
