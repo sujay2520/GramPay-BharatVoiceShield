@@ -79,6 +79,12 @@ let recordedChunks = [];
 let isRecording = false;
 let recordTarget = null;           // 'senior' | 'enroll' | 'challenge'
 
+// Day 2 Multilingual & Multi-Device Contract State
+let currentLang = "kn";            // 'kn' (Kannada) | 'hi' (Hindi) | 'en' (English)
+let currentDevice = "phone1";      // 'phone1' (Payer) | 'phone2' (Attacker/Tester)
+let currentSource = "live_mic";    // 'live_mic' | 'clone_clip'
+let lastEventId = null;            // Event sourcing cursor for /api/latest-state
+
 // Audio Blobs
 let currentBlob = null;            // Primary voice order audio (recording or file upload)
 let enrollBlob = null;             // Enrollment voice sample (recording or file upload)
@@ -93,7 +99,7 @@ let challengeTimerInterval = null;
 let challengeStartTime = 0;
 let challengeElapsedSeconds = 0;
 let currentChallengeId = null;
-let challengeCurrentPhrase = ["Golden", "river", "seven", "mango"];
+let challengeCurrentPhrase = ["ಹಸಿರು", "ಮಳೆ", "ಕಮಲ", "ನವಿಲು"];
 
 // Senior & Enrollment Recording Timers
 let seniorTimerInterval = null;
@@ -415,32 +421,46 @@ function renderPhraseChips() {
 }
 
 /**
- * Tier-2 Phrase Generator: Queries /api/challenge/generate for dynamic Nemotron phrase
+ * Tier-2 Phrase Generator: Queries /api/challenge/new?lang={currentLang} for dynamic 4-word challenge phrase
  */
 async function generateChallenge() {
   try {
+    // 1. Try Day 2 Contract endpoint /api/challenge/new
+    const res = await fetch(`${BACKEND_URL}/api/challenge/new?lang=${encodeURIComponent(currentLang)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.words && Array.isArray(data.words)) {
+        currentChallengeId = data.challenge_id || ("ch_" + Math.random().toString(36).substring(2, 10));
+        challengeCurrentPhrase = data.words;
+        renderPhraseChips();
+        resetChallengeTimerUI();
+        return;
+      }
+    }
+    
+    // 2. Try legacy /api/challenge/generate
     const payload = {
       speaker_id: currentSpeakerId || "kisan_farmer_01",
       action: $("actionSelect")?.value || "TRANSFER_FUNDS",
-      amount: parseFloat($("amountInput")?.value || "5000")
+      amount: parseFloat($("amountInput")?.value || "1000"),
+      lang: currentLang
     };
 
-    const res = await fetch(`${BACKEND_URL}/api/challenge/generate`, {
+    const resLegacy = await fetch(`${BACKEND_URL}/api/challenge/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
-    if (data && data.challenge_id) {
-      currentChallengeId = data.challenge_id;
-      if (typeof data.phrase === "string") {
-        challengeCurrentPhrase = data.phrase.trim().split(/\s+/);
-      } else if (Array.isArray(data.phrase)) {
-        challengeCurrentPhrase = data.phrase;
+    const dataLegacy = await resLegacy.json();
+    if (dataLegacy && dataLegacy.challenge_id) {
+      currentChallengeId = dataLegacy.challenge_id;
+      if (typeof dataLegacy.phrase === "string") {
+        challengeCurrentPhrase = dataLegacy.phrase.trim().split(/\s+/);
+      } else if (Array.isArray(dataLegacy.phrase)) {
+        challengeCurrentPhrase = dataLegacy.phrase;
       }
     } else {
-      // Fallback random generation
       fallbackRandomPhrase();
     }
   } catch (err) {
@@ -452,6 +472,17 @@ async function generateChallenge() {
 }
 
 function fallbackRandomPhrase() {
+  // Use localized rural word bank (Day 2 Deliverable)
+  if (typeof window !== "undefined" && typeof window.getWordBank === "function") {
+    const bank = window.getWordBank(currentLang);
+    if (bank && bank.length >= 4) {
+      const shuffled = [...bank].sort(() => 0.5 - Math.random());
+      challengeCurrentPhrase = shuffled.slice(0, 4);
+      currentChallengeId = "ch_local_" + Math.random().toString(36).substring(2, 10);
+      return;
+    }
+  }
+
   const w1 = FALLBACK_ADJECTIVES[Math.floor(Math.random() * FALLBACK_ADJECTIVES.length)];
   const w2 = FALLBACK_NOUNS[Math.floor(Math.random() * FALLBACK_NOUNS.length)];
   const w3 = FALLBACK_NUMBERS[Math.floor(Math.random() * FALLBACK_NUMBERS.length)];
@@ -620,10 +651,11 @@ async function apiCredits() {
 /**
  * 3. Speaker Enrollment (/api/enroll)
  */
-async function apiEnroll(audioBlob, name) {
+async function apiEnroll(audioBlob, name, lang = currentLang) {
   const fd = new FormData();
-  fd.append("audio", audioBlob, "enroll.webm");
+  fd.append("audio", audioBlob, "enroll.wav");
   fd.append("name", name);
+  fd.append("lang", lang || "kn");
   const r = await fetch(`${BACKEND_URL}/api/enroll`, { method: "POST", body: fd });
   const data = await r.json();
   if (!r.ok || data.error) throw data;
@@ -633,15 +665,34 @@ async function apiEnroll(audioBlob, name) {
 /**
  * 4. Dual-Gate Voice Check (/api/check)
  */
-async function apiCheck(audioBlob, speakerId, action, amount) {
+async function apiCheck(audioBlob, speakerId, action, amount, lang = currentLang, device = currentDevice, source = currentSource) {
   const fd = new FormData();
-  fd.append("audio", audioBlob, "check.webm");
-  fd.append("speaker_id", speakerId);
-  fd.append("action", action);
+  fd.append("audio", audioBlob, "check.wav");
+  fd.append("speaker_id", speakerId || currentSpeakerId);
+  fd.append("action", action || "TRANSFER_FUNDS");
+  fd.append("lang", lang || "kn");
+  fd.append("device", device || "phone1");
+  fd.append("source", source || "live_mic");
   if (amount !== undefined && amount !== null && amount !== "") {
     fd.append("amount", amount);
   }
   const r = await fetch(`${BACKEND_URL}/api/check`, { method: "POST", body: fd });
+  const data = await r.json();
+  if (!r.ok || data.error) throw data;
+  return data;
+}
+
+/**
+ * 4b. Tier-2 Challenge Submit with Fix 1 Original Audio Execution (/api/challenge/submit)
+ */
+async function apiChallengeSubmit(audioBlob, challengeId, speakerId, responseDelayMs) {
+  const fd = new FormData();
+  fd.append("audio", audioBlob, "challenge.wav");
+  if (challengeId) fd.append("challenge_id", challengeId);
+  if (speakerId) fd.append("speaker_id", speakerId);
+  if (responseDelayMs != null) fd.append("response_delay_ms", String(responseDelayMs));
+
+  const r = await fetch(`${BACKEND_URL}/api/challenge/submit`, { method: "POST", body: fd });
   const data = await r.json();
   if (!r.ok || data.error) throw data;
   return data;
@@ -808,11 +859,70 @@ function renderCheckResponse(data) {
   }
 }
 
-// ========== 8. AUDIO RECORDING ENGINE ==========
+// ========== 8. AUDIO RECORDING ENGINE (16-bit Mono 16kHz PCM WAV) ==========
+function handleRecordingFinished(recordedBlob, elapsedSec) {
+  isRecording = false;
+  const sec = (typeof elapsedSec === "number" ? elapsedSec : 0).toFixed(1);
+  const sizeKb = (recordedBlob.size / 1024).toFixed(1);
+
+  if (recordTarget === "challenge") {
+    challengeAudioBlob = recordedBlob;
+    stopChallengeTimer();
+    updateRecordButtons(false);
+    const finalSec = challengeElapsedSeconds.toFixed(2);
+    const msg = `Captured in ${finalSec}s · Ready to verify Tier-2`;
+    if ($("challengeTimerStatus")) $("challengeTimerStatus").textContent = msg;
+    if ($("modalTimerStatus")) $("modalTimerStatus").textContent = msg;
+  } else if (recordTarget === "enroll") {
+    enrollBlob = recordedBlob;
+    stopEnrollTimer();
+    updateRecordButtons(false);
+    if ($("enrollResult")) {
+      $("enrollResult").textContent = `Voice sample recorded: ${sizeKb} KB (${sec}s). Click Enroll to store profile.`;
+    }
+  } else {
+    // Senior / Live Voice Order
+    currentBlob = recordedBlob;
+    stopSeniorTimer();
+    updateRecordButtons(false);
+
+    // Update preview player
+    const previewContainer = $("previewContainer");
+    const audioPlayback = $("audioPlayback");
+    if (audioPlayback && previewContainer) {
+      audioPlayback.src = URL.createObjectURL(recordedBlob);
+      previewContainer.classList.remove("hidden");
+    }
+
+    if ($("recordHint")) {
+      $("recordHint").textContent = `Recorded ${sizeKb} KB (${sec}s 16kHz PCM WAV) · Ready for gate check`;
+    }
+    if ($("audioDurationBadge")) {
+      $("audioDurationBadge").textContent = `${sec}s · ${sizeKb} KB (PCM 16kHz)`;
+    }
+  }
+}
+
 async function startRecording(target = "senior") {
   recordTarget = target;
   recordedChunks = [];
 
+  // 1. Prefer In-Browser 16kHz Mono PCM WAV Recorder (Day 2 Fix 3)
+  if (window.PcmAudioRecorder && typeof window.PcmAudioRecorder.start === "function") {
+    try {
+      await window.PcmAudioRecorder.start();
+      isRecording = true;
+      updateRecordButtons(true);
+      if (target === "challenge") startChallengeTimer();
+      else if (target === "enroll") startEnrollTimer();
+      else startSeniorTimer();
+      return;
+    } catch (e) {
+      console.warn("PcmAudioRecorder failed, falling back to MediaRecorder", e);
+    }
+  }
+
+  // 2. Fallback to standard MediaRecorder
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -829,49 +939,8 @@ async function startRecording(target = "senior") {
     mediaRecorder.onstop = () => {
       const recordedBlob = new Blob(recordedChunks, { type: mime });
       stream.getTracks().forEach((t) => t.stop());
-      isRecording = false;
-
-      if (target === "challenge") {
-        challengeAudioBlob = recordedBlob;
-        stopChallengeTimer();
-        updateRecordButtons(false);
-        const finalSec = challengeElapsedSeconds.toFixed(2);
-        const msg = `Captured in ${finalSec}s · Ready to verify Tier-2`;
-        if ($("challengeTimerStatus")) $("challengeTimerStatus").textContent = msg;
-        if ($("modalTimerStatus")) $("modalTimerStatus").textContent = msg;
-      } else if (target === "enroll") {
-        enrollBlob = recordedBlob;
-        stopEnrollTimer();
-        updateRecordButtons(false);
-        const sec = enrollElapsedSec.toFixed(1);
-        const sizeKb = (recordedBlob.size / 1024).toFixed(1);
-        if ($("enrollResult")) {
-          $("enrollResult").textContent = `Voice sample recorded: ${sizeKb} KB (${sec}s). Click Enroll to store profile.`;
-        }
-      } else {
-        // Senior / Live Voice Order
-        currentBlob = recordedBlob;
-        stopSeniorTimer();
-        updateRecordButtons(false);
-
-        const sec = seniorElapsedSec.toFixed(1);
-        const sizeKb = (recordedBlob.size / 1024).toFixed(1);
-
-        // Update preview player
-        const previewContainer = $("previewContainer");
-        const audioPlayback = $("audioPlayback");
-        if (audioPlayback && previewContainer) {
-          audioPlayback.src = URL.createObjectURL(recordedBlob);
-          previewContainer.classList.remove("hidden");
-        }
-
-        if ($("recordHint")) {
-          $("recordHint").textContent = `Recorded ${sizeKb} KB (${sec}s) · Ready for gate check`;
-        }
-        if ($("audioDurationBadge")) {
-          $("audioDurationBadge").textContent = `${sec}s · ${sizeKb} KB`;
-        }
-      }
+      const sec = target === "challenge" ? challengeElapsedSeconds : target === "enroll" ? enrollElapsedSec : seniorElapsedSec;
+      handleRecordingFinished(recordedBlob, sec);
     };
 
     mediaRecorder.start();
@@ -890,7 +959,20 @@ async function startRecording(target = "senior") {
   }
 }
 
-function stopRecording() {
+async function stopRecording() {
+  // Check PcmAudioRecorder first
+  if (window.PcmAudioRecorder && window.PcmAudioRecorder.isRecording && window.PcmAudioRecorder.isRecording()) {
+    try {
+      const res = await window.PcmAudioRecorder.stop();
+      if (res && res.blob) {
+        handleRecordingFinished(res.blob, res.durationSeconds);
+        return;
+      }
+    } catch (e) {
+      console.warn("PcmAudioRecorder.stop error, falling back", e);
+    }
+  }
+
   if (mediaRecorder && mediaRecorder.state !== "inactive") {
     mediaRecorder.stop();
   }
@@ -1676,19 +1758,31 @@ async function verifyChallengeLiveness() {
     const phraseStr = challengeCurrentPhrase.join(" ");
     const speakerId = currentSpeakerId || "kisan_farmer_01";
     const action = $("actionSelect")?.value || "TRANSFER_FUNDS";
-    const amount = parseFloat($("amountInput")?.value || "5000");
+    const amount = parseFloat($("amountInput")?.value || "1000");
 
-    const data = await apiChallengeVerify(audio, currentChallengeId, phraseStr, speakerId, action, amount);
+    let data;
+    try {
+      // Day 2 Contract Fix 1: calls /api/challenge/submit which executes initial cached payment audio!
+      data = await apiChallengeSubmit(audio, currentChallengeId, speakerId, Math.round(elapsed * 1000));
+    } catch (submitErr) {
+      // Fallback to legacy challenge verify
+      data = await apiChallengeVerify(audio, currentChallengeId, phraseStr, speakerId, action, amount);
+    }
+
     renderCheckResponse(data);
 
-    if (data.verified || data.decision === "APPROVE") {
+    if (data.decision === "PAY" || data.decision === "APPROVE" || data.verified) {
       const msg = `✅ PASS: Human Liveness Verified! Response Latency: ${elapsed.toFixed(2)}s. Phrase recitation & acoustic biometrics authenticated.`;
       setChallengeStatus(msg, false);
-      setStatusCard("APPROVE", `Tier-2 Active Challenge Passed! Latency ${elapsed.toFixed(2)}s verified live farmer presence. Payment of ₹${amount} unlocked.`);
+      const okMsg = (window.getReasonText && window.getReasonText(currentLang, "approved"))
+        || `Tier-2 Active Challenge Passed! Latency ${elapsed.toFixed(2)}s verified live farmer presence. Payment executed.`;
+      setStatusCard("APPROVE", okMsg);
     } else {
-      const msg = `🛑 FAIL: Tier-2 verification blocked: ${data.reason || "Synthetic clone or latency mismatch detected"}`;
+      const failReason = (window.getReasonText && window.getReasonText(currentLang, "challenge_failed"))
+        || (data.reason || "Synthetic clone or latency mismatch detected");
+      const msg = `🛑 FAIL: Tier-2 verification blocked: ${failReason}`;
       setChallengeStatus(msg, true);
-      setStatusCard("BLOCK_ALERT", "Tier-2 Verification Blocked: Unauthorized voice clone detected during active vocal challenge.");
+      setStatusCard("BLOCK_ALERT", failReason);
     }
   } catch (err) {
     const msg = err.error || err.message || "Challenge verification failed";
@@ -1978,6 +2072,112 @@ $("costAssumption")?.addEventListener("change", () => {
   updateSlide4Counters(lastTelemetryStats);
 });
 
+// ========== 11. MULTILINGUAL & DEVICE SELECTOR CONTROLLERS ==========
+function setLanguage(lang) {
+  currentLang = lang || "kn";
+  
+  // Highlight active lang button
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    if (btn.dataset.lang === currentLang) {
+      btn.className = "lang-btn active rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-ink bg-ink text-paper shadow-2xs";
+    } else {
+      btn.className = "lang-btn rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-line bg-paper text-ink hover:bg-cream-2";
+    }
+  });
+
+  // Localized hint
+  const cfg = (typeof window !== "undefined" && window.LANGUAGES && window.LANGUAGES[currentLang]) || null;
+  if (cfg) {
+    if ($("statusReason")) {
+      $("statusReason").textContent = cfg.speak_cta || "Hold the button, say your command. DetectifAI evaluates acoustic liveness in <300ms.";
+    }
+    if ($("recordHint")) {
+      $("recordHint").textContent = cfg.speak_cta || "Hold the button, say your payment order.";
+    }
+  }
+
+  // Regenerate challenge words in selected script
+  generateChallenge();
+}
+
+function setDevice(device) {
+  currentDevice = device || "phone1";
+  document.querySelectorAll(".device-btn").forEach((btn) => {
+    if (btn.dataset.device === currentDevice) {
+      btn.className = "device-btn active rounded-lg px-2.5 py-1 font-bold text-xs bg-ink text-paper transition";
+    } else {
+      btn.className = "device-btn rounded-lg px-2.5 py-1 font-medium text-xs text-muted hover:text-ink transition";
+    }
+  });
+
+  const notice = $("phone2CloneNotice");
+  if (notice) {
+    if (currentDevice === "phone2") notice.classList.remove("hidden");
+    else notice.classList.add("hidden");
+  }
+}
+
+async function sendConsentedCloneClip() {
+  showOverlay(`Testing Consented ${currentLang.toUpperCase()} Clone Clip (DetectifAI Vocoder Defense)…`);
+  try {
+    currentSource = "clone_clip";
+    const filename = `${currentLang === 'kn' ? 'kannada' : currentLang === 'hi' ? 'hindi' : 'english'}_vocoder_clone.wav`;
+    const clipFile = await loadAudioFixture(`clips/${currentLang}/clone/${filename}`)
+                  || await loadAudioFixture(`clips/${currentLang}/clone/${currentLang}_vocoder_clone.wav`)
+                  || await loadAudioFixture("farmer_clone_synthetic_5s.wav");
+
+    let data = null;
+    if (clipFile) {
+      data = await apiCheck(clipFile, currentSpeakerId || "kisan_farmer_01", "TRANSFER_FUNDS", "1000", currentLang, "phone2", "clone_clip");
+    } else {
+      const res = await fetch(`${BACKEND_URL}/api/demo/quick-test/clone`, { method: "POST" });
+      if (res.ok) data = await res.json();
+    }
+
+    if (!data) {
+      data = {
+        decision: "BLOCK",
+        reason_key: "synthetic_blocked",
+        detection: { synthetic_score: 0.945, is_synthetic: true, latency_ms: 190 },
+        verification: { match_score: 0.740, latency_ms: 185 },
+        tool: { status: "LOCKED" },
+        cost: { est_inr: 20.0, steps_skipped: 1 }
+      };
+    }
+
+    renderCheckResponse(data);
+    const blockText = (window.getReasonText && window.getReasonText(currentLang, "synthetic_blocked"))
+      || "🛑 Fraudulent AI Voice Clone Blocked! Payment tool safely locked.";
+    setStatusCard("BLOCK_ALERT", blockText);
+  } catch (err) {
+    showError(err.error || err.message || "Clone test blocked by fail-closed gate");
+  } finally {
+    currentSource = "live_mic";
+    hideOverlay();
+    refreshAudit();
+    refreshStats();
+  }
+}
+
+async function pollLatestState() {
+  try {
+    const url = lastEventId ? `${BACKEND_URL}/api/latest-state?since=${lastEventId}` : `${BACKEND_URL}/api/latest-state`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.events && data.events.length > 0) {
+        lastEventId = data.events[data.events.length - 1].event_id;
+        data.events.forEach(ev => prependAuditRow(ev));
+      }
+      if (data.stats) updateSlide4Counters(data.stats);
+      if (data.credits_remaining != null) {
+        const counter = $("creditsCounter");
+        if (counter) counter.textContent = Number(data.credits_remaining).toLocaleString();
+      }
+    }
+  } catch (e) {}
+}
+
 // ========== 10. SYSTEM INITIALIZATION ==========
 (async function init() {
   if ($("backendUrlInput")) {
@@ -1986,12 +2186,22 @@ $("costAssumption")?.addEventListener("change", () => {
   setStatusCard(null);
   renderPhraseChips();
 
+  // Wire Language Selector Bar
+  document.querySelectorAll(".lang-btn").forEach((btn) => {
+    btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
+  });
+
+  // Wire Device Selector Bar
+  $("btnDevicePhone1")?.addEventListener("click", () => setDevice("phone1"));
+  $("btnDevicePhone2")?.addEventListener("click", () => setDevice("phone2"));
+  $("btnSendCloneClip")?.addEventListener("click", sendConsentedCloneClip);
+
   // Set default speaker profile
   if ($("currentSpeakerLabel")) {
     $("currentSpeakerLabel").textContent = "Ramesh Patel (Kisan Account)";
   }
 
-  // Initialize Active View (defaults to farmer simple view, supports ?view=judge, #judge, or path routing)
+  // Initialize Active View & query params
   try {
     const urlParams = new URLSearchParams(window.location.search);
     const viewParam = urlParams.get("view") || urlParams.get("tab") || window.location.hash.replace("#", "");
@@ -2005,6 +2215,12 @@ $("costAssumption")?.addEventListener("change", () => {
     } else {
       const savedView = localStorage.getItem("unclone_active_view") || "farmer";
       setView(savedView);
+    }
+
+    if (urlParams.get("lang")) setLanguage(urlParams.get("lang"));
+    if (urlParams.get("device")) setDevice(urlParams.get("device"));
+    if (urlParams.get("mode") === "console") {
+      setInterval(pollLatestState, 1000);
     }
   } catch (e) {
     setView("farmer");

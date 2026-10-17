@@ -140,7 +140,7 @@ class TestNemotronGramPayAgent(unittest.TestCase):
             action="TRANSFER_FUNDS"
         )
         self.assertIn("Namaste Ramesh ji", spoken)
-        self.assertIn("Voice verified", spoken)
+        self.assertTrue("voice verified" in spoken.lower(), f"Expected 'voice verified' in spoken, got: {spoken}")
         self.assertIn("5,000", spoken)
         self.assertIn("IFFCO Fertilizer Co-op", spoken)
         self.assertIn("Hello! UPI", spoken)
@@ -191,7 +191,7 @@ class TestNemotronGramPayAgent(unittest.TestCase):
         self.assertEqual(turn["tool"]["result"]["amount_inr"], 5000.0)
         self.assertEqual(turn["tool"]["result"]["recipient"], "IFFCO Fertilizer Co-op")
         self.assertIn("Namaste Ramesh ji", turn["agent_reply_text"])
-        self.assertIn("Voice verified", turn["agent_reply_text"])
+        self.assertTrue("voice verified" in turn["agent_reply_text"].lower(), f"Expected 'voice verified' in agent_reply_text, got: {turn['agent_reply_text']}")
         self.assertIn("Hello! UPI", turn["agent_reply_text"])
 
     # --------------------------------------------------------------------------

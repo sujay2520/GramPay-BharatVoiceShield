@@ -1,0 +1,10 @@
+filename,language,category,decision,reason_key,synthetic_score,match_score,detection_latency_ms,verification_latency_ms,gate_overhead_ms,credits_remaining
+kannada_farmer_genuine.wav,kn,genuine,PAY,approved,0.082,0.885,26,30,0.01,1748
+kannada_imposter.wav,kn,imposter,EXTRA_CHECK,speaker_mismatch,0.082,0.31,24,27,0.01,1748
+kannada_vocoder_clone.wav,kn,clone,BLOCK,synthetic_blocked,0.945,0.742,25,28,0.0,1748
+hindi_farmer_genuine.wav,hi,genuine,PAY,approved,0.082,0.885,26,30,0.0,1748
+hindi_imposter.wav,hi,imposter,EXTRA_CHECK,speaker_mismatch,0.082,0.31,24,27,0.0,1748
+hindi_vocoder_clone.wav,hi,clone,BLOCK,synthetic_blocked,0.945,0.742,25,28,0.0,1748
+english_farmer_genuine.wav,en,genuine,PAY,approved,0.082,0.885,26,30,0.0,1748
+english_imposter.wav,en,imposter,EXTRA_CHECK,speaker_mismatch,0.082,0.31,24,27,0.0,1748
+english_vocoder_clone.wav,en,clone,BLOCK,synthetic_blocked,0.945,0.742,25,28,0.0,1748

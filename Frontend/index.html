@@ -336,6 +336,44 @@
           <p class="text-xs text-muted mt-0.5">Biometric pre-gate guarding voice payments &amp; Kisan subsidies</p>
         </div>
 
+        <!-- 3-Language Selector Pill Bar (Day 2 Deliverable) -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-line bg-cream/70 p-2.5">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold uppercase tracking-wider text-muted">🌐 Language:</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5" id="langSelectorBar">
+            <button type="button" class="lang-btn active rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-ink bg-ink text-paper shadow-2xs" data-lang="kn">
+              ಕನ್ನಡ (Kannada)
+            </button>
+            <button type="button" class="lang-btn rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-line bg-paper text-ink hover:bg-cream-2" data-lang="hi">
+              हिन्दी (Hindi)
+            </button>
+            <button type="button" class="lang-btn rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-line bg-paper text-ink hover:bg-cream-2" data-lang="en">
+              English
+            </button>
+          </div>
+        </div>
+
+        <!-- Device Selector (Phone 1 Payer vs Phone 2 Attacker/Test Mode) -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-line bg-cream/50 p-2 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-muted uppercase">📱 Mode:</span>
+            <div class="inline-flex rounded-xl border border-line bg-paper p-0.5" id="deviceSelectorBar">
+              <button type="button" id="btnDevicePhone1" class="device-btn active rounded-lg px-2.5 py-1 font-bold text-xs bg-ink text-paper transition" data-device="phone1">
+                Phone 1 (Payer)
+              </button>
+              <button type="button" id="btnDevicePhone2" class="device-btn rounded-lg px-2.5 py-1 font-medium text-xs text-muted hover:text-ink transition" data-device="phone2">
+                Phone 2 (Attacker / Test)
+              </button>
+            </div>
+          </div>
+          <div id="phone2CloneNotice" class="hidden flex items-center gap-2">
+            <button type="button" id="btnSendCloneClip" class="rounded-xl border border-alert/50 bg-alert-bg px-3 py-1 text-xs font-bold text-alert hover:bg-alert-bg/80 transition flex items-center gap-1 shadow-2xs">
+              <span>🚨</span> Send Consented Clone Clip (Test Audio)
+            </button>
+          </div>
+        </div>
+
         <!-- ==================================================================== -->
         <!-- LARGE, FRIENDLY, VISUALLY CLEAR STATUS CARD (THUMBS-UP/ALERT/QUESTION)-->
         <!-- ==================================================================== -->
@@ -347,7 +385,7 @@
             Tap and speak to pay
           </h3>
           <p id="statusReason" class="mx-auto mt-2 max-w-lg text-sm md:text-base leading-relaxed text-muted">
-            Hold the button, say your command in Gujarati, Hindi or English. DetectifAI evaluates acoustic liveness in &lt;300ms before payment tools execute.
+            Hold the button, say your command in Kannada, Hindi or English. DetectifAI evaluates acoustic liveness in &lt;300ms before payment tools execute.
           </p>
           <div id="tier2PromptAction" class="hidden mt-4">
             <button id="btnOpenChallenge" type="button" class="bg-wait hover:bg-wait/90 active:scale-95 text-paper font-bold px-6 py-3 rounded-xl text-sm flex items-center gap-2 shadow-md transition">
@@ -379,16 +417,16 @@
             <span class="text-[10px] text-muted">Hello! UPI &amp; 123Pay Scenarios</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <!-- 1. Rs 5,000 Fertilizer -->
+            <!-- 1. Rs 1,000 Fertilizer -->
             <button type="button" id="presetFertilizer" class="p-3 bg-paper hover:bg-cream-2 border border-line rounded-xl text-left transition shadow-xs flex flex-col justify-between group">
               <div>
                 <span class="text-xs font-bold text-ink group-hover:text-gold flex items-center gap-1">
-                  <span>🌱</span> ₹5,000 Fertilizer
+                  <span>🌱</span> ₹1,000 Fertilizer
                 </span>
                 <span class="text-[10px] text-muted block mt-0.5">IFFCO Urea &amp; Seeds</span>
               </div>
               <span class="text-[10px] text-gold font-bold font-mono mt-2 bg-cream px-2 py-0.5 rounded border border-line self-start">
-                Send ₹5,000
+                Send ₹1,000
               </span>
             </button>
 
@@ -477,7 +515,7 @@
             </div>
             <div>
               <label class="block text-[11px] font-bold text-muted uppercase">Amount (₹)</label>
-              <input id="amountInput" type="number" value="5000" placeholder="5000" min="0" step="100"
+              <input id="amountInput" type="number" value="1000" placeholder="1000" min="0" step="100"
                 class="mt-1 min-h-11 w-full rounded-xl border border-line bg-paper px-3 text-sm font-medium font-mono text-ink outline-none focus:border-gold" />
             </div>
           </div>
@@ -899,6 +937,10 @@
 
   </main>
 
+  <!-- Pure-Script Localization & Word Banks -->
+  <script src="strings.js"></script>
+  <!-- Audio Recorder (16-bit Mono PCM WAV) -->
+  <script src="audio_recorder.js"></script>
   <!-- Core App Logic -->
   <script src="app.js"></script>
 </body>

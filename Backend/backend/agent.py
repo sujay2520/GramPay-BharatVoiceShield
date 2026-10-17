@@ -49,7 +49,7 @@ class VoiceAgentOrchestrator:
     def __init__(self):
         self.client = None
         if NVIDIA_API_KEY:
-            self.client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY)
+            self.client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY, timeout=2.0)
         self.llm_call_count = 0
         self.last_llm_compute_burned = False
 
