@@ -164,7 +164,7 @@ class TestDetectifClient(unittest.TestCase):
         self.assertEqual(res["verdict"], "not_sure")
         self.assertEqual(res["score"], 0.9813)
         self.assertEqual(res["threshold"], 0.62)
-        self.assertFalse(res["is_synthetic"])
+        self.assertIsNone(res["is_synthetic"])
 
     # ==========================================================================
     # 3. Speaker Enrollment (POST /v1/speakers/enroll)

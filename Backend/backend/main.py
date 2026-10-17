@@ -171,8 +171,9 @@ async def get_credits_endpoint():
         avail = credits_data.get("available")
         if avail is None:
             avail = detectif_client.remaining_credits
-        remaining_credits = int(avail) if avail is not None else 0
-        reserve_protected = bool(remaining_credits >= CREDIT_RESERVE_FLOOR)
+        unlimited = bool(credits_data.get("unlimited"))
+        remaining_credits = int(avail) if avail is not None else None
+        reserve_protected = unlimited or bool(remaining_credits is not None and remaining_credits > CREDIT_RESERVE_FLOOR)
         return {
             **meta,
             "status": "ok",
@@ -182,7 +183,7 @@ async def get_credits_endpoint():
             "remaining": remaining_credits,
             "reserve_floor": CREDIT_RESERVE_FLOOR,
             "reserve_protected": reserve_protected,
-            "circuit_breaker_active": bool(remaining_credits <= CREDIT_RESERVE_FLOOR),
+            "circuit_breaker_active": not unlimited and remaining_credits is not None and remaining_credits <= CREDIT_RESERVE_FLOOR,
         }
     except DetectifAPIError as e:
         return JSONResponse(
@@ -223,7 +224,8 @@ async def enroll_speaker_endpoint(
     try:
         raw_bytes = await audio_upload.read()
         prep_bytes, mime_type, filename = prepare_audio_for_detectif(raw_bytes, audio_upload.filename or "enroll.wav")
-        
+        detectif_client.get_credits(force_refresh=True)
+
         result = detectif_client.enroll_speaker(
             audio_bytes=prep_bytes,
             speaker_name=target_name,
@@ -231,11 +233,6 @@ async def enroll_speaker_endpoint(
         )
 
         credits_remaining = detectif_client.remaining_credits
-        try:
-            credits_data = detectif_client.get_credits()
-            credits_remaining = credits_data.get("available", credits_remaining)
-        except Exception:
-            pass
 
         return {
             **meta,
@@ -298,10 +295,13 @@ async def check_audio_endpoint(
         # Read live credits before inference
         initial_credits = detectif_client.remaining_credits
         try:
-            credits_data = detectif_client.get_credits()
+            credits_data = detectif_client.get_credits(force_refresh=True)
             initial_credits = credits_data.get("available", initial_credits)
-        except Exception:
-            pass
+        except Exception as err:
+            return JSONResponse(
+                status_code=503,
+                content={**meta, "error": f"Cannot confirm DetectifAI credits; audio was not analyzed. {err}", "fail_closed": True}
+            )
 
         detection_res = None
         verification_res = None
@@ -354,6 +354,9 @@ async def check_audio_endpoint(
         if api_error or synth_score is None or match_score is None:
             decision = "BLOCK"
             reason_key = "api_error"
+        elif detection_res.get("verdict") == "not_sure":
+            decision = "EXTRA_CHECK"
+            reason_key = "uncertain_challenge"
         elif detection_res.get("verdict") == "fake" or detection_res.get("is_synthetic") is True or synth_score >= float(detection_res.get("threshold", SYNTH_HIGH)):
             decision = "BLOCK"
             reason_key = "synthetic_blocked"
@@ -411,7 +414,7 @@ async def check_audio_endpoint(
             steps_skipped = 1
 
         localized_reason = get_localized_reason(reason_key, norm_lang)
-        credits_remaining = max(0, initial_credits - (2 if not api_error else 0)) if initial_credits is not None else None
+        credits_remaining = detectif_client.remaining_credits
 
         # Build Contract Response Object
         contract_response = {
@@ -422,14 +425,17 @@ async def check_audio_endpoint(
             "decision": decision,
             "reason_key": reason_key,
             "detection": {
-                "is_synthetic": detection_res.get("is_synthetic") if detection_res.get("is_synthetic") is not None else ((synth_score >= float(detection_res.get("threshold", SYNTH_HIGH))) if synth_score is not None else None),
+                "is_synthetic": None if detection_res.get("verdict") == "not_sure" else (detection_res.get("is_synthetic") if detection_res.get("is_synthetic") is not None else ((synth_score >= float(detection_res.get("threshold", SYNTH_HIGH))) if synth_score is not None else None)),
                 "synthetic_score": synth_score,
+                "verdict": detection_res.get("verdict"),
+                "threshold": detection_res.get("threshold", SYNTH_HIGH),
                 "latency_ms": detection_res.get("latency_ms", 0),
                 "raw": detection_res.get("raw", {})
             },
             "verification": {
-                "matched": verification_res.get("matched") if verification_res.get("matched") is not None else ((match_score >= 0.50) if match_score is not None else None),
+                "matched": verification_res.get("matched") if verification_res.get("matched") is not None else ((match_score >= float(verification_res.get("threshold", MATCH_HIGH))) if match_score is not None else None),
                 "match_score": match_score,
+                "threshold": verification_res.get("threshold", MATCH_HIGH),
                 "latency_ms": verification_res.get("latency_ms", 0),
                 "raw": verification_res.get("raw", {})
             },
@@ -532,10 +538,14 @@ async def submit_challenge_endpoint(
 
         initial_credits = detectif_client.remaining_credits
         try:
-            credits_data = detectif_client.get_credits()
+            credits_data = detectif_client.get_credits(force_refresh=True)
             initial_credits = credits_data.get("available", initial_credits)
-        except Exception:
-            pass
+        except Exception as err:
+            remove_pending_challenge(challenge_id)
+            return JSONResponse(
+                status_code=503,
+                content={**meta, "error": f"Cannot confirm DetectifAI credits; audio was not analyzed. {err}", "fail_closed": True}
+            )
 
         detection_res = None
         verification_res = None
@@ -569,6 +579,9 @@ async def submit_challenge_endpoint(
         if api_error or synth_score is None or match_score is None:
             decision = "BLOCK"
             reason_key = "challenge_failed"
+        elif detection_res.get("verdict") == "not_sure":
+            decision = "BLOCK"
+            reason_key = "challenge_failed"
         elif detection_res.get("verdict") == "fake" or detection_res.get("is_synthetic") is True or synth_score >= float(detection_res.get("threshold", SYNTH_HIGH)):
             decision = "BLOCK"
             reason_key = "synthetic_blocked"
@@ -595,7 +608,7 @@ async def submit_challenge_endpoint(
 
         # Cleanup cached challenge
         remove_pending_challenge(challenge_id)
-        credits_remaining = max(0, initial_credits - (2 if not api_error else 0)) if initial_credits is not None else None
+        credits_remaining = detectif_client.remaining_credits
 
         contract_response = {
             "event_id": event_id,
@@ -605,14 +618,17 @@ async def submit_challenge_endpoint(
             "decision": decision,
             "reason_key": reason_key,
             "detection": {
-                "is_synthetic": detection_res.get("is_synthetic") if detection_res.get("is_synthetic") is not None else ((synth_score >= float(detection_res.get("threshold", SYNTH_HIGH))) if synth_score is not None else None),
+                "is_synthetic": None if detection_res.get("verdict") == "not_sure" else (detection_res.get("is_synthetic") if detection_res.get("is_synthetic") is not None else ((synth_score >= float(detection_res.get("threshold", SYNTH_HIGH))) if synth_score is not None else None)),
                 "synthetic_score": synth_score,
+                "verdict": detection_res.get("verdict"),
+                "threshold": detection_res.get("threshold", SYNTH_HIGH),
                 "latency_ms": detection_res.get("latency_ms", 0),
                 "raw": detection_res.get("raw", {})
             },
             "verification": {
-                "matched": verification_res.get("matched") if verification_res.get("matched") is not None else ((match_score >= 0.50) if match_score is not None else None),
+                "matched": verification_res.get("matched") if verification_res.get("matched") is not None else ((match_score >= float(verification_res.get("threshold", MATCH_HIGH))) if match_score is not None else None),
                 "match_score": match_score,
+                "threshold": verification_res.get("threshold", MATCH_HIGH),
                 "latency_ms": verification_res.get("latency_ms", 0),
                 "raw": verification_res.get("raw", {})
             },

@@ -436,8 +436,10 @@ class DetectifClient:
                     raise DetectifAPIError("DetectifAI returned an invalid deepfake threshold.", raw_json=raw_json)
 
                 is_synth_val = res_obj.get("is_synthetic")
+                if is_synth_val is not None and not isinstance(is_synth_val, bool):
+                    raise DetectifAPIError("DetectifAI returned a non-boolean is_synthetic field.", raw_json=raw_json)
                 if is_synth_val is not None:
-                    is_synthetic = bool(is_synth_val)
+                    is_synthetic = is_synth_val
                 elif verdict:
                     is_synthetic = verdict == "fake"
                 elif score is not None:
@@ -460,13 +462,6 @@ class DetectifClient:
                         raw_body=resp.text,
                         raw_json=raw_json,
                     )
-                if verdict == "not_sure":
-                    raise DetectifAPIError(
-                        "DetectifAI could not determine whether this audio is real or synthetic.",
-                        status_code=resp.status_code,
-                        raw_body=resp.text,
-                        raw_json=raw_json,
-                    )
                 score_classification = score >= threshold
                 if verdict in ("real", "fake") and (verdict == "fake") != score_classification:
                     raise DetectifAPIError(
@@ -475,14 +470,16 @@ class DetectifClient:
                         raw_body=resp.text,
                         raw_json=raw_json,
                     )
-                if is_synth_val is not None and bool(is_synth_val) != score_classification:
+                if verdict != "not_sure" and is_synth_val is not None and is_synth_val != score_classification:
                     raise DetectifAPIError(
                         "DetectifAI returned conflicting is_synthetic and score fields.",
                         status_code=resp.status_code,
                         raw_body=resp.text,
                         raw_json=raw_json,
                     )
-                is_synthetic = verdict == "fake" if verdict else (bool(is_synth_val) if is_synth_val is not None else score >= threshold)
+                is_synthetic = None if verdict == "not_sure" else (
+                    verdict == "fake" if verdict else (is_synth_val if is_synth_val is not None else score >= threshold)
+                )
 
                 # Track credits from response
                 if "credits" in raw_json:
@@ -494,7 +491,7 @@ class DetectifClient:
                     "verdict": verdict or ("fake" if is_synthetic else "real"),
                     "score": round(score, 4),
                     "threshold": threshold,
-                    "is_synthetic": bool(is_synthetic),
+                    "is_synthetic": is_synthetic,
                     "synthetic_score": round(score, 4),  # UnClone Gate contract compatibility
                     "decided_by": res_obj.get("decided_by"),
                     "duration_seconds": res_obj.get("duration_seconds"),
@@ -722,6 +719,8 @@ class DetectifClient:
                     res_obj = raw_json
 
                 decision = res_obj.get("decision")  # 'match' | 'no_match'
+                if decision not in (None, "match", "no_match"):
+                    raise DetectifAPIError("DetectifAI returned an unknown speaker verification decision.", raw_json=raw_json)
                 similarity = res_obj.get("similarity")
                 if similarity is not None:
                     similarity = float(similarity)

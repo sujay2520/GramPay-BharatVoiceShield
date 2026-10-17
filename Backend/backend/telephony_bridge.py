@@ -336,8 +336,8 @@ class UnCloneTelephonyGate:
             except DetectifAPIError as err:
                 api_error = str(err)
                 detection_res = {
-                    "is_synthetic": True,
-                    "synthetic_score": 1.0,
+                    "is_synthetic": None,
+                    "synthetic_score": None,
                     "raw": {"error": str(err)},
                     "latency_ms": 0
                 }
@@ -348,8 +348,8 @@ class UnCloneTelephonyGate:
                 if not api_error:
                     api_error = str(err)
                 verification_res = {
-                    "matched": False,
-                    "match_score": 0.0,
+                    "matched": None,
+                    "match_score": None,
                     "raw": {"error": str(err)},
                     "latency_ms": 0
                 }

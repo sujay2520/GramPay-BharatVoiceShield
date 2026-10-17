@@ -276,6 +276,19 @@ function setStatusCard(decision, reason) {
     // Automatically speak native language confirmation aloud
     speakVoiceAssistant("approved");
 
+  } else if (d === "UNAVAILABLE") {
+    card.classList.add("status-block");
+    if (emoji) emoji.textContent = "⚠️";
+    if (title) {
+      title.textContent = "Voice check could not be completed";
+      title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-white tracking-tight";
+    }
+    if (reasonEl) {
+      const prefix = "No downstream action was approved by this voice check.";
+      reasonEl.textContent = reason ? (String(reason).includes(prefix) ? reason : `${prefix} ${reason}`) : prefix;
+      reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl font-bold text-rose-100";
+    }
+    if (tier2Prompt) tier2Prompt.classList.add("hidden");
   } else if (d === "BLOCK_ALERT" || d === "BLOCK" || d === "BLOCKED") {
     card.classList.add("status-block");
     if (emoji) {
@@ -374,6 +387,15 @@ function setStatusCard(decision, reason) {
       if (cEmoji) cEmoji.textContent = "✅";
       if (cTitle) cTitle.textContent = lang === "kn" ? "✅ ಧ್ವನಿ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿಯಾಗಿದೆ" : (lang === "hi" ? "✅ आवाज़ की जाँच सफल हुई" : "✅ Voice check passed");
       if (cReason) cReason.textContent = reason || (lang === "kn" ? "ಧ್ವನಿ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿ. ಯಾವುದೇ ಪಾವತಿ ಮಾಡಲಾಗಿಲ್ಲ." : (lang === "hi" ? "आवाज़ की जाँच सफल हुई। कोई भुगतान नहीं किया गया।" : "Voice check passed. No payment was made."));
+      if (cBox) cBox.classList.add("hidden");
+    } else if (d === "UNAVAILABLE") {
+      cCard.classList.add("status-block");
+      if (cEmoji) cEmoji.textContent = "⚠️";
+      if (cTitle) cTitle.textContent = "Voice check could not be completed";
+      if (cReason) {
+        const prefix = "No downstream action was approved by this voice check.";
+        cReason.textContent = reason ? (String(reason).includes(prefix) ? reason : `${prefix} ${reason}`) : prefix;
+      }
       if (cBox) cBox.classList.add("hidden");
     } else if (d === "BLOCK_ALERT" || d === "BLOCK" || d === "BLOCKED") {
       cCard.classList.add("status-block");
@@ -531,9 +553,7 @@ function showError(msg, failClosed = true) {
   if (displayMsg.includes("Unexpected token") || displayMsg.includes("not valid JSON") || displayMsg.includes("The page c")) {
     displayMsg = "Local gateway is not connected. Start the local server and retry.";
   }
-  setStatusCard("BLOCK_ALERT", failClosed
-    ? (displayMsg || "Security check failed. Transaction held safely to protect funds.")
-    : displayMsg);
+  setStatusCard("UNAVAILABLE", failClosed ? displayMsg : (displayMsg || "The voice check did not finish."));
   if ($("jsonLog")) {
     $("jsonLog").textContent = JSON.stringify({ error: displayMsg, fail_closed: failClosed }, null, 2);
   }
@@ -898,7 +918,8 @@ function renderCheckResponse(data) {
     renderPhraseChips();
   }
   // 1. Status Card: PAY / APPROVED, CLONE BLOCKED, or EXTRA VOICE CHECK
-  setStatusCard(data.decision, data.reason);
+  const unavailable = data.status === "error" || !!data.api_error || ["api_error", "challenge_failed"].includes(data.reason_key);
+  setStatusCard(unavailable ? "UNAVAILABLE" : data.decision, unavailable ? data.api_error || data.reason : data.reason);
   updateRecordButtons(isRecording);
 
   // 2. Gauges & Latency Breakdown
@@ -939,7 +960,7 @@ function renderCheckResponse(data) {
   if (synthScore != null || matchScore != null) {
     renderGateMatrix(matchScore, synthScore, data.decision);
   }
-  const isSynth = (synthScore != null && synthScore >= 0.50) || data.decision === "BLOCK_ALERT" || data.decision === "BLOCK";
+  const isSynth = data.detection?.is_synthetic === true || data.detection?.verdict === "fake" || data.reason_key === "synthetic_blocked";
   renderSpectrogramSnapshot(isSynth, data.decision);
 
   // Update credits if returned in payload
@@ -2220,7 +2241,7 @@ async function pollLatestState() {
         $("metricToolLockIcon").textContent = tool === "EXECUTED" ? "🔓" : "🔒";
       }
 
-      const isSynth = (synth != null && synth >= 0.50) || dec === "BLOCK_ALERT" || dec === "BLOCK";
+      const isSynth = latest.is_synthetic === true || latest.detection?.is_synthetic === true || latest.reason_key === "synthetic_blocked";
       renderSpectrogramSnapshot(isSynth, dec);
 
       // ===== 4 LARGE CARDS FOR LAPTOP JUDGE CONSOLE (?mode=console) =====
@@ -2432,19 +2453,20 @@ async function pollCallerState() {
         card.classList.add("status-block");
       }
       if (emoji) emoji.textContent = "🛑";
-      const syntheticDetected = latest.reason_key === "synthetic_blocked" || latest.detection?.is_synthetic === true;
+      const unavailable = ["api_error", "challenge_failed"].includes(latest.reason_key) || latest.fail_closed === true;
+      const syntheticDetected = !unavailable && (latest.reason_key === "synthetic_blocked" || latest.detection?.is_synthetic === true);
       if (title) {
         title.textContent = syntheticDetected
           ? (lang === "kn" ? "🛑 ಸಂಶ್ಲೇಷಿತ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ" : (lang === "hi" ? "🛑 सिंथेटिक आवाज़ मिली" : "Synthetic voice detected"))
-          : (lang === "kn" ? "🛑 ಧ್ವನಿ ಪರಿಶೀಲನೆ ಪೂರ್ಣಗೊಳ್ಳಲಿಲ್ಲ" : (lang === "hi" ? "🛑 आवाज़ की जाँच पूरी नहीं हुई" : "Voice check could not be completed"));
+          : (lang === "kn" ? "ಧ್ವನಿ ಪರಿಶೀಲನೆ ಪೂರ್ಣಗೊಳ್ಳಲಿಲ್ಲ" : (lang === "hi" ? "आवाज़ की जाँच पूरी नहीं हो सकी" : "Voice check could not be completed"));
       }
       if (reason) {
         reason.textContent = syntheticDetected
           ? (lang === "kn" ? "ಸಂಶ್ಲೇಷಿತ ಧ್ವನಿ ಎಂದು ಪತ್ತೆಯಾಗಿದೆ. ಯಾವುದೇ ಮುಂದಿನ ಕ್ರಮ ಅನುಮೋದಿಸಲ್ಪಟ್ಟಿಲ್ಲ." : (lang === "hi" ? "सिंथेटिक आवाज़ मिली। कोई आगे की कार्रवाई स्वीकृत नहीं हुई।" : "Synthetic voice detected. No downstream action was approved."))
-          : (lang === "kn" ? "ಈ ಧ್ವನಿ ಪರಿಶೀಲನೆಯಲ್ಲಿ ಮುಂದಿನ ಕ್ರಮ ಅನುಮೋದಿಸಲ್ಪಟ್ಟಿಲ್ಲ." : (lang === "hi" ? "इस आवाज़ जाँच में आगे की कार्रवाई स्वीकृत नहीं हुई।" : "No downstream action was approved by this voice check."));
+          : (lang === "kn" ? "ಧ್ವನಿ ಪರಿಶೀಲನೆ ಪೂರ್ಣಗೊಳ್ಳಲಿಲ್ಲ. ಈ ಪರಿಶೀಲನೆಯಲ್ಲಿ ಮುಂದಿನ ಕ್ರಮಕ್ಕೆ ಅನುಮೋದನೆ ನೀಡಲಾಗಿಲ್ಲ." : (lang === "hi" ? "आवाज़ की जाँच पूरी नहीं हो सकी। इस जाँच से आगे की कार्रवाई स्वीकृत नहीं हुई।" : "Voice check could not be completed. No downstream action was approved by this voice check."));
       }
       if (box) box.classList.add("hidden");
-      speakVoiceAssistant("blocked");
+      if (syntheticDetected) speakVoiceAssistant("blocked");
     } else if (dec === "APPROVE" || dec === "PAY") {
       callerChallengeActive = false;
       const card = $("callerStatusCard");

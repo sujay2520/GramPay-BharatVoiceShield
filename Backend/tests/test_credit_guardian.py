@@ -123,99 +123,55 @@ class TestCreditGuardian(unittest.TestCase):
         self.assertEqual(self.client.remaining_credits, 3400)
 
     # ==========================================================================
-    # 3. Circuit Breaker: Drains prevented when credits <= 3000 in non-demo runs
+    # 3. Circuit Breaker: No fabricated answers when reserve is active
     # ==========================================================================
     @patch("requests.post")
     def test_circuit_breaker_active_at_reserve_floor(self, mock_post):
-        """When credits <= 3000, automated non-demo run does NOT call live API and returns baseline fixture."""
+        """When credits are at reserve, live inference fails closed without a fixture."""
         self.client.remaining_credits = 3000
         self.assertTrue(self.client.is_circuit_breaker_active(is_demo=False))
-
-        with self.assertLogs("detectif_client", level="WARNING") as cm:
-            res = self.client.detect_deepfake(self.dummy_audio, filename="human.wav", is_demo=False)
-
-        # Live API was NOT called
+        with self.assertRaises(DetectifAPIError):
+            self.client.detect_deepfake(self.dummy_audio, filename="human.wav", is_demo=False)
         mock_post.assert_not_called()
-
-        # Warning was logged
-        self.assertTrue(any("CREDIT GUARDIAN" in log for log in cm.output))
-
-        # Returns high-fidelity fixture baseline
-        self.assertEqual(res["verdict"], "real")
-        self.assertEqual(res["score"], 0.082)
-        self.assertEqual(res["threshold"], 0.62)
-        self.assertFalse(res["is_synthetic"])
-        self.assertTrue(res["circuit_breaker_active"])
 
     @patch("requests.post")
     def test_circuit_breaker_active_below_floor_clone(self, mock_post):
-        """When credits < 3000, clone filename returns synthetic clone fixture baseline without API call."""
+        """A clone-like filename never determines a voice result."""
         self.client.remaining_credits = 2500
         self.assertTrue(self.client.is_circuit_breaker_active(is_demo=False))
 
-        res = self.client.detect_deepfake(self.dummy_audio, filename="voice_clone_attack.wav", is_demo=False)
-
+        with self.assertRaises(DetectifAPIError):
+            self.client.detect_deepfake(self.dummy_audio, filename="voice_clone_attack.wav", is_demo=False)
         mock_post.assert_not_called()
-        self.assertEqual(res["verdict"], "fake")
-        self.assertEqual(res["score"], 0.945)
-        self.assertTrue(res["is_synthetic"])
-        self.assertTrue(res["circuit_breaker_active"])
 
     @patch("requests.post")
-    def test_circuit_breaker_verification_fixture(self, mock_post):
-        """When circuit breaker active, speaker verification returns fixture baseline without live call."""
+    def test_circuit_breaker_verification_fails_closed(self, mock_post):
+        """When circuit breaker active, speaker verification has no fabricated result."""
         self.client.remaining_credits = 2950
-
-        # Authentic speaker
-        res_auth = self.client.verify_speaker(self.dummy_audio, speaker_id="Ramesh_Patel", filename="authentic.wav", is_demo=False)
+        with self.assertRaises(DetectifAPIError):
+            self.client.verify_speaker(self.dummy_audio, speaker_id="speaker", is_demo=False)
         mock_post.assert_not_called()
-        self.assertEqual(res_auth["decision"], "match")
-        self.assertTrue(res_auth["matched"])
-        self.assertEqual(res_auth["similarity"], 0.885)
-        self.assertTrue(res_auth["circuit_breaker_active"])
-
-        # Imposter speaker
-        res_imp = self.client.verify_speaker(self.dummy_audio, speaker_id="imposter_user_99", filename="imposter.wav", is_demo=False)
-        mock_post.assert_not_called()
-        self.assertEqual(res_imp["decision"], "no_match")
-        self.assertFalse(res_imp["matched"])
-        self.assertEqual(res_imp["similarity"], 0.310)
 
     @patch("requests.post")
-    def test_circuit_breaker_enrollment_fixture(self, mock_post):
-        """When circuit breaker active, speaker enrollment returns fixture baseline without live call."""
+    def test_circuit_breaker_enrollment_fails_closed(self, mock_post):
+        """When circuit breaker active, enrollment returns no fabricated profile."""
         self.client.remaining_credits = 2800
-
-        res = self.client.enroll_speaker(self.dummy_audio, speaker_id="farmer_01", display_name="Farmer Ramesh", is_demo=False)
+        with self.assertRaises(DetectifAPIError):
+            self.client.enroll_speaker(self.dummy_audio, speaker_id="farmer_01", display_name="Farmer", is_demo=False)
         mock_post.assert_not_called()
-        self.assertEqual(res["speaker_id"], "farmer_01")
-        self.assertTrue(res["enrolled"])
-        self.assertTrue(res["circuit_breaker_active"])
 
     # ==========================================================================
-    # 4. Demo Mode Bypass
+    # 4. Demo Mode Does Not Bypass the Reserve
     # ==========================================================================
     @patch("requests.post")
-    def test_demo_mode_bypasses_circuit_breaker(self, mock_post):
-        """Live demo runs (is_demo=True) bypass the circuit breaker to allow judge presentations."""
+    def test_demo_mode_does_not_bypass_circuit_breaker(self, mock_post):
+        """Demo flags cannot authorize a live call below the reserve."""
         self.client.remaining_credits = 2500  # Below floor
 
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = {
-            "request_id": "req_demo_live",
-            "result": {"verdict": "real", "score": 0.04, "threshold": 0.62, "is_synthetic": False},
-            "credits": {"charged": 50, "balance": 2450},
-        }
-        mock_post.return_value = mock_resp
-
-        # When is_demo=True, circuit breaker is NOT active
-        self.assertFalse(self.client.is_circuit_breaker_active(is_demo=True))
-
-        res = self.client.detect_deepfake(self.dummy_audio, filename="human.wav", is_demo=True)
-        # Live API was called
-        mock_post.assert_called_once()
-        self.assertEqual(res["score"], 0.04)
+        self.assertTrue(self.client.is_circuit_breaker_active(is_demo=True))
+        with self.assertRaises(DetectifAPIError):
+            self.client.detect_deepfake(self.dummy_audio, filename="human.wav", is_demo=True)
+        mock_post.assert_not_called()
 
     # ==========================================================================
     # 5. /api/credits Endpoint Contract

@@ -10,6 +10,7 @@ NON-NEGOTIABLE RULE: The LLM NEVER decides allow or block.
 Security decisions are 100% deterministic code based on DetectifAI model outputs.
 """
 
+import math
 import random
 from typing import Dict, Any, Optional
 from backend.config import (
@@ -168,6 +169,67 @@ def evaluate_gate(
             "cost": _calculate_cost_saving(skipped=True)
         }
 
+    synth_high = float(detection.get("threshold", SYNTH_HIGH))
+    match_high = float(verification.get("threshold", MATCH_HIGH))
+    if (
+        not all(math.isfinite(v) for v in (synth_score, similarity, synth_high, match_high))
+        or not 0.0 <= synth_score <= 1.0
+        or not -1.0 <= similarity <= 1.0
+        or not 0.0 <= synth_high <= 1.0
+        or not -1.0 <= match_high <= 1.0
+    ):
+        decision = "BLOCK" if is_payment else "STEP_UP"
+        return {
+            "decision": decision,
+            "action_code": ACTION_BLOCK if is_payment else ACTION_STEP_UP_EXTRA_CHECK,
+            "tier": None,
+            "tier_name": "Fail-Closed",
+            "reason": "Invalid biometric scores or thresholds received from the voice provider.",
+            "tool_allowed": False,
+            "fail_closed": True,
+            "cognitive_phrase": None,
+            "cost": _calculate_cost_saving(skipped=True)
+        }
+
+    provider_verdict = detection.get("verdict")
+    provider_synthetic = detection.get("is_synthetic")
+    provider_matched = verification.get("matched")
+    if provider_verdict not in (None, "real", "fake", "not_sure"):
+        provider_verdict = "invalid"
+    if (
+        provider_verdict == "invalid"
+        or (provider_synthetic is not None and not isinstance(provider_synthetic, bool))
+        or (provider_matched is not None and not isinstance(provider_matched, bool))
+        or (provider_verdict in ("real", "fake") and (provider_verdict == "fake") != (synth_score >= synth_high))
+        or (provider_verdict != "not_sure" and provider_synthetic is not None and provider_synthetic != (synth_score >= synth_high))
+        or (provider_matched is not None and provider_matched != (similarity >= match_high))
+    ):
+        decision = "BLOCK" if is_payment else "STEP_UP"
+        return {
+            "decision": decision,
+            "action_code": ACTION_BLOCK if is_payment else ACTION_STEP_UP_EXTRA_CHECK,
+            "tier": None,
+            "tier_name": "Fail-Closed",
+            "reason": "Conflicting biometric results received from the voice provider.",
+            "tool_allowed": False,
+            "fail_closed": True,
+            "cognitive_phrase": None,
+            "cost": _calculate_cost_saving(skipped=True)
+        }
+
+    if provider_verdict == "not_sure":
+        return {
+            "decision": "STEP_UP",
+            "action_code": ACTION_STEP_UP_EXTRA_CHECK,
+            "tier": 2,
+            "tier_name": "Tier 2: Provider Uncertain",
+            "reason": "The voice provider could not determine whether this sample is real or synthetic. Another check is required.",
+            "tool_allowed": False,
+            "fail_closed": True,
+            "cognitive_phrase": get_dynamic_cognitive_phrase(),
+            "cost": _calculate_cost_saving(skipped=True)
+        }
+
     # --------------------------------------------------------------------------
     # 2. AUDIO FORMAT & NOISE INSPECTION
     # --------------------------------------------------------------------------
@@ -193,9 +255,9 @@ def evaluate_gate(
 
     # TIER 3: HIGH RISK (Synthetic Clone / Bot: synth_score >= 0.62)
     # Action: BLOCK_ALERT ('BLOCK_CLONE' / freeze UPI payout, alert fraud desk, short-circuit LLM compute)
-    if synth_score >= SYNTH_HIGH:
+    if provider_verdict == "fake" or provider_synthetic is True or synth_score >= synth_high:
         # Check if matched to enrolled account holder
-        matched_enrolled = (similarity >= MATCH_HIGH) or verification.get("matched", False)
+        matched_enrolled = provider_matched if provider_matched is not None else similarity >= match_high
         
         if matched_enrolled:
             decision = "BLOCK_ALERT"
@@ -233,8 +295,8 @@ def evaluate_gate(
     # - OR noisy 8kHz audio
     # - OR unverified speaker (similarity < 0.40 with human voice)
     # Action: STEP_UP ('EXTRA_CHECK' / prompt dynamic active cognitive phrase via Nemotron)
-    is_synth_uncertain = (SYNTH_LOW <= synth_score < SYNTH_HIGH)
-    is_similarity_uncertain = (MATCH_LOW <= similarity < MATCH_HIGH)
+    is_synth_uncertain = (SYNTH_LOW <= synth_score < synth_high)
+    is_similarity_uncertain = (MATCH_LOW <= similarity < match_high)
     is_similarity_low = (similarity < MATCH_LOW)
 
     if is_synth_uncertain or is_similarity_uncertain or noisy_8k_detected or is_similarity_low:
@@ -289,8 +351,8 @@ def evaluate_gate(
     decision = "APPROVE"
     action_code = ACTION_APPROVE_PAY
     reason = (
-        f"Verified Safe (Tier 1): Natural human voice (synth {synth_score:.2f} < {SYNTH_HIGH:.2f}) "
-        f"and account holder identity confirmed (similarity {similarity:.2f} >= {MATCH_HIGH:.2f}). "
+        f"Verified Safe (Tier 1): Provider score is below the synthetic threshold ({synth_score:.2f} < {synth_high:.2f}) "
+        f"and account holder identity confirmed (similarity {similarity:.2f} >= {match_high:.2f}). "
         "Payment tool unlocked."
     )
 

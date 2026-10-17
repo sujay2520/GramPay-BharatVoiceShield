@@ -242,8 +242,8 @@ def log_audit_event(
     match_raw = verification.get("match_score") if verification.get("match_score") is not None else (verification.get("similarity") if verification.get("similarity") is not None else verification.get("score"))
     synth_score = float(synth_raw) if synth_raw is not None else None
     match_score = float(match_raw) if match_raw is not None else None
-    is_synth = (1 if detection.get("is_synthetic") else 0) if detection.get("is_synthetic") is not None else ((1 if synth_score >= 0.5 else 0) if synth_score is not None else None)
-    matched = (1 if verification.get("matched") else 0) if verification.get("matched") is not None else ((1 if match_score >= 0.5 else 0) if match_score is not None else None)
+    is_synth = int(detection["is_synthetic"]) if isinstance(detection.get("is_synthetic"), bool) else None
+    matched = int(verification["matched"]) if isinstance(verification.get("matched"), bool) else None
     det_lat = float(detection.get("latency_ms") or 0.0)
     ver_lat = float(verification.get("latency_ms") or 0.0)
     latency = int(det_lat + ver_lat)
@@ -415,7 +415,7 @@ def get_telemetry_stats(limit: int = 50) -> Dict[str, Any]:
                 SUM(CASE WHEN UPPER(decision) LIKE 'BLOCK%' THEN 1 ELSE 0 END) as total_blocked,
                 SUM(CASE 
                     WHEN decision = 'BLOCK_ALERT' THEN 1
-                    WHEN decision LIKE 'BLOCK%' AND (is_synthetic = 1 OR (synthetic_score IS NOT NULL AND synthetic_score >= 0.5)) THEN 1
+                WHEN decision LIKE 'BLOCK%' AND is_synthetic = 1 THEN 1
                     WHEN challenge_verdict IN ('BLOCK', 'CLONE', 'FAIL', 'SYNTHETIC') THEN 1
                     ELSE 0 
                 END) as clones_blocked,
@@ -544,8 +544,10 @@ def record_contract_event(event_dict: Optional[Dict[str, Any]] = None, **kwargs:
     speaker_id = event.get("speaker_id")
     action = intent.get("action") if isinstance(intent, dict) and intent.get("action") else event.get("action", "TRANSFER_FUNDS")
     reason = event.get("reason", "")
-    is_synth = 1 if (synth_score is not None and synth_score >= 0.5) else 0
-    matched = 1 if (match_score is not None and match_score >= 0.5) else 0
+    is_synth_raw = det.get("is_synthetic")
+    matched_raw = ver.get("matched")
+    is_synth = int(is_synth_raw) if isinstance(is_synth_raw, bool) else None
+    matched = int(matched_raw) if isinstance(matched_raw, bool) else None
 
     with sqlite3.connect(SQLITE_DB_PATH) as conn:
         cursor = conn.cursor()
