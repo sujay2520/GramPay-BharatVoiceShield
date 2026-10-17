@@ -164,7 +164,9 @@ def evaluate_incoming_audio_against_enrollment(
     bio = extract_voice_biometrics(wav_bytes)
     enrolled = get_enrolled_profile()
 
-    is_phone2 = (device == "phone2") or (source == "scammer_mic") or (source == "clone_clip")
+    # Only the canned clone clip is auto-flagged. A live mic on Phone 2 is a real
+    # person and must be judged on the audio itself.
+    is_phone2 = (source == "clone_clip")
     is_vocoder_clone = False
     is_impostor_mismatch = False
     match_score = 0.885
@@ -183,31 +185,31 @@ def evaluate_incoming_audio_against_enrollment(
     elif enrolled and bio:
         # Check against enrolled biometric profile
         en_bio = enrolled["biometrics"]
-        en_f0 = max(float(en_bio.get("f0_hz", 130.0)), 1.0)
-        curr_f0 = max(float(bio.get("f0_hz", 130.0)), 1.0)
+        f0_diff = abs(bio["f0_hz"] - en_bio["f0_hz"])
+        lag_diff = abs(bio["best_lag"] - en_bio["best_lag"])
 
-        # Logarithmic semitone difference (12 semitones = 1 octave)
-        semitone_diff = abs(12.0 * math.log2(curr_f0 / en_f0)) if curr_f0 > 10.0 and en_f0 > 10.0 else 0.0
-        f0_diff = abs(curr_f0 - en_f0)
-        lag_diff = abs(bio.get("best_lag", 0) - en_bio.get("best_lag", 0))
-
-        # True impostor divergence: cross-gender or distinct vocal register (>6 semitones / >60 Hz or register lag > 45)
-        # Natural human speech inflection naturally fluctuates 30-50 Hz between sentences.
-        if (semitone_diff > 6.0 and f0_diff > 60.0) or (lag_diff > 45):
+        # Male / female or different human speaker pitch divergence
+        if f0_diff > 24.0 or lag_diff > 14:
             is_impostor_mismatch = True
 
-        if is_vocoder_clone or is_impostor_mismatch:
-            # Divergent speaker register or AI vocoder detected
+        if is_vocoder_clone:
             is_deepfake = True
             synth_score = 0.945
             match_score = round(max(0.18, 0.45 - (f0_diff / 80.0) * 0.25), 3)
             matched = False
-            reason = "Voice Mismatch: Non-enrolled voice detected as AI Clone / Impostor"
-        else:
-            # Matches enrolled customer within natural speech prosody variance
+            reason = "AI Voice Clone Vocoder Carrier Detected"
+        elif is_impostor_mismatch:
+            # Different HUMAN speaker: blocked as impostor, but it is not synthetic audio
             is_deepfake = False
             synth_score = 0.082
-            match_score = round(max(0.75, 0.94 - (semitone_diff / 8.0) * 0.15), 3)
+            match_score = round(max(0.18, 0.45 - (f0_diff / 80.0) * 0.25), 3)
+            matched = False
+            reason = "Voice Mismatch: Human voice does not match enrolled account holder"
+        else:
+            # Matches enrolled customer
+            is_deepfake = False
+            synth_score = 0.082
+            match_score = round(max(0.72, 0.92 - (f0_diff / 30.0) * 0.15), 3)
             matched = True
             reason = "Authorized Customer Voiceprint Verified"
     else:
@@ -258,8 +260,8 @@ def evaluate_incoming_audio_against_enrollment(
     return {
         "detection": detection,
         "verification": verification,
-        "decision": "BLOCK" if is_deepfake else "PAY",
-        "reason_key": "synthetic_blocked" if is_deepfake else "approved",
+        "decision": "BLOCK" if (is_deepfake or not matched) else "PAY",
+        "reason_key": "synthetic_blocked" if is_deepfake else ("speaker_mismatch" if not matched else "approved"),
         "reason": reason,
         "enrolled": bool(enrolled)
     }
