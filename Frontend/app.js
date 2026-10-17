@@ -93,7 +93,7 @@ let recordTarget = null;           // 'senior' | 'enroll' | 'challenge'
 
 // Day 2 Multilingual & Multi-Device Contract State
 let currentLang = "kn";            // 'kn' (Kannada) | 'hi' (Hindi) | 'en' (English)
-let currentDevice = "phone1";      // 'phone1' (Payer) | 'phone2' (Attacker/Tester)
+const currentDevice = "phone1";    // The caller/farmer phone view
 let currentSource = "live_mic";    // 'live_mic' | 'clone_clip'
 let lastEventId = null;            // Event sourcing cursor for /api/latest-state
 
@@ -103,15 +103,15 @@ let enrollBlob = null;             // Enrollment voice sample (recording or file
 let challengeAudioBlob = null;     // Tier-2 challenge voice sample
 
 // Speaker Profile
-let currentSpeakerId = "kisan_farmer_01"; // Default pre-configured farmer demo profile
-let currentSpeakerName = "Ramesh Patel (Kisan Account)";
+let currentSpeakerId = (() => { try { return localStorage.getItem("unclone_speaker_id") || "Account_holder"; } catch (e) { return "Account_holder"; } })();
+let currentSpeakerName = (() => { try { return localStorage.getItem("unclone_speaker_name") || "Account holder"; } catch (e) { return "Account holder"; } })();
 
 // Tier-2 Active Challenge State
 let challengeTimerInterval = null;
 let challengeStartTime = 0;
 let challengeElapsedSeconds = 0;
 let currentChallengeId = null;
-let challengeCurrentPhrase = ["ಹಸಿರು", "ಮಳೆ", "ಕಮಲ", "ನವಿಲು"];
+let challengeCurrentPhrase = [];
 
 // Senior & Enrollment Recording Timers
 let seniorTimerInterval = null;
@@ -125,44 +125,34 @@ let enrollElapsedSec = 0;
 // Security Credentials State
 let lastCredential = null;         // Stored single-use JWT for replay test
 
-// Telemetry Stats Cache (Pre-seeded with baseline production telemetry)
+// Live telemetry cache. Empty values remain empty until the gateway returns data.
 let lastTelemetryStats = {
-  checks_run: 24,
-  clones_blocked: 7,
-  agent_steps_skipped: 7,
-  agent_seconds_avoided: 840,
-  agent_time_saved_inr: 140.0,
-  rate_per_min: 10
+  checks_run: null,
+  clones_blocked: null,
+  agent_steps_skipped: null,
+  agent_seconds_avoided: null,
+  agent_time_saved_inr: null,
+  rate_per_min: null
 };
 
 // ========== 3. DOM SELECTOR HELPER ==========
 const $ = (id) => {
   const el = document.getElementById(id);
   if (el) return el;
-  // Aliases for 1-click quick demo buttons & forensic views
-  if (id === "btnQuickAuthentic" || id === "demoCase1" || id === "heroCase1" || id === "btnHeroCase1") {
-    return document.getElementById("btnQuickAuthentic") || document.getElementById("demoCase1") || document.getElementById("heroCase1") || document.getElementById("btnHeroCase1");
-  }
-  if (id === "btnQuickClone" || id === "demoCase2" || id === "heroCase2" || id === "btnHeroCase2") {
-    return document.getElementById("btnQuickClone") || document.getElementById("demoCase2") || document.getElementById("heroCase2") || document.getElementById("btnHeroCase2");
-  }
-  if (id === "btnQuickChallenge" || id === "demoCase3" || id === "heroCase3" || id === "btnHeroCase3") {
-    return document.getElementById("btnQuickChallenge") || document.getElementById("demoCase3") || document.getElementById("heroCase3") || document.getElementById("btnHeroCase3");
-  }
   return null;
 };
 
 // ========== 3B. SENIOR VOICE ASSISTANT (WEB SPEECH SYNTHESIS TTS) ==========
 const TTS_PHRASES = {
   approved: {
-    kn: "ಧ್ವನಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ. ಒಂದು ಸಾವಿರ ರೂಪಾಯಿ ಪಾವತಿಸಲಾಗಿದೆ.",
-    hi: "असली आवाज़ प्रमाणित। एक हज़ार रुपये का भुगतान सफल हुआ।",
-    en: "Real voice verified. One thousand rupees payment successful."
+    kn: "ಧ್ವನಿ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿಯಾಗಿದೆ.",
+    hi: "आवाज़ की जाँच सफल हुई।",
+    en: "Voice check passed."
   },
   blocked: {
-    kn: "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ. ಪಾವತಿ ತಡೆಯಲಾಗಿದೆ.",
-    hi: "सावधान! नकली आवाज़ पकड़ी गई। भुगतान रोक दिया गया है।",
-    en: "Warning! Synthetic voice clone detected. Payment blocked."
+    kn: "ಧ್ವನಿ ಪರಿಶೀಲನೆ ಪೂರ್ಣಗೊಳ್ಳಲಿಲ್ಲ. ಮುಂದಿನ ಕ್ರಮ ಅನುಮೋದಿಸಲ್ಪಟ್ಟಿಲ್ಲ.",
+    hi: "आवाज़ की जाँच पूरी नहीं हुई। आगे की कार्रवाई स्वीकृत नहीं हुई।",
+    en: "Voice check could not be completed. No downstream action was approved."
   }
 };
 
@@ -310,7 +300,7 @@ function setStatusCard(decision, reason) {
     }
     if (reasonEl) {
       const cfg = (typeof window !== "undefined" && window.LANGUAGES && window.LANGUAGES[lang]) || null;
-      reasonEl.textContent = reason || (cfg && cfg.speak_cta) || "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: \"ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ\" (ನಿಮ್ಮ ಪಾವತಿ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತ)";
+      reasonEl.textContent = reason || (lang === "kn" ? "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಸ್ಪಷ್ಟವಾಗಿ ಮಾತನಾಡಿ." : (lang === "hi" ? "बटन दबाकर स्पष्ट रूप से बोलें।" : "Tap the microphone and speak clearly."));
       reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl leading-relaxed text-muted font-medium";
     }
     if (tier2Prompt) tier2Prompt.classList.add("hidden");
@@ -326,20 +316,20 @@ function setStatusCard(decision, reason) {
     }
     if (title) {
       if (lang === "kn") {
-        title.textContent = "ಧ್ವನಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ · ಒಂದು ಸಾವಿರ ರೂಪಾಯಿ ಪಾವತಿಸಲಾಗಿದೆ";
+        title.textContent = "ಧ್ವನಿ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿಯಾಗಿದೆ";
       } else if (lang === "hi") {
-        title.textContent = "असली आवाज़ प्रमाणित · एक हज़ार रुपये का भुगतान सफल हुआ";
+        title.textContent = "आवाज़ की जाँच सफल हुई";
       } else {
-        title.textContent = "Real Voice Verified · Payment Successful (₹1,000)";
+        title.textContent = "Voice Check Passed";
       }
       title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-white tracking-tight";
     }
     if (reasonEl) {
       const defaultDesc = lang === "kn"
-        ? "ನಿಜವಾದ ರೈತರ ಧ್ವನಿ ಮತ್ತು ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ದೃಢಪಟ್ಟಿದೆ • IFFCO ಗೊಬ್ಬರ ಪಾವತಿ ಅನುಮೋದಿಸಲಾಗಿದೆ (Safe Payment)"
+        ? "ಧ್ವನಿ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿಯಾಗಿದೆ."
         : (lang === "hi"
-          ? "असली किसान आवाज़ प्रमाणित • इफको खाद भुगतान स्वीकृत (Safe Payment)"
-          : "Verified Safe: Human vocal cord acoustics & identity confirmed via DetectifAI Eidos. Gate APPROVED <300ms.");
+          ? "आवाज़ की जाँच सफल हुई।"
+          : "The voice check passed.");
       reasonEl.textContent = reason || defaultDesc;
       reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl font-bold text-emerald-100";
     }
@@ -356,20 +346,20 @@ function setStatusCard(decision, reason) {
     }
     if (title) {
       if (lang === "kn") {
-        title.textContent = "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ · ಪಾವತಿ ತಡೆಯಲಾಗಿದೆ";
+        title.textContent = "ಧ್ವನಿ ಪರಿಶೀಲನೆ ತಡೆಯಲಾಗಿದೆ";
       } else if (lang === "hi") {
-        title.textContent = "सावधान! नकली आवाज़ पकड़ी गई · भुगतान रोक दिया गया है";
+        title.textContent = "आवाज़ की जाँच रोक दी गई";
       } else {
-        title.textContent = "Warning! Synthetic Voice Clone Detected · Payment Blocked";
+        title.textContent = "Voice check blocked";
       }
       title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-white tracking-tight";
     }
     if (reasonEl) {
       const defaultDesc = lang === "kn"
-        ? "ನಕಲಿ ಧ್ವನಿ ವಂಚನೆ ತಡೆಯಲಾಗಿದೆ • ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯ ಹಣ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹20 Compute Saved)"
+        ? "ಸಂಶ್ಲೇಷಿತ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ; ಪರಿಶೀಲನೆ ತಡೆಯಲಾಗಿದೆ."
         : (lang === "hi"
-          ? "नकली आवाज़ का हमला रोका गया • आपकी बचत सुरक्षित है (₹20 Compute Saved)"
-          : "CRITICAL WARNING: Computer-generated voice clone detected! Gate BLOCKED <300ms, tool hard-locked, ₹20 saved.");
+          ? "सिंथेटिक आवाज़ मिली; जाँच रोक दी गई।"
+          : "Synthetic voice detected; the check was blocked.");
       reasonEl.textContent = reason || defaultDesc;
       reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl font-bold text-rose-100";
     }
@@ -439,19 +429,19 @@ function setStatusCard(decision, reason) {
       cCard.classList.add("status-ready");
       if (cEmoji) cEmoji.textContent = "🛡️";
       if (cTitle) cTitle.textContent = lang === "kn" ? "ಮಾತನಾಡಿ ಪಾವತಿಸಿ" : (lang === "hi" ? "बोलकर भुगतान करें" : "Speak to Pay");
-      if (cReason) cReason.textContent = reason || (lang === "kn" ? "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: \"ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ\"" : (lang === "hi" ? "बटन दबाकर बोलें: \"इफको खाद के लिए ₹1,000 भेजें\"" : "Tap Speak button: \"Send ₹1,000 for IFFCO fertilizer\""));
+      if (cReason) cReason.textContent = reason || (lang === "kn" ? "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಸ್ಪಷ್ಟವಾಗಿ ಮಾತನಾಡಿ." : (lang === "hi" ? "बटन दबाकर स्पष्ट रूप से बोलें।" : "Tap the microphone and speak clearly."));
       if (cBox) cBox.classList.add("hidden");
     } else if (d === "APPROVE" || d === "APPROVED") {
       cCard.classList.add("status-approve");
       if (cEmoji) cEmoji.textContent = "✅";
-      if (cTitle) cTitle.textContent = lang === "kn" ? "✅ ಧ್ವನಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ! ₹1,000 ಪಾವತಿ ಅನುಮೋದಿಸಲಾಗಿದೆ" : (lang === "hi" ? "✅ असली आवाज़ प्रमाणित! ₹1,000 भुगतान सफल हुआ" : "✅ Voice Verified! ₹1,000 Payment Approved");
+      if (cTitle) cTitle.textContent = lang === "kn" ? "✅ ಧ್ವನಿ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿಯಾಗಿದೆ" : (lang === "hi" ? "✅ आवाज़ की जाँच सफल हुई" : "✅ Voice check passed");
       if (cReason) cReason.textContent = reason || (lang === "kn" ? "ನಿಮ್ಮ ನೈಜ ಧ್ವನಿ ದೃಢಪಟ್ಟಿದೆ · ಅಧಿಕೃತ NPCI 123Pay" : (lang === "hi" ? "आपकी असली आवाज़ सत्यापित · आधिकारिक NPCI 123Pay" : "Human voice verified · Official NPCI 123Pay"));
       if (cBox) cBox.classList.add("hidden");
     } else if (d === "BLOCK_ALERT" || d === "BLOCK" || d === "BLOCKED") {
       cCard.classList.add("status-block");
       if (cEmoji) cEmoji.textContent = "🛑";
       if (cTitle) cTitle.textContent = lang === "kn" ? "🛑 ಎಚ್ಚರಿಕೆ! ನಕಲಿ (AI) ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ" : (lang === "hi" ? "🛑 सावधान! नकली (AI) आवाज़ पकड़ी गई" : "🛑 Alert! AI Voice Clone Attempt Blocked");
-      if (cReason) cReason.textContent = reason || (lang === "kn" ? "ಯಾರೋ ನಿಮ್ಮ ಧ್ವನಿ ನಕಲು ಮಾಡಲು ಯತ್ನಿಸಿದ್ದಾರೆ · ನಿಮ್ಮ ಹಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹0 Debited)" : (lang === "hi" ? "किसी ने आपकी आवाज़ की नकल करने की कोशिश की · आपकी बचत सुरक्षित है" : "Someone attempted to clone your voice · Your money is safe (₹0 Debited)"));
+      if (cReason) cReason.textContent = reason || (lang === "kn" ? "ಧ್ವನಿ ಪರಿಶೀಲನೆ ವಿಫಲವಾಗಿದೆ; ಮುಂದಿನ ಕ್ರಮ ಕೈಗೊಳ್ಳಲಿಲ್ಲ." : (lang === "hi" ? "आवाज़ की जाँच विफल हुई; आगे की कार्रवाई नहीं हुई।" : "Voice check failed; no downstream action was taken."));
       if (cBox) cBox.classList.add("hidden");
     } else if (d === "STEP_UP" || d === "EXTRA_CHECK") {
       cCard.classList.add("status-stepup");
@@ -574,11 +564,11 @@ function updateGauges(detection, verification) {
 }
 
 /**
- * Slide 4 Live Demo Telemetry Counters:
+ * Backend-reported telemetry counters:
  *  - checks_run
  *  - clones_blocked
  *  - agent_steps_skipped
- *  - agent_time_saved_inr (with assumed ₹10/min baseline)
+ *  - agent_time_saved_inr (when provided by the backend)
  */
 function updateSlide4Counters(statsData) {
   if (!statsData) return;
@@ -588,11 +578,9 @@ function updateSlide4Counters(statsData) {
   const skipped = statsData.agent_steps_skipped ?? statsData.steps_skipped ?? lastTelemetryStats.agent_steps_skipped;
   const seconds = statsData.agent_seconds_avoided ?? statsData.seconds_avoided ?? lastTelemetryStats.agent_seconds_avoided;
 
-  const inputRate = parseFloat($("costAssumption")?.value || "10");
-  const ratePerMin = (!isNaN(inputRate) && inputRate > 0) ? inputRate : 10;
-
-  // Calculate INR saved = (seconds avoided / 60) * ratePerMin
-  const inrSaved = (seconds / 60) * ratePerMin;
+  const inrSaved = statsData.agent_time_saved_inr != null && Number.isFinite(Number(statsData.agent_time_saved_inr))
+    ? Number(statsData.agent_time_saved_inr)
+    : null;
 
   lastTelemetryStats = {
     checks_run: checks,
@@ -600,20 +588,20 @@ function updateSlide4Counters(statsData) {
     agent_steps_skipped: skipped,
     agent_seconds_avoided: seconds,
     agent_time_saved_inr: inrSaved,
-    rate_per_min: ratePerMin
+    rate_per_min: null
   };
 
   // Update the 4 Primary Slide 4 Presentation Counters
-  if ($("checks_run")) $("checks_run").textContent = Number(checks).toLocaleString();
-  if ($("clones_blocked")) $("clones_blocked").textContent = Number(blocked).toLocaleString();
-  if ($("agent_steps_skipped")) $("agent_steps_skipped").textContent = Number(skipped).toLocaleString();
-  if ($("agent_time_saved_inr")) $("agent_time_saved_inr").textContent = "₹" + inrSaved.toFixed(2);
+  if ($("checks_run")) $("checks_run").textContent = checks == null ? "—" : Number(checks).toLocaleString();
+  if ($("clones_blocked")) $("clones_blocked").textContent = blocked == null ? "—" : Number(blocked).toLocaleString();
+  if ($("agent_steps_skipped")) $("agent_steps_skipped").textContent = skipped == null ? "—" : Number(skipped).toLocaleString();
+  if ($("agent_time_saved_inr")) $("agent_time_saved_inr").textContent = inrSaved == null ? "—" : "₹" + inrSaved.toFixed(2);
 
   // Update secondary metrics
-  if ($("costSteps")) $("costSteps").textContent = Number(skipped).toLocaleString();
-  if ($("costSeconds")) $("costSeconds").textContent = Number(seconds).toFixed(0);
-  if ($("costInr")) $("costInr").textContent = "₹" + inrSaved.toFixed(2);
-  if ($("costAssumptionText")) $("costAssumptionText").textContent = `Assumed ₹${ratePerMin}/min`;
+  if ($("costSteps")) $("costSteps").textContent = skipped == null ? "—" : Number(skipped).toLocaleString();
+  if ($("costSeconds")) $("costSeconds").textContent = seconds == null ? "—" : Number(seconds).toFixed(0);
+  if ($("costInr")) $("costInr").textContent = inrSaved == null ? "—" : "₹" + inrSaved.toFixed(2);
+  if ($("costAssumptionText")) $("costAssumptionText").textContent = "Reported by backend";
 }
 
 /**
@@ -633,11 +621,6 @@ function showError(msg, failClosed = true) {
 }
 
 // ========== 5. TIER-2 ACTIVE CHALLENGE (NEMOTRON PHRASE & LATENCY TIMER) ==========
-const FALLBACK_ADJECTIVES = ["Golden", "Silver", "Green", "Solar", "Bright", "Calm", "Swift", "Deep", "Pure", "Amber", "Copper", "Wild"];
-const FALLBACK_NOUNS = ["river", "harvest", "mountain", "valley", "forest", "field", "ocean", "breeze", "soil", "tractor", "village", "temple"];
-const FALLBACK_NUMBERS = ["seven", "four", "nine", "eight", "three", "five", "six", "two"];
-const FALLBACK_OBJECTS = ["mango", "banyan", "lotus", "wheat", "mustard", "cotton", "neem", "jasmine", "pepper", "tulsi"];
-
 function renderPhraseChips() {
   const chipsHtml = challengeCurrentPhrase.map(w => 
     `<span class="px-3.5 py-1.5 bg-amber-950/80 border border-amber-500 text-amber-300 font-bold font-mono rounded-lg text-sm md:text-base shadow-sm">${w}</span>`
@@ -651,73 +634,39 @@ function renderPhraseChips() {
  * Tier-2 Phrase Generator: Queries /api/challenge/new?lang={currentLang} for dynamic 4-word challenge phrase
  */
 async function generateChallenge() {
+  challengeCurrentPhrase = [];
+  currentChallengeId = null;
   try {
-    // 1. Try Day 2 Contract endpoint /api/challenge/new
-    try {
-      const data = await safeApiFetch(`${BACKEND_URL}/api/challenge/new?lang=${encodeURIComponent(currentLang)}`);
-      if (data && data.words && Array.isArray(data.words)) {
-        currentChallengeId = data.challenge_id || ("ch_" + Math.random().toString(36).substring(2, 10));
-        challengeCurrentPhrase = data.words;
-        renderPhraseChips();
-        resetChallengeTimerUI();
-        return;
-      }
-    } catch (e) {}
-    
-    // 2. Try legacy /api/challenge/generate
+    const data = await safeApiFetch(`${BACKEND_URL}/api/challenge/new?lang=${encodeURIComponent(currentLang)}`);
+    if (data && Array.isArray(data.words) && data.words.length) {
+      currentChallengeId = data.challenge_id || null;
+      challengeCurrentPhrase = data.words;
+    }
+  } catch (e) {
+    // Continue to the supported legacy challenge endpoint.
+  }
+
+  if (!challengeCurrentPhrase.length) {
     const payload = {
-      speaker_id: currentSpeakerId || "kisan_farmer_01",
-      action: $("actionSelect")?.value || "TRANSFER_FUNDS",
-      amount: parseFloat($("amountInput")?.value || "1000"),
+      speaker_id: currentSpeakerId || "Account_holder",
+      action: $("actionSelect")?.value || "VOICE_VERIFY",
+      amount: parseFloat($("amountInput")?.value || "") || undefined,
       lang: currentLang
     };
-
-    try {
-      const dataLegacy = await safeApiFetch(`${BACKEND_URL}/api/challenge/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (dataLegacy && dataLegacy.challenge_id) {
-        currentChallengeId = dataLegacy.challenge_id;
-        if (typeof dataLegacy.phrase === "string") {
-          challengeCurrentPhrase = dataLegacy.phrase.trim().split(/\s+/);
-        } else if (Array.isArray(dataLegacy.phrase)) {
-          challengeCurrentPhrase = dataLegacy.phrase;
-        }
-      } else {
-        fallbackRandomPhrase();
-      }
-    } catch (e) {
-      fallbackRandomPhrase();
+    const legacy = await safeApiFetch(`${BACKEND_URL}/api/challenge/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    if (legacy?.challenge_id && legacy.phrase) {
+      currentChallengeId = legacy.challenge_id;
+      challengeCurrentPhrase = Array.isArray(legacy.phrase) ? legacy.phrase : String(legacy.phrase).trim().split(/\s+/);
     }
-  } catch (err) {
-    fallbackRandomPhrase();
   }
 
+  if (!challengeCurrentPhrase.length) throw new Error("Challenge service returned no phrase.");
   renderPhraseChips();
   resetChallengeTimerUI();
-}
-
-function fallbackRandomPhrase() {
-  // Use localized rural word bank (Day 2 Deliverable)
-  if (typeof window !== "undefined" && typeof window.getWordBank === "function") {
-    const bank = window.getWordBank(currentLang);
-    if (bank && bank.length >= 4) {
-      const shuffled = [...bank].sort(() => 0.5 - Math.random());
-      challengeCurrentPhrase = shuffled.slice(0, 4);
-      currentChallengeId = "ch_local_" + Math.random().toString(36).substring(2, 10);
-      return;
-    }
-  }
-
-  const w1 = FALLBACK_ADJECTIVES[Math.floor(Math.random() * FALLBACK_ADJECTIVES.length)];
-  const w2 = FALLBACK_NOUNS[Math.floor(Math.random() * FALLBACK_NOUNS.length)];
-  const w3 = FALLBACK_NUMBERS[Math.floor(Math.random() * FALLBACK_NUMBERS.length)];
-  const w4 = FALLBACK_OBJECTS[Math.floor(Math.random() * FALLBACK_OBJECTS.length)];
-  challengeCurrentPhrase = [w1, w2, w3, w4];
-  currentChallengeId = "ch_local_" + Math.random().toString(36).substring(2, 10);
 }
 
 function startChallengeTimer() {
@@ -778,10 +727,10 @@ function updateChallengeTimerUI(elapsed) {
     latencyFlag.classList.remove("latency-flag-ok", "latency-flag-alert");
     if (isOverThreshold) {
       latencyFlag.classList.add("latency-flag-alert");
-      latencyFlagText.textContent = `> 800ms: Vocoder Delay Detected (${formatted})`;
+      latencyFlagText.textContent = `Above 800ms threshold (${formatted})`;
     } else {
       latencyFlag.classList.add("latency-flag-ok");
-      latencyFlagText.textContent = `< 800ms: Human Reaction Speed (${formatted})`;
+      latencyFlagText.textContent = `At or below 800ms threshold (${formatted})`;
     }
   }
 
@@ -796,10 +745,10 @@ function updateChallengeTimerUI(elapsed) {
   if (modalFlag) {
     if (isOverThreshold) {
       modalFlag.className = "font-mono font-bold text-red-400";
-      modalFlag.textContent = `> 800ms Vocoder Lag Alert (${formatted})`;
+      modalFlag.textContent = `Above 800ms threshold (${formatted})`;
     } else {
       modalFlag.className = "font-mono font-bold text-emerald-400";
-      modalFlag.textContent = `< 800ms Human Zone (${formatted})`;
+      modalFlag.textContent = `At or below 800ms threshold (${formatted})`;
     }
   }
 
@@ -812,11 +761,6 @@ function updateChallengeTimerUI(elapsed) {
   if ($("challengeTimerStatus")) $("challengeTimerStatus").textContent = statusText;
   if ($("modalTimerStatus")) $("modalTimerStatus").textContent = statusText;
 }
-
-window.simLatency = function(ms) {
-  challengeElapsedSeconds = ms / 1000;
-  updateChallengeTimerUI(challengeElapsedSeconds);
-};
 
 function setChallengeStatus(msg, isError = false) {
   const resultEl = $("challengeResult");
@@ -904,16 +848,21 @@ async function apiHealth() {
   try {
     const data = await safeApiFetch(`${BACKEND_URL}/api/health`, { method: "GET" });
     setHealthBadge(!!data.ok, data.detectif_reachable, data.detectif_details);
-    void apiCredits();
+    if (data.credits_remaining != null) updateCreditCounters(data.credits_remaining);
+    else void apiCredits();
     return data;
   } catch (e) {
-    setHealthBadge(true, true, { mode: "integrated" });
-    const counter = $("creditsCounter");
-    if (counter && (!counter.textContent || counter.textContent === "—" || counter.textContent === "0")) {
-      counter.textContent = "4,950";
-    }
-    return { ok: true, detectif_reachable: true, credits: 4950 };
+    setHealthBadge(false, false, { reason: e.error || e.message || "Gateway unavailable" });
+    return { ok: false, detectif_reachable: false, error: e.error || e.message };
   }
+}
+
+function updateCreditCounters(credits) {
+  const text = credits == null || !Number.isFinite(Number(credits)) ? "—" : Number(credits).toLocaleString();
+  ["creditsCounter", "judgeCreditsVal", "consoleLiveCredits"].forEach((id) => {
+    const el = $(id);
+    if (el) el.textContent = text;
+  });
 }
 
 /**
@@ -923,16 +872,12 @@ async function apiCredits() {
   try {
     const data = await safeApiFetch(`${BACKEND_URL}/api/credits`, { method: "GET" });
     if (data && data.available != null) {
-      const counter = $("creditsCounter");
-      if (counter) counter.textContent = Number(data.available).toLocaleString();
+      updateCreditCounters(data.available);
     }
     return data;
   } catch (e) {
-    const counter = $("creditsCounter");
-    if (counter && (!counter.textContent || counter.textContent === "—" || counter.textContent === "0")) {
-      counter.textContent = "4,950";
-    }
-    return { available: 4950 };
+    updateCreditCounters(null);
+    return null;
   }
 }
 
@@ -954,7 +899,7 @@ async function apiCheck(audioBlob, speakerId, action, amount, lang = currentLang
   const fd = new FormData();
   fd.append("audio", audioBlob, "check.wav");
   fd.append("speaker_id", speakerId || currentSpeakerId);
-  fd.append("action", action || "TRANSFER_FUNDS");
+  fd.append("action", action || "VOICE_VERIFY");
   fd.append("lang", lang || "kn");
   fd.append("device", device || "phone1");
   fd.append("source", source || "live_mic");
@@ -1008,11 +953,12 @@ async function apiChallengeVerify(audioBlob, challengeId, phrase, speakerId, act
  * 7. NPCI Hello! UPI Payment Execution (/api/pay/upi)
  */
 async function apiPayUpi(amount, speakerId, credential) {
+  if (!speakerId || !Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+    throw new Error("Choose a voice profile and enter a valid payment amount first.");
+  }
   const payload = {
-    amount: amount || 5000.0,
-    speaker_id: speakerId || "kisan_farmer_01",
-    merchant_name: "IFFCO Fertilizer Co-op",
-    upi_id: "iffco@upi",
+    amount: Number(amount),
+    speaker_id: speakerId,
     credential: credential || undefined,
     is_unlocked: true
   };
@@ -1059,7 +1005,7 @@ async function apiAudit(limit = 30) {
   try {
     return await safeApiFetch(`${BACKEND_URL}/api/audit?limit=${limit}`);
   } catch (e) {
-    return DEFAULT_DEMO_AUDIT_LOGS;
+    return [];
   }
 }
 
@@ -1147,12 +1093,7 @@ function renderCheckResponse(data) {
 }
 
 // ========== 7B. 2x2 DECISION MATRIX & LIVE SPECTROGRAM VISUALIZERS ==========
-let matrixPointsHistory = [
-  { match: 0.91, synth: 0.04, decision: "APPROVE" },
-  { match: 0.74, synth: 0.945, decision: "BLOCK_ALERT" },
-  { match: 0.38, synth: 0.88, decision: "BLOCK" },
-  { match: 0.42, synth: 0.12, decision: "STEP_UP" }
-];
+let matrixPointsHistory = [];
 
 function renderGateMatrix(matchScore, synthScore, decision) {
   const canvas = $("matrixCanvas");
@@ -1349,120 +1290,23 @@ function renderGateMatrix(matchScore, synthScore, decision) {
 }
 
 let spectrogramState = {
-  isSynthetic: false,
-  decision: "STANDBY",
-  phaseOffset: 0
+  decision: "STANDBY"
 };
 
-function renderSpectrogramSnapshot(isSynthetic, decision) {
-  spectrogramState.isSynthetic = !!isSynthetic;
-  spectrogramState.decision = decision || (isSynthetic ? "BLOCK_ALERT" : "APPROVE");
-  drawSpectrogramFrame();
-}
-
-function drawSpectrogramFrame() {
+function renderSpectrogramSnapshot(_isSynthetic, decision) {
+  spectrogramState.decision = decision || "STANDBY";
   const canvas = $("spectrogramCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-
-  const w = canvas.width;
-  const h = canvas.height;
-  spectrogramState.phaseOffset += 0.07;
-
-  // Background
   ctx.fillStyle = "#0B0F17";
-  ctx.fillRect(0, 0, w, h);
-
-  // Subtle grid lines
-  ctx.strokeStyle = "#1E293B";
-  ctx.lineWidth = 1;
-  for (let x = 40; x < w; x += 40) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-    ctx.stroke();
-  }
-  for (let y = 30; y < h; y += 35) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
-
-  // Vocoder Anomaly Zone (>8kHz: right ~48% of canvas)
-  const vocoderSplitX = w * 0.52;
-  ctx.fillStyle = spectrogramState.isSynthetic ? "rgba(239, 68, 68, 0.09)" : "rgba(30, 41, 59, 0.2)";
-  ctx.fillRect(vocoderSplitX, 0, w - vocoderSplitX, h);
-
-  ctx.strokeStyle = spectrogramState.isSynthetic ? "rgba(239, 68, 68, 0.45)" : "rgba(148, 163, 184, 0.25)";
-  ctx.setLineDash([3, 3]);
-  ctx.beginPath();
-  ctx.moveTo(vocoderSplitX, 0);
-  ctx.lineTo(vocoderSplitX, h);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Frequency Bars (48 bins across 0-16kHz)
-  const numBars = 48;
-  const barWidth = (w - 20) / numBars;
-
-  for (let i = 0; i < numBars; i++) {
-    const freqRatio = i / numBars; // 0.0 to 1.0 (0 to 16 kHz)
-    let barHeight = 0;
-
-    if (spectrogramState.isSynthetic) {
-      if (freqRatio > 0.5) {
-        // High vocoder anomaly spikes
-        const noise = Math.sin(i * 1.7 + spectrogramState.phaseOffset * 2) * 0.3 + 0.7;
-        barHeight = (h * 0.65) * noise * (0.8 + 0.3 * Math.sin(i * 0.8));
-      } else {
-        barHeight = (h * 0.45) * Math.exp(-freqRatio * 1.5) * (0.8 + 0.2 * Math.sin(i + spectrogramState.phaseOffset));
-      }
-    } else if (spectrogramState.decision === "APPROVE") {
-      if (freqRatio < 0.45) {
-        barHeight = (h * 0.75) * (1 - freqRatio * 1.2) * (0.85 + 0.15 * Math.sin(i * 0.5 + spectrogramState.phaseOffset));
-      } else {
-        barHeight = (h * 0.15) * Math.exp(-freqRatio * 3.0) * (0.6 + 0.4 * Math.random());
-      }
-    } else {
-      barHeight = (h * 0.22) * Math.sin(freqRatio * Math.PI + spectrogramState.phaseOffset) + (h * 0.08);
-    }
-
-    barHeight = Math.max(4, Math.min(h - 10, barHeight));
-    const bx = 10 + i * barWidth;
-    const by = h - barHeight - 4;
-
-    const grad = ctx.createLinearGradient(0, h, 0, by);
-    if (spectrogramState.isSynthetic && freqRatio > 0.5) {
-      grad.addColorStop(0, "rgba(239, 68, 68, 0.4)");
-      grad.addColorStop(1, "#EF4444");
-    } else if (spectrogramState.decision === "APPROVE") {
-      grad.addColorStop(0, "rgba(16, 185, 129, 0.3)");
-      grad.addColorStop(1, "#10B981");
-    } else {
-      grad.addColorStop(0, "rgba(217, 119, 6, 0.3)");
-      grad.addColorStop(1, "#F59E0B");
-    }
-
-    ctx.fillStyle = grad;
-    ctx.fillRect(bx, by, barWidth - 2, barHeight);
-  }
-
-  // Update Status Badge
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#94A3B8";
+  ctx.font = "14px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("No spectrogram data is provided by the analysis API.", canvas.width / 2, canvas.height / 2);
   const badge = $("spectrogramStatusBadge");
-  if (badge) {
-    if (spectrogramState.isSynthetic) {
-      badge.textContent = "🚨 Vocoder Anomaly (>9.2kHz)";
-      badge.className = "rounded-md px-2 py-0.5 text-[10px] font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse";
-    } else if (spectrogramState.decision === "APPROVE") {
-      badge.textContent = "✅ Natural Harmonics";
-      badge.className = "rounded-md px-2 py-0.5 text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
-    } else {
-      badge.textContent = "Acoustic: Standby";
-      badge.className = "rounded-md px-2 py-0.5 text-[10px] font-mono font-bold bg-ink border border-line text-cream-2";
-    }
-  }
+  if (badge) badge.textContent = "Provider spectrogram unavailable";
 }
 
 // Backend URL Modal Handlers
@@ -1569,8 +1413,6 @@ function handleRecordingFinished(recordedBlob, elapsedSec) {
   }
 }
 
-let _isSimulatedHttpRecording = false;
-
 async function startRecording(target = "senior") {
   recordTarget = target;
   recordedChunks = [];
@@ -1583,27 +1425,7 @@ async function startRecording(target = "senior") {
   );
 
   if (!hasMediaDevices) {
-    console.info("Mobile HTTP environment: navigator.mediaDevices.getUserMedia unavailable. Activating live Wi-Fi capture fallback.");
-    _isSimulatedHttpRecording = true;
-    isRecording = true;
-    updateRecordButtons(true);
-    if (target === "challenge") startChallengeTimer();
-    else if (target === "enroll") startEnrollTimer();
-    else startSeniorTimer();
-
-    if ($("callerInstructionText")) {
-      const activeLang = typeof currentLang !== "undefined" ? currentLang : "kn";
-      if (activeLang === "kn") {
-        $("callerInstructionText").textContent = "🎤 ಲೈವ್ ಧ್ವನಿ ರೆಕಾರ್ಡ್ ಆಗುತ್ತಿದೆ... ಮಾತನಾಡಿ ಮತ್ತು ನಿಲ್ಲಿಸಲು ಮತ್ತೆ ಟ್ಯಾಪ್ ಮಾಡಿ";
-      } else if (activeLang === "hi") {
-        $("callerInstructionText").textContent = "🎤 लाइव आवाज़ रिकॉर्ड हो रही है... बोलें और रोकने के लिए फिर से टैप करें";
-      } else {
-        $("callerInstructionText").textContent = "🎤 Recording live voice order... Speak and tap again to send & verify";
-      }
-    }
-    if ($("recordHint")) {
-      $("recordHint").textContent = "Recording live voice over Wi-Fi... Tap mic again to send & verify biometrics";
-    }
+    showError("Microphone recording is unavailable in this browser context. Open this local app on localhost or grant microphone access.");
     return;
   }
 
@@ -1655,52 +1477,14 @@ async function startRecording(target = "senior") {
       startSeniorTimer();
     }
   } catch (err) {
-    console.warn("Microphone access unavailable or denied, falling back to live Wi-Fi simulation:", err);
-    _isSimulatedHttpRecording = true;
-    isRecording = true;
-    updateRecordButtons(true);
-    if (target === "challenge") startChallengeTimer();
-    else if (target === "enroll") startEnrollTimer();
-    else startSeniorTimer();
+    console.warn("Microphone access unavailable or denied:", err);
+    isRecording = false;
+    updateRecordButtons(false);
+    showError(err?.message || "Microphone access was denied or unavailable.");
   }
 }
 
 async function stopRecording() {
-  if (_isSimulatedHttpRecording) {
-    _isSimulatedHttpRecording = false;
-    isRecording = false;
-    updateRecordButtons(false);
-    const sec = recordTarget === "challenge" ? challengeElapsedSeconds : recordTarget === "enroll" ? enrollElapsedSec : seniorElapsedSec;
-    if (recordTarget === "challenge") stopChallengeTimer();
-    else if (recordTarget === "enroll") stopEnrollTimer();
-    else stopSeniorTimer();
-
-    // Select authentic audio fixture matching the selected language
-    const lang = typeof currentLang !== "undefined" ? currentLang : "kn";
-    let fixtureName = "kannada_farmer_genuine.wav";
-    if (recordTarget === "enroll") {
-      fixtureName = "sample_enroll_16s.wav";
-    } else {
-      if (lang === "kn") fixtureName = "kannada_farmer_genuine.wav";
-      else if (lang === "hi") fixtureName = "hindi_farmer_genuine.wav";
-      else if (lang === "en") fixtureName = "english_farmer_genuine.wav";
-    }
-
-    let fixtureFile = await loadAudioFixture(fixtureName);
-    if (!fixtureFile) {
-      fixtureFile = await loadAudioFixture(`clips/${lang}/genuine/${fixtureName}`)
-                 || await loadAudioFixture("farmer_genuine_5s.wav")
-                 || await loadAudioFixture("sample_human.wav");
-    }
-
-    if (fixtureFile) {
-      handleRecordingFinished(fixtureFile, Math.max(3, Math.round(sec || 3)));
-    } else {
-      console.warn("Could not load authentic fixture for mobile HTTP fallback");
-    }
-    return;
-  }
-
   // Check PcmAudioRecorder first
   if (window.PcmAudioRecorder && window.PcmAudioRecorder.isRecording && window.PcmAudioRecorder.isRecording()) {
     try {
@@ -1715,7 +1499,11 @@ async function stopRecording() {
   }
 
   if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
+    const recorder = mediaRecorder;
+    await new Promise((resolve) => {
+      recorder.addEventListener("stop", resolve, { once: true });
+      recorder.stop();
+    });
   }
   if (recordTarget === "challenge") {
     stopChallengeTimer();
@@ -2023,284 +1811,6 @@ function prependAuditRow(r) {
   }
 }
 
-// 4. Instant 1-Click Hero Scenario Handlers
-
-// Case 1: Authentic Farmer Voice (Approved Payment)
-async function handleHeroCase1() {
-  if (currentView === "judge") setView("farmer");
-
-  if ($("actionSelect")) $("actionSelect").value = "TRANSFER_FUNDS";
-  if ($("amountInput")) $("amountInput").value = "1000";
-
-  const file = await loadAudioFixture("farmer_genuine_5s.wav") || await loadAudioFixture("sample_human.wav");
-  if (file) {
-    currentBlob = file;
-    window.currentBlob = file;
-    const playback = $("audioPlayback");
-    const preview = $("previewContainer");
-    if (playback && preview) {
-      playback.src = URL.createObjectURL(file);
-      preview.classList.remove("hidden");
-    }
-    if ($("audioDurationBadge")) $("audioDurationBadge").textContent = "5.0s · farmer_genuine_5s.wav (Safe)";
-    if ($("recordHint")) $("recordHint").textContent = "Selected: farmer_genuine_5s.wav (Authentic Kisan Voice)";
-  }
-
-  showOverlay("Case 1: Sending farmer_genuine_5s.wav to Gate Check…");
-
-  try {
-    let data = null;
-
-    // Try /api/demo/quick-test/authentic first
-    try {
-      data = await safeApiFetch(`${BACKEND_URL}/api/demo/quick-test/authentic`, { method: "POST" });
-    } catch (e) {
-      data = null;
-    }
-
-    // Fall back to /api/check with form data
-    if (!data && file) {
-      try {
-        data = await apiCheck(file, currentSpeakerId || "kisan_farmer_01", "TRANSFER_FUNDS", "1000");
-      } catch (err) {
-        data = null;
-      }
-    }
-
-    if (!data || data.decision !== "APPROVE") {
-      data = {
-        request_id: "req_demo_approve_" + Math.random().toString(36).substring(2, 8),
-        ts: new Date().toISOString(),
-        status: "ok",
-        fail_closed: false,
-        decision: "APPROVE",
-        reason: "Verified Safe: Natural human vocal cord acoustics & Ramesh Patel identity confirmed via DetectifAI Eidos (94.1% match). Gate APPROVED in 210ms. Tool UNLOCKED.",
-        detection: { status: "ok", is_synthetic: false, synthetic_score: 0.041, latency_ms: 180 },
-        verification: { status: "ok", matched: true, match_score: 0.941, latency_ms: 195 },
-        tool: {
-          name: "transfer_funds",
-          status: "EXECUTED",
-          result: { txn_id: "TXN-NPCI-123PAY-1000-PASS", amount: 1000, recipient: "IFFCO Fertilizer Co-op" },
-          message: "Transferred ₹1,000 to IFFCO Fertilizer Co-op. Ramesh Patel Kisan account debited."
-        },
-        cost: { agent_steps_skipped: 0, agent_seconds_avoided: 0.0, est_inr: 0.0, assumption: "Saved @ ₹10/min" },
-        transcript: "IFFCO khad maate ek hazaar rupiya moklo",
-        intent: "TRANSFER_FUNDS",
-        agent_reply_text: "Namaste Ramesh Patel. Aapka ₹1,000 ka fertilizer payment safaltapoorvak poora ho gaya hai."
-      };
-    }
-
-    renderCheckResponse(data);
-
-    // Update verified badge on Senior Farmer View
-    if ($("badgeLabel")) {
-      $("badgeLabel").textContent = "VERIFIED NPCI 123PAY";
-      $("badgeLabel").className = "rounded-full px-3 py-1 text-xs font-bold tracking-wide bg-safe-bg text-safe border border-safe";
-    }
-
-    // Increment checks_run counter
-    lastTelemetryStats.checks_run = (Number(lastTelemetryStats.checks_run) || 0) + 1;
-    updateSlide4Counters(lastTelemetryStats);
-
-    // Add to audit trail
-    prependAuditRow({
-      ts: new Date().toISOString(),
-      decision: "APPROVE",
-      synthetic_score: 0.041,
-      match_score: 0.941,
-      tool_status: "EXECUTED"
-    });
-
-  } finally {
-    hideOverlay();
-    $("statusCard")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-}
-
-// Case 2: AI Voice Clone Attack (Clone Block + ₹20 Saved)
-async function handleHeroCase2() {
-  if (currentView === "judge") setView("farmer");
-
-  if ($("actionSelect")) $("actionSelect").value = "TRANSFER_FUNDS";
-  if ($("amountInput")) $("amountInput").value = "1000";
-
-  const file = await loadAudioFixture("farmer_clone_synthetic_5s.wav") || await loadAudioFixture("sample_clone.wav");
-  if (file) {
-    currentBlob = file;
-    window.currentBlob = file;
-    const playback = $("audioPlayback");
-    const preview = $("previewContainer");
-    if (playback && preview) {
-      playback.src = URL.createObjectURL(file);
-      preview.classList.remove("hidden");
-    }
-    if ($("audioDurationBadge")) $("audioDurationBadge").textContent = "5.0s · farmer_clone_synthetic_5s.wav (Synthetic Clone)";
-    if ($("recordHint")) $("recordHint").textContent = "Selected: farmer_clone_synthetic_5s.wav (Neural Clone Attack)";
-  }
-
-  showOverlay("Case 2: Detecting Real-Time Neural Clone Attack…");
-
-  try {
-    let data = null;
-
-    // Try /api/demo/quick-test/clone
-    try {
-      data = await safeApiFetch(`${BACKEND_URL}/api/demo/quick-test/clone`, { method: "POST" });
-    } catch (e) {
-      data = null;
-    }
-
-    // Fall back to /api/check with form data
-    if (!data && file) {
-      try {
-        data = await apiCheck(file, currentSpeakerId || "kisan_farmer_01", "TRANSFER_FUNDS", "1000");
-      } catch (err) {
-        data = null;
-      }
-    }
-
-    if (!data || data.decision !== "BLOCK_ALERT") {
-      data = {
-        request_id: "req_demo_block_" + Math.random().toString(36).substring(2, 8),
-        ts: new Date().toISOString(),
-        status: "error",
-        fail_closed: true,
-        decision: "BLOCK_ALERT",
-        reason: "CRITICAL WARNING: Computer-generated voice clone detected! Although acoustic timbre mimics Ramesh Patel (Eidos: 93.2%), neural vocoder artifacts were identified by Aletheia (synth_score: 92.2% >= 0.62). Gate BLOCKED in <300ms, tool HARD-LOCKED, and ₹20.00 compute saved.",
-        detection: { status: "ok", is_synthetic: true, synthetic_score: 0.922, latency_ms: 142 },
-        verification: { status: "ok", matched: true, match_score: 0.932, latency_ms: 155 },
-        tool: {
-          name: "transfer_funds",
-          status: "LOCKED",
-          result: null,
-          message: "CRITICAL: Transaction LOCKED. Fraudulent voice clone detected. Zero rupees transferred."
-        },
-        cost: { agent_steps_skipped: 1, agent_seconds_avoided: 120.0, est_inr: 20.0, assumption: "Saved @ ₹10/min" },
-        transcript: "Mera account se turant paanch hazaar bhejo",
-        intent: "TRANSFER_FUNDS",
-        agent_reply_text: "Security Alert: Voice authentication failed. Transaction blocked to protect your savings."
-      };
-    }
-
-    renderCheckResponse(data);
-
-    // Update verified badge to show blocked/locked
-    if ($("badgeLabel")) {
-      $("badgeLabel").textContent = "TRANSACTION HARD-LOCKED";
-      $("badgeLabel").className = "rounded-full px-3 py-1 text-xs font-bold tracking-wide bg-alert-bg text-alert border border-alert";
-    }
-
-    // Prompt requirement: "renders the red BLOCK_ALERT clone defense state with ₹20 saved counter increment"
-    lastTelemetryStats.checks_run = (Number(lastTelemetryStats.checks_run) || 0) + 1;
-    lastTelemetryStats.clones_blocked = (Number(lastTelemetryStats.clones_blocked) || 0) + 1;
-    lastTelemetryStats.agent_steps_skipped = (Number(lastTelemetryStats.agent_steps_skipped) || 0) + 1;
-    lastTelemetryStats.agent_seconds_avoided = (Number(lastTelemetryStats.agent_seconds_avoided) || 0) + 120.0;
-    updateSlide4Counters(lastTelemetryStats);
-
-    // Add to audit trail
-    prependAuditRow({
-      ts: new Date().toISOString(),
-      decision: "BLOCK_ALERT",
-      synthetic_score: 0.922,
-      match_score: 0.932,
-      tool_status: "LOCKED"
-    });
-
-  } finally {
-    hideOverlay();
-    $("statusCard")?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-}
-
-// Case 3: Tier-2 Active Cognitive Challenge (Dynamic Nemotron Phrase + Animated Latency Timer)
-async function handleHeroCase3() {
-  if (currentView === "judge") setView("farmer");
-
-  showOverlay("Case 3: Generating Dynamic Nemotron Challenge Phrase…");
-
-  try {
-    // 1. Generate fresh dynamic Nemotron challenge phrase
-    await generateChallenge();
-
-    // 2. Set status card to STEP_UP (Amber question state)
-    setStatusCard("STEP_UP", "Noisy or cellular 8kHz audio requires secondary active challenge. Please recite the randomized Nemotron phrase aloud within 800ms natural human reaction window.");
-
-    // Highlight and scroll to Tier-2 challenge box
-    const tier2Box = $("tier2Box");
-    if (tier2Box) {
-      tier2Box.classList.add("ring-4", "ring-wait", "ring-offset-2");
-      setTimeout(() => {
-        tier2Box.classList.remove("ring-4", "ring-wait", "ring-offset-2");
-      }, 3500);
-      tier2Box.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-
-    hideOverlay();
-
-    // 3. Smoothly animate response latency timer up to realistic human latency (0.56s)
-    let start = performance.now();
-    const targetMs = 560; // 0.56s (well within <=800ms human baseline)
-    const duration = 650; // ms
-
-    const animInterval = setInterval(() => {
-      const elapsed = performance.now() - start;
-      const progress = Math.min(1, elapsed / duration);
-      const currentMs = Math.round(progress * targetMs);
-      challengeElapsedSeconds = currentMs / 1000;
-      updateChallengeTimerUI(challengeElapsedSeconds);
-
-      if (progress >= 1) {
-        clearInterval(animInterval);
-
-        // 4. Verify challenge liveness
-        setChallengeStatus("✅ PASS: Human Liveness Verified! Response Latency: 0.56s. Phrase recitation & acoustic biometrics authenticated.", false);
-        setStatusCard("APPROVE", "Tier-2 Active Challenge Passed! Latency 0.56s verified live farmer presence. Payment of ₹1,000 unlocked.");
-
-        if ($("badgeLabel")) {
-          $("badgeLabel").textContent = "CHALLENGE PASSED · NPCI 123PAY";
-          $("badgeLabel").className = "rounded-full px-3 py-1 text-xs font-bold tracking-wide bg-safe-bg text-safe border border-safe";
-        }
-
-        if ($("metricDecision")) {
-          $("metricDecision").textContent = "APPROVE";
-          $("metricDecision").className = "text-right font-bold text-safe";
-        }
-        if ($("metricTool")) {
-          $("metricTool").textContent = "UNLOCKED";
-          $("metricTool").className = "font-bold text-safe";
-        }
-        if ($("metricToolLockIcon")) {
-          $("metricToolLockIcon").textContent = "🔓";
-        }
-
-        updateGauges(
-          { synthetic_score: 0.08, latency_ms: 180 },
-          { match_score: 0.92, latency_ms: 195 }
-        );
-
-        prependAuditRow({
-          ts: new Date().toISOString(),
-          decision: "APPROVE (Tier-2)",
-          synthetic_score: 0.08,
-          match_score: 0.92,
-          tool_status: "UNLOCKED"
-        });
-      }
-    }, 25);
-
-  } catch (err) {
-    hideOverlay();
-  }
-}
-
-// Bind 1-Click Hero Scenario Buttons (all alias IDs supported: #btnQuickAuthentic, #btnQuickClone, #btnQuickChallenge)
-const bindHeroButton = (ids, handler) => {
-  ids.forEach(id => $(id)?.addEventListener("click", handler));
-};
-bindHeroButton(["btnQuickAuthentic", "demoCase1", "heroCase1", "btnHeroCase1"], handleHeroCase1);
-bindHeroButton(["btnQuickClone", "demoCase2", "heroCase2", "btnHeroCase2"], handleHeroCase2);
-bindHeroButton(["btnQuickChallenge", "demoCase3", "heroCase3", "btnHeroCase3"], handleHeroCase3);
-
 // Bind Voice Assistant (TTS) Replay Action
 $("btnReplayTTS")?.addEventListener("click", () => {
   if (lastSpokenVerdict) {
@@ -2310,56 +1820,7 @@ $("btnReplayTTS")?.addEventListener("click", () => {
   }
 });
 
-// Expose handlers globally for HTML / console testing
-window.handleHeroCase1 = handleHeroCase1;
-window.handleHeroCase2 = handleHeroCase2;
-window.handleHeroCase3 = handleHeroCase3;
-window.btnQuickAuthentic = handleHeroCase1;
-window.btnQuickClone = handleHeroCase2;
-window.btnQuickChallenge = handleHeroCase3;
-
 // ========== 10. PRESET EVENT LISTENERS & WORKFLOWS ==========
-
-// 1. GramPay Quick Scenario Presets
-$("presetFertilizer")?.addEventListener("click", () => {
-  if ($("actionSelect")) $("actionSelect").value = "TRANSFER_FUNDS";
-  if ($("amountInput")) $("amountInput").value = "1000";
-  setStatusCard(null, currentLang === "kn"
-    ? `ಉದಾಹರಣೆ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ: "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ". ಮಾತನಾಡಲು ಗುಂಡಿಯನ್ನು ಒತ್ತಿ.`
-    : (currentLang === "hi"
-      ? `उदाहरण चुना गया: "इफको खाद को 1,000 रुपये भेजें"। बोलने के लिए बटन दबाएं।`
-      : `Preset Selected: "Send ₹1,000 Fertilizer". Tap to speak.`));
-});
-
-$("presetFuel")?.addEventListener("click", () => {
-  if ($("actionSelect")) $("actionSelect").value = "TRANSFER_FUNDS";
-  if ($("amountInput")) $("amountInput").value = "2500";
-  setStatusCard(null, currentLang === "kn"
-    ? `ಉದಾಹರಣೆ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ: "ಟ್ರ್ಯಾಕ್ಟರ್ ಡೀಸೆಲ್‌ಗೆ 2,500 ರೂ ಕಳುಹಿಸಿ". ಮಾತನಾಡಲು ಗುಂಡಿಯನ್ನು ಒತ್ತಿ.`
-    : (currentLang === "hi"
-      ? `उदाहरण चुना गया: "ट्रैक्टर डीजल को 2,500 रुपये भेजें"। बोलने के लिए बटन दबाएं।`
-      : `Preset Selected: "Send ₹2,500 Fuel". Tap to speak.`));
-});
-
-$("presetBalance")?.addEventListener("click", () => {
-  if ($("actionSelect")) $("actionSelect").value = "CHECK_BALANCE";
-  if ($("amountInput")) $("amountInput").value = "0";
-  setStatusCard(null, currentLang === "kn"
-    ? `ಉದಾಹರಣೆ ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ: "ಕಿಸಾನ್ ಖಾತೆಯ ಬ್ಯಾಲೆನ್ಸ್ ನೋಡಿ". ಮಾತನಾಡಲು ಗುಂಡಿಯನ್ನು ಒತ್ತಿ.`
-    : (currentLang === "hi"
-      ? `उदाहरण चुना गया: "किसान बैलेंस चेक करें"। बोलने के लिए बटन दबाएं।`
-      : `Preset Selected: "Check Kisan Balance". Tap to speak.`));
-});
-
-$("presetPmKisan")?.addEventListener("click", () => {
-  if ($("actionSelect")) $("actionSelect").value = "PAY_UPI";
-  if ($("amountInput")) $("amountInput").value = "2000";
-  setStatusCard(null, currentLang === "kn"
-    ? `ಪಿಎಂ-ಕಿಸಾನ್ ಸಬ್ಸಿಡಿ ₹2,000. ಮಾತನಾಡಲು ಗುಂಡಿಯನ್ನು ಒತ್ತಿ.`
-    : (currentLang === "hi"
-      ? `पीएम-किसान सब्सिडी ₹2,000। बोलने के लिए बटन दबाएं।`
-      : `PM-Kisan Subsidy ₹2,000. Tap to speak.`));
-});
 
 // Backend URL & Health check buttons
 $("btnSaveBackend")?.addEventListener("click", () => {
@@ -2425,7 +1886,7 @@ $("audioFileEnroll")?.addEventListener("change", (e) => {
 
 $("btnEnroll")?.addEventListener("click", async () => {
   const nameInput = $("enrollName")?.value.trim();
-  const name = nameInput || "Ramesh Patel (Kisan Account)";
+    const name = nameInput || "Account holder";
   const audio = enrollBlob || $("audioFileEnroll")?.files?.[0] || currentBlob;
 
   if (!audio) {
@@ -2438,6 +1899,10 @@ $("btnEnroll")?.addEventListener("click", async () => {
     const data = await apiEnroll(audio, name);
     currentSpeakerId = data.speaker_id;
     currentSpeakerName = data.name || name;
+    try {
+      localStorage.setItem("unclone_speaker_id", currentSpeakerId);
+      localStorage.setItem("unclone_speaker_name", currentSpeakerName);
+    } catch (e) {}
 
     if ($("currentSpeakerLabel")) {
       $("currentSpeakerLabel").textContent = `${currentSpeakerName} (${data.speaker_id.substring(0, 8)}…)`;
@@ -2470,9 +1935,13 @@ $("btnCheck")?.addEventListener("click", async () => {
     return;
   }
 
-  const action = $("actionSelect")?.value || "TRANSFER_FUNDS";
-  const amount = $("amountInput")?.value || "5000";
-  const speakerId = currentSpeakerId || "kisan_farmer_01";
+  const action = "VOICE_VERIFY";
+  const amount = null;
+  const speakerId = currentSpeakerId;
+  if (!speakerId) {
+    showError("Enroll a voice profile before running verification.", true);
+    return;
+  }
 
   showOverlay("Running GramPay Voice Gate Check (DetectifAI Aletheia + Eidos)…");
   try {
@@ -2497,7 +1966,7 @@ $("btnAgentTurn")?.addEventListener("click", async () => {
 
   const action = $("actionSelect")?.value || "TRANSFER_FUNDS";
   const amount = $("amountInput")?.value || "5000";
-  const speakerId = currentSpeakerId || "kisan_farmer_01";
+  const speakerId = currentSpeakerId;
 
   showOverlay("Gate Check → Speech-to-Text → NVIDIA Nemotron Assistant Turn…");
   try {
@@ -2514,13 +1983,17 @@ $("btnAgentTurn")?.addEventListener("click", async () => {
 
 // 6. Direct Hello! UPI Tool Execution (/api/pay/upi)
 $("btnExecutePay")?.addEventListener("click", async () => {
-  const amount = parseFloat($("amountInput")?.value || "5000");
-  const speakerId = currentSpeakerId || "kisan_farmer_01";
+  const amount = parseFloat($("amountInput")?.value || "");
+  const speakerId = currentSpeakerId;
+  if (!speakerId || !Number.isFinite(amount) || amount <= 0) {
+    showError("Choose a voice profile and enter a valid payment amount first.");
+    return;
+  }
 
   showOverlay("Executing NPCI Hello! UPI / 123Pay Voice Payment Tool…");
   try {
     const data = await apiPayUpi(amount, speakerId, lastCredential);
-    setStatusCard("APPROVE", data.message || `Payment of ₹${amount} executed successfully via Hello! UPI.`);
+    setStatusCard(data.status === "EXECUTED" ? "APPROVE" : null, data.message || "Payment API returned a response; check its status before treating the payment as complete.");
     if ($("metricTool")) {
       $("metricTool").textContent = "EXECUTED";
       $("metricTool").className = "font-black text-base text-emerald-400";
@@ -2536,8 +2009,8 @@ $("btnExecutePay")?.addEventListener("click", async () => {
 });
 
 // 7. Tier-2 Active Challenge Controls
-$("btnNewPhrase")?.addEventListener("click", generateChallenge);
-$("btnNewPhraseModal")?.addEventListener("click", generateChallenge);
+$("btnNewPhrase")?.addEventListener("click", () => generateChallenge().catch(err => setChallengeStatus(err.message || "Challenge service unavailable.", true)));
+$("btnNewPhraseModal")?.addEventListener("click", () => generateChallenge().catch(err => setChallengeStatus(err.message || "Challenge service unavailable.", true)));
 
 $("btnRecordChallenge")?.addEventListener("click", () => {
   if (isRecording) return;
@@ -2563,9 +2036,9 @@ async function verifyChallengeLiveness() {
   showOverlay("Verifying Tier-2 Active Liveness & Acoustic Biometrics…");
   try {
     const phraseStr = challengeCurrentPhrase.join(" ");
-    const speakerId = currentSpeakerId || "kisan_farmer_01";
-    const action = $("actionSelect")?.value || "TRANSFER_FUNDS";
-    const amount = parseFloat($("amountInput")?.value || "1000");
+    const speakerId = currentSpeakerId;
+    const action = $("actionSelect")?.value || "VOICE_VERIFY";
+    const amount = parseFloat($("amountInput")?.value || "") || undefined;
 
     let data;
     try {
@@ -2582,7 +2055,7 @@ async function verifyChallengeLiveness() {
       const msg = `✅ PASS: Human Liveness Verified! Response Latency: ${elapsed.toFixed(2)}s. Phrase recitation & acoustic biometrics authenticated.`;
       setChallengeStatus(msg, false);
       const okMsg = (window.getReasonText && window.getReasonText(currentLang, "approved"))
-        || `Tier-2 Active Challenge Passed! Latency ${elapsed.toFixed(2)}s verified live farmer presence. Payment executed.`;
+        || `Voice challenge passed. Measured response time: ${elapsed.toFixed(2)}s.`;
       setStatusCard("APPROVE", okMsg);
     } else {
       const failReason = (window.getReasonText && window.getReasonText(currentLang, "challenge_failed"))
@@ -2615,9 +2088,7 @@ function openChallengeModal() {
     m.classList.remove("hidden");
     m.classList.add("flex");
   }
-  if (!currentChallengeId) {
-    generateChallenge();
-  }
+  if (!currentChallengeId) generateChallenge().catch(err => setChallengeStatus(err.message || "Challenge service unavailable.", true));
 }
 
 function closeChallengeModal() {
@@ -2780,48 +2251,15 @@ async function refreshStats() {
   }
 }
 
-const DEFAULT_DEMO_AUDIT_LOGS = [
-  {
-    ts: new Date(Date.now() - 35000).toISOString(),
-    decision: "APPROVE",
-    synthetic_score: 0.041,
-    match_score: 0.941,
-    tool_status: "EXECUTED"
-  },
-  {
-    ts: new Date(Date.now() - 110000).toISOString(),
-    decision: "BLOCK_ALERT",
-    synthetic_score: 0.922,
-    match_score: 0.932,
-    tool_status: "LOCKED"
-  },
-  {
-    ts: new Date(Date.now() - 240000).toISOString(),
-    decision: "APPROVE (Tier-2)",
-    synthetic_score: 0.082,
-    match_score: 0.918,
-    tool_status: "UNLOCKED"
-  },
-  {
-    ts: new Date(Date.now() - 420000).toISOString(),
-    decision: "APPROVE",
-    synthetic_score: 0.051,
-    match_score: 0.935,
-    tool_status: "EXECUTED"
-  },
-  {
-    ts: new Date(Date.now() - 680000).toISOString(),
-    decision: "BLOCK_ALERT",
-    synthetic_score: 0.884,
-    match_score: 0.879,
-    tool_status: "LOCKED"
-  }
-];
-
 function renderAuditRows(rows) {
   const tbody = $("auditBody");
   if (!tbody) return;
-  const list = (rows && rows.length) ? rows : DEFAULT_DEMO_AUDIT_LOGS;
+  const list = Array.isArray(rows) ? rows : [];
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">No voice checks recorded.</td></tr>';
+    return;
+  }
 
   tbody.innerHTML = list.map((r) => {
     const rawTs = r.ts || r.time || r.created_at || "";
@@ -2837,7 +2275,7 @@ function renderAuditRows(rows) {
     if (typeof synthVal === "number") s = (synthVal * 100).toFixed(0) + "%";
     if (typeof matchVal === "number") m = (matchVal * 100).toFixed(0) + "%";
 
-    const tool = r.tool_status || r.tool?.status || "LOCKED";
+    const tool = r.tool_status || r.tool?.status || "—";
 
     const decColor = d === "APPROVE" || d.includes("APPROVE")
       ? "text-emerald-400 font-bold"
@@ -2861,23 +2299,12 @@ async function refreshAudit() {
     const rows = Array.isArray(data) ? data : (data.logs || data.rows || data.audit || []);
     renderAuditRows(rows);
   } catch (e) {
-    const tbody = $("auditBody");
-    if (tbody && (!tbody.children.length || tbody.innerHTML.includes("No audit records"))) {
-      renderAuditRows(DEFAULT_DEMO_AUDIT_LOGS);
-    }
+    renderAuditRows([]);
   }
 }
 
 $("btnRefreshStats")?.addEventListener("click", refreshStats);
 $("btnRefreshAudit")?.addEventListener("click", refreshAudit);
-
-// Editable Rate Assumption
-$("costAssumption")?.addEventListener("input", () => {
-  updateSlide4Counters(lastTelemetryStats);
-});
-$("costAssumption")?.addEventListener("change", () => {
-  updateSlide4Counters(lastTelemetryStats);
-});
 
 // ========== 11. MULTILINGUAL & DEVICE SELECTOR CONTROLLERS ==========
 function setLanguage(lang) {
@@ -2901,12 +2328,9 @@ function setLanguage(lang) {
   // Localized hint and primary button CTA (Zero Jargon)
   const cfg = (typeof window !== "undefined" && window.LANGUAGES && window.LANGUAGES[currentLang]) || null;
   if (cfg) {
-    if ($("statusReason")) {
-      $("statusReason").textContent = cfg.speak_cta || "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: \"ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ\"";
-    }
-    if ($("recordHint")) {
-      $("recordHint").textContent = cfg.speak_cta || "ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಕನಿಷ್ಠ 4 ಸೆಕೆಂಡುಗಳ ಕಾಲ ಮಾತನಾಡಿ.";
-    }
+    const instruction = currentLang === "kn" ? "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಸ್ಪಷ್ಟವಾಗಿ ಮಾತನಾಡಿ." : currentLang === "hi" ? "बटन दबाकर स्पष्ट रूप से बोलें।" : "Tap the microphone and speak clearly.";
+    if ($("statusReason")) $("statusReason").textContent = instruction;
+    if ($("recordHint")) $("recordHint").textContent = instruction;
   }
 
   // Update primary Speak button label (Clean, single language, no clipping)
@@ -2927,92 +2351,7 @@ function setLanguage(lang) {
   }
 
   // Regenerate challenge words in selected script
-  generateChallenge();
-}
-
-function setDevice(device) {
-  currentDevice = device || "phone1";
-  document.querySelectorAll(".device-btn").forEach((btn) => {
-    if (btn.dataset.device === currentDevice) {
-      btn.className = "device-btn active rounded-lg px-2.5 py-1 font-bold text-xs bg-ink text-paper transition";
-    } else {
-      btn.className = "device-btn rounded-lg px-2.5 py-1 font-medium text-xs text-muted hover:text-ink transition";
-    }
-  });
-
-  const notice = $("phone2CloneNotice");
-  const attackerBanner = $("phone2AttackerBanner");
-  const authenticBanner = $("phone1AuthenticBanner");
-  const speakerBadge = $("currentSpeakerBadge");
-
-  if (currentDevice === "phone2") {
-    if (notice) notice.classList.remove("hidden");
-    if (attackerBanner) attackerBanner.classList.remove("hidden");
-    if (authenticBanner) authenticBanner.classList.add("hidden");
-    if (speakerBadge) speakerBadge.textContent = "🚨 Phone 2: Attacker Line (Impostor)";
-    setStatusCard(null, "🚨 Phone 2 (Attacker Line Active): Tap 'Send Consented Clone Clip' below to test live AI voice clone defense.");
-  } else {
-    currentDevice = "phone1";
-    currentSpeakerId = "kisan_farmer_01";
-    currentSpeakerName = "Ramesh Patel (Kisan Account)";
-    if (notice) notice.classList.add("hidden");
-    if (attackerBanner) attackerBanner.classList.add("hidden");
-    if (authenticBanner) authenticBanner.classList.remove("hidden");
-    if (speakerBadge) speakerBadge.textContent = "👤 Phone 1: Ramesh Patel (Enrolled Farmer)";
-    setStatusCard(null, "👤 Phone 1 (Enrolled Farmer): Tap 'Check this voice' or hold Speak to verify biometrics in <300ms.");
-  }
-}
-
-async function sendConsentedCloneClip() {
-  showOverlay(`Testing Consented ${currentLang.toUpperCase()} Clone Clip (DetectifAI Vocoder Defense)…`);
-  try {
-    currentSource = "clone_clip";
-    const filename = `${currentLang === 'kn' ? 'kannada' : currentLang === 'hi' ? 'hindi' : 'english'}_vocoder_clone.wav`;
-    const clipFile = await loadAudioFixture(`clips/${currentLang}/clone/${filename}`)
-                  || await loadAudioFixture(`clips/${currentLang}/clone/${currentLang}_vocoder_clone.wav`)
-                  || await loadAudioFixture("farmer_clone_synthetic_5s.wav");
-
-    let data = null;
-    if (clipFile) {
-      try {
-        data = await apiCheck(clipFile, currentSpeakerId || "kisan_farmer_01", "TRANSFER_FUNDS", "1000", currentLang, "phone2", "clone_clip");
-      } catch (checkErr) {
-        data = null;
-      }
-    }
-
-    if (!data) {
-      try {
-        data = await safeApiFetch(`${BACKEND_URL}/api/demo/quick-test/clone`, { method: "POST" });
-      } catch (demoErr) {
-        data = null;
-      }
-    }
-
-    if (!data || !data.decision) {
-      data = {
-        decision: "BLOCK",
-        reason_key: "synthetic_blocked",
-        reason: "🛑 Fraudulent AI Voice Clone Blocked! High-frequency vocoder phase artifact detected. Payment tool held safe.",
-        detection: { synthetic_score: 0.945, is_synthetic: true, latency_ms: 190 },
-        verification: { match_score: 0.740, latency_ms: 185 },
-        tool: { status: "LOCKED" },
-        cost: { est_inr: 20.0, steps_skipped: 1 }
-      };
-    }
-
-    renderCheckResponse(data);
-    const blockText = (window.getReasonText && window.getReasonText(currentLang, "synthetic_blocked"))
-      || "🛑 Fraudulent AI Voice Clone Blocked! Payment tool safely locked.";
-    setStatusCard("BLOCK_ALERT", blockText);
-  } catch (err) {
-    showError(err.error || err.message || "Clone test blocked by fail-closed gate");
-  } finally {
-    currentSource = "live_mic";
-    hideOverlay();
-    refreshAudit();
-    refreshStats();
-  }
+  generateChallenge().catch(err => setChallengeStatus(err.message || "Challenge service unavailable.", true));
 }
 
 function renderConsoleEventsTable(events) {
@@ -3021,23 +2360,23 @@ function renderConsoleEventsTable(events) {
   const last5 = events.slice(-5).reverse();
   tbody.innerHTML = last5.map(ev => {
     const timeStr = ev.ts ? new Date(ev.ts).toLocaleTimeString() : new Date().toLocaleTimeString();
-    const spk = ev.speaker_id || "kisan_farmer_01";
-    const dec = ev.decision || "BLOCK";
+    const spk = ev.speaker_id || "—";
+    const dec = ev.decision || "—";
     const synth = ev.synthetic_score ?? ev.detection?.synthetic_score;
     const match = ev.match_score ?? ev.verification?.match_score;
-    const tool = ev.tool_status || (dec === "APPROVE" ? "EXECUTED" : "LOCKED");
+    const tool = ev.tool_status || "—";
 
     const decColor = (dec === "APPROVE" || dec === "PAY")
       ? "text-emerald-400 font-bold"
       : (dec === "STEP_UP" || dec === "EXTRA_CHECK" ? "text-amber-400 font-bold" : "text-red-400 font-bold");
-    const toolBadge = (tool === "EXECUTED" || dec === "APPROVE" || dec === "PAY")
+    const toolBadge = tool === "EXECUTED"
       ? '<span class="px-2 py-0.5 rounded-md bg-emerald-950 text-emerald-400 border border-emerald-500/40 text-xs font-bold">🔓 EXECUTED</span>'
-      : '<span class="px-2 py-0.5 rounded-md bg-red-950 text-red-400 border border-red-500/40 text-xs font-bold">🔒 LOCKED</span>';
+      : `<span class="px-2 py-0.5 rounded-md bg-slate-900 text-slate-400 border border-slate-700 text-xs font-bold">${tool}</span>`;
 
     return `
       <tr class="hover:bg-cream-2/40 transition">
         <td class="p-3 text-xs text-muted font-mono">${timeStr}</td>
-        <td class="p-3 font-medium text-xs">${spk.includes("farmer") ? "Ramesh Patel" : spk}</td>
+        <td class="p-3 font-medium text-xs">${spk}</td>
         <td class="p-3 ${decColor}">${dec}</td>
         <td class="p-3 font-mono font-bold ${synth >= 0.50 ? 'text-red-400' : 'text-emerald-400'}">${synth != null ? (synth * 100).toFixed(1) + '%' : '—'}</td>
         <td class="p-3 font-mono font-bold ${match >= 0.80 ? 'text-cyan-400' : 'text-amber-400'}">${match != null ? (match * 100).toFixed(1) + '%' : '—'}</td>
@@ -3066,12 +2405,21 @@ async function pollLatestState() {
     // 2. Slide 4 presentation counters
     if (data.stats) {
       updateSlide4Counters(data.stats);
-      if ($("consoleStepsSkipped")) $("consoleStepsSkipped").textContent = data.stats.agent_steps_skipped || 0;
-      if ($("consoleInrSaved")) $("consoleInrSaved").textContent = `₹${Math.round(data.stats.agent_time_saved_inr || 0)}`;
+      if ($("consoleStepsSkipped")) $("consoleStepsSkipped").textContent = data.stats.agent_steps_skipped ?? "—";
+      if ($("consoleInrSaved")) $("consoleInrSaved").textContent = data.stats.agent_time_saved_inr == null ? "—" : `₹${Number(data.stats.agent_time_saved_inr).toFixed(2)}`;
     }
 
     // 3. Process new events stream
     if (data.events && data.events.length > 0) {
+      if (lastEventId === null) {
+        // Existing audit rows may belong to earlier app activity. Establish a
+        // cursor without presenting those rows as checks from this session.
+        const priorEvents = data.events;
+        lastEventId = priorEvents[priorEvents.length - 1].event_id || priorEvents[priorEvents.length - 1].request_id;
+        const tbody = $("consoleEventsTableBody");
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-muted font-sans font-medium">No voice checks recorded in this session.</td></tr>';
+        return;
+      }
       lastEventId = data.events[data.events.length - 1].event_id || data.events[data.events.length - 1].request_id;
       data.events.forEach(ev => prependAuditRow(ev));
 
@@ -3080,9 +2428,9 @@ async function pollLatestState() {
       const synth = latest.synthetic_score ?? latest.detection?.synthetic_score;
       const match = latest.match_score ?? latest.verification?.match_score;
       const dec = latest.decision;
-      const tool = latest.tool_status || (dec === "APPROVE" ? "EXECUTED" : "LOCKED");
-      const detMs = latest.detection_latency_ms || latest.detection?.latency_ms || latest.latency_ms;
-      const verMs = latest.verification_latency_ms || latest.verification?.latency_ms;
+      const tool = latest.tool_status || "—";
+      const detMs = latest.detection_latency_ms ?? latest.detection?.latency_ms ?? latest.latency_ms;
+      const verMs = latest.verification_latency_ms ?? latest.verification?.latency_ms;
 
       if (synth != null || match != null) {
         updateGauges(
@@ -3116,12 +2464,12 @@ async function pollLatestState() {
       if (banner && bannerText) {
         if (dec === "APPROVE" || dec === "PAY") {
           banner.className = "w-full rounded-3xl border-4 border-emerald-500 bg-emerald-950/90 p-6 sm:p-8 text-center shadow-2xl transition-all duration-300";
-          bannerText.textContent = "🟢 PAY (TOOL UNLOCKED) · ₹1,000 APPROVED";
+          bannerText.textContent = "🟢 VOICE CHECK APPROVED";
           bannerText.className = "font-display text-3xl sm:text-5xl font-black tracking-wide text-emerald-400 uppercase";
           if (bannerDot) bannerDot.className = "size-5 rounded-full bg-emerald-400 animate-pulse";
         } else if (dec === "BLOCK" || dec === "BLOCK_ALERT") {
           banner.className = "w-full rounded-3xl border-4 border-red-500 bg-red-950/90 p-6 sm:p-8 text-center shadow-2xl transition-all duration-300";
-          bannerText.textContent = "🔴 BLOCKED (SYNTHETIC CLONE DETECTED) · LLM SKIPPED";
+          bannerText.textContent = "🔴 VOICE CHECK BLOCKED";
           bannerText.className = "font-display text-3xl sm:text-5xl font-black tracking-wide text-red-400 uppercase";
           if (bannerDot) bannerDot.className = "size-5 rounded-full bg-red-400 animate-ping";
         } else if (dec === "STEP_UP" || dec === "EXTRA_CHECK") {
@@ -3137,48 +2485,42 @@ async function pollLatestState() {
         $("consoleSynthScore").textContent = `${(synth * 100).toFixed(1)}%`;
         $("consoleSynthScore").className = "font-mono text-6xl sm:text-7xl font-black " + (synth >= 0.50 ? "text-red-400" : "text-emerald-400");
       }
-      if ($("consoleDetLatency")) {
-        $("consoleDetLatency").textContent = detMs != null ? `⚡ ${detMs} ms` : "⚡ 142 ms";
-      }
+      if ($("consoleDetLatency")) $("consoleDetLatency").textContent = detMs != null ? `⚡ ${detMs} ms` : "—";
 
       if ($("consoleMatchScore") && match != null) {
         $("consoleMatchScore").textContent = `${(match * 100).toFixed(1)}%`;
         $("consoleMatchScore").className = "font-mono text-6xl sm:text-7xl font-black " + (match >= 0.80 ? "text-cyan-400" : (match >= 0.53 ? "text-amber-400" : "text-red-400"));
       }
-      if ($("consoleVerLatency")) {
-        $("consoleVerLatency").textContent = verMs != null ? `⚡ ${verMs} ms` : "⚡ 98 ms";
-      }
+      if ($("consoleVerLatency")) $("consoleVerLatency").textContent = verMs != null ? `⚡ ${verMs} ms` : "—";
 
       // Card 3: Action Gate Status & Spoken Transcript
       const toolBadge = $("consoleToolStatusBadge");
       const toolText = $("consoleToolStatusText");
       const toolIcon = $("consoleToolLockIcon");
       if (toolBadge && toolText && toolIcon) {
-        if (tool === "EXECUTED" || dec === "APPROVE" || dec === "PAY") {
+        if (tool === "EXECUTED") {
           toolBadge.className = "rounded-2xl px-5 py-2 text-base sm:text-lg font-black tracking-wide border-2 bg-emerald-950 border-emerald-500 text-emerald-300 flex items-center gap-2";
           toolIcon.textContent = "🔓";
-          toolText.textContent = "EXECUTED: ₹1,000 paid to IFFCO Fertilizer Co-op";
+          toolText.textContent = "Downstream action executed (reported by API)";
+        } else if (tool === "—") {
+          toolBadge.className = "rounded-2xl px-5 py-2 text-base sm:text-lg font-black tracking-wide border-2 bg-slate-900 border-slate-700 text-slate-300 flex items-center gap-2";
+          toolIcon.textContent = "•";
+          toolText.textContent = "No downstream action status reported";
         } else {
           toolBadge.className = "rounded-2xl px-5 py-2 text-base sm:text-lg font-black tracking-wide border-2 bg-red-950 border-red-500 text-red-300 flex items-center gap-2";
           toolIcon.textContent = "🔒";
-          toolText.textContent = "HARD-LOCKED (ZERO FRAUD DEBITED)";
+          toolText.textContent = `Downstream action status: ${tool}`;
         }
       }
 
       const transcriptBox = $("consoleTranscriptBox");
       const bypassNote = $("consoleLlmBypassNote");
       if (transcriptBox && bypassNote) {
-        if (dec === "BLOCK" || dec === "BLOCK_ALERT") {
-          transcriptBox.innerHTML = `<span class="text-red-400 font-mono font-bold tracking-wide">[LLM Step Skipped - Zero Tokens - ₹20 Compute Saved]</span>`;
-          bypassNote.textContent = "Pre-LLM Zero-Trust Gate";
-          bypassNote.className = "font-mono font-bold text-red-400";
-        } else {
-          const userTxt = latest.transcript || latest.user_text || "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ";
-          const trans = latest.translation || "Send ₹1,000 to IFFCO Fertilizer Co-op";
-          transcriptBox.innerHTML = `🗣️ <span class="text-ink dark:text-cream ml-1">${userTxt}</span> <span class="text-muted ml-2 font-normal font-sans text-base">→ [English: "${trans}"]</span>`;
-          bypassNote.textContent = "NVIDIA Nemotron NIM Executed";
-          bypassNote.className = "font-mono font-bold text-emerald-400";
-        }
+        const userTxt = latest.transcript || latest.user_text;
+        const trans = latest.translation;
+        transcriptBox.textContent = userTxt ? `🗣️ ${userTxt}${trans ? ` → [English: "${trans}"]` : ""}` : "No transcript reported";
+        bypassNote.textContent = latest.llm_status || "No language model status reported";
+        bypassNote.className = "font-mono font-bold text-slate-400";
       }
 
       // Card 4: 5-Row Recent Events Table
@@ -3189,15 +2531,14 @@ async function pollLatestState() {
   }
 }
 
-function switchStageMode(mode, device = "phone1") {
+function switchStageMode(mode) {
   const normMode = String(mode || "split").toLowerCase();
 
   // Highlight active role switcher pill
   document.querySelectorAll(".mode-switcher-pill").forEach(p => {
     const target = p.dataset.targetMode;
     const isAct = (normMode === "split" && target === "split") ||
-                  (normMode === "caller" && device === "phone1" && target === "phone1") ||
-                  (normMode === "caller" && device === "phone2" && target === "phone2") ||
+                  (normMode === "caller" && target === "phone1") ||
                   (normMode === "console" && target === "console");
     p.classList.toggle("active", isAct);
     if (isAct) {
@@ -3209,7 +2550,7 @@ function switchStageMode(mode, device = "phone1") {
 
   if (normMode === "console") {
     document.body.classList.add("mode-console");
-    document.body.classList.remove("mode-caller");
+    document.body.classList.remove("mode-caller", "mode-split");
     if ($("judgeConsoleView")) {
       $("judgeConsoleView").classList.remove("hidden");
       $("judgeConsoleView").classList.add("flex");
@@ -3228,7 +2569,7 @@ function switchStageMode(mode, device = "phone1") {
     }
   } else if (normMode === "caller") {
     document.body.classList.add("mode-caller");
-    document.body.classList.remove("mode-console");
+    document.body.classList.remove("mode-console", "mode-split");
     if ($("callerPhoneView")) {
       $("callerPhoneView").classList.remove("hidden");
       $("callerPhoneView").classList.add("flex");
@@ -3249,28 +2590,35 @@ function switchStageMode(mode, device = "phone1") {
       window._callerPollInterval = setInterval(pollCallerState, 1500);
     }
   } else {
-    // Default: Split View (Farmer Phone on left, Bank Console on right)
+    // Judge-ready split: the actual farmer phone experience beside bank telemetry.
     document.body.classList.remove("mode-caller", "mode-console");
+    document.body.classList.add("mode-split");
     if ($("standardView")) {
-      $("standardView").classList.remove("hidden");
+      $("standardView").classList.add("hidden");
     }
     if ($("callerPhoneView")) {
-      $("callerPhoneView").classList.add("hidden");
-      $("callerPhoneView").classList.remove("flex");
+      $("callerPhoneView").classList.remove("hidden");
+      $("callerPhoneView").classList.add("flex");
     }
     if ($("judgeConsoleView")) {
-      $("judgeConsoleView").classList.add("hidden");
-      $("judgeConsoleView").classList.remove("flex");
+      $("judgeConsoleView").classList.remove("hidden");
+      $("judgeConsoleView").classList.add("flex");
     }
     setView("split");
+    initCallerPhoneControls();
     pollLatestState();
+    pollCallerState();
     if (!window._consolePollInterval) {
       window._consolePollInterval = setInterval(pollLatestState, 1500);
+    }
+    if (!window._callerPollInterval) {
+      window._callerPollInterval = setInterval(pollCallerState, 1500);
     }
   }
 }
 
 let lastCallerNotifiedEventId = null;
+let callerStatePrimed = false;
 
 async function pollCallerState() {
   try {
@@ -3278,12 +2626,27 @@ async function pollCallerState() {
       ? `${BACKEND_URL}/api/latest-state?since=${lastCallerNotifiedEventId}`
       : `${BACKEND_URL}/api/latest-state`;
     const data = await safeApiFetch(url);
-    if (!data || !data.events || data.events.length === 0) return;
+    if (!data || !Array.isArray(data.events)) return;
+
+    // Ignore audit history already present when this page opens. Only alert on a
+    // new event observed after the farmer view is active.
+    if (!callerStatePrimed) {
+      const priorEvent = data.events[data.events.length - 1];
+      lastCallerNotifiedEventId = priorEvent?.event_id || priorEvent?.request_id || null;
+      callerStatePrimed = true;
+      return;
+    }
+    if (data.events.length === 0) return;
 
     const latest = data.events[data.events.length - 1];
     const evId = latest.event_id || latest.request_id;
     if (evId === lastCallerNotifiedEventId) return;
     lastCallerNotifiedEventId = evId;
+
+    const agentBadge = $("callerAgentBadge");
+    if (agentBadge && latest.badge === "VERIFIED_AGENT") {
+      agentBadge.textContent = "🛡️ Verified Bank Agent";
+    }
 
     const dec = latest.decision;
     const lang = (currentLang || "kn").toLowerCase();
@@ -3301,15 +2664,16 @@ async function pollCallerState() {
         card.classList.add("status-block");
       }
       if (emoji) emoji.textContent = "🛑";
+      const syntheticDetected = latest.reason_key === "synthetic_blocked" || latest.detection?.is_synthetic === true;
       if (title) {
-        title.textContent = lang === "kn"
-          ? "🛑 ಎಚ್ಚರಿಕೆ! ನಕಲಿ (AI) ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ"
-          : (lang === "hi" ? "🛑 सावधान! नकली (AI) आवाज़ पकड़ी गई" : "🛑 Alert! AI Voice Clone Attempt Blocked");
+        title.textContent = syntheticDetected
+          ? (lang === "kn" ? "🛑 ಸಂಶ್ಲೇಷಿತ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ" : (lang === "hi" ? "🛑 सिंथेटिक आवाज़ मिली" : "Synthetic voice detected"))
+          : (lang === "kn" ? "🛑 ಧ್ವನಿ ಪರಿಶೀಲನೆ ಪೂರ್ಣಗೊಳ್ಳಲಿಲ್ಲ" : (lang === "hi" ? "🛑 आवाज़ की जाँच पूरी नहीं हुई" : "Voice check could not be completed"));
       }
       if (reason) {
-        reason.textContent = lang === "kn"
-          ? "ಯಾರೋ ನಿಮ್ಮ ಧ್ವನಿ ನಕಲು ಮಾಡಲು ಯತ್ನಿಸಿದ್ದಾರೆ · ನಿಮ್ಮ ಹಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹0 Debited)"
-          : (lang === "hi" ? "किसी ने आपकी आवाज़ की नकल करने की कोशिश की · आपकी बचत सुरक्षित है" : "Someone attempted to clone your voice · Your money is safe (₹0 Debited)");
+        reason.textContent = syntheticDetected
+          ? (lang === "kn" ? "ಸಂಶ್ಲೇಷಿತ ಧ್ವನಿ ಎಂದು ಪತ್ತೆಯಾಗಿದೆ. ಯಾವುದೇ ಮುಂದಿನ ಕ್ರಮ ಅನುಮೋದಿಸಲ್ಪಟ್ಟಿಲ್ಲ." : (lang === "hi" ? "सिंथेटिक आवाज़ मिली। कोई आगे की कार्रवाई स्वीकृत नहीं हुई।" : "Synthetic voice detected. No downstream action was approved."))
+          : (lang === "kn" ? "ಈ ಧ್ವನಿ ಪರಿಶೀಲನೆಯಲ್ಲಿ ಮುಂದಿನ ಕ್ರಮ ಅನುಮೋದಿಸಲ್ಪಟ್ಟಿಲ್ಲ." : (lang === "hi" ? "इस आवाज़ जाँच में आगे की कार्रवाई स्वीकृत नहीं हुई।" : "No downstream action was approved by this voice check."));
       }
       if (box) box.classList.add("hidden");
       speakVoiceAssistant("blocked");
@@ -3327,13 +2691,13 @@ async function pollCallerState() {
       if (emoji) emoji.textContent = "✅";
       if (title) {
         title.textContent = lang === "kn"
-          ? "✅ ಧ್ವನಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ! ₹1,000 ಪಾವತಿ ಅನುಮೋದಿಸಲಾಗಿದೆ"
-          : (lang === "hi" ? "✅ असली आवाज़ प्रमाणित! ₹1,000 भुगतान सफल हुआ" : "✅ Voice Verified! ₹1,000 Payment Approved");
+          ? "✅ ಧ್ವನಿ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿಯಾಗಿದೆ"
+          : (lang === "hi" ? "✅ आवाज़ की जाँच सफल हुई" : "✅ Voice check passed");
       }
       if (reason) {
         reason.textContent = lang === "kn"
-          ? "ನಿಮ್ಮ ನೈಜ ಧ್ವನಿ ದೃಢಪಟ್ಟಿದೆ · ಅಧಿಕೃತ NPCI 123Pay"
-          : (lang === "hi" ? "आपकी असली आवाज़ सत्यापित · आधिकारिक NPCI 123Pay" : "Human voice verified · Official NPCI 123Pay");
+          ? "ಧ್ವನಿ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿಯಾಗಿದೆ."
+          : (lang === "hi" ? "आवाज़ की जाँच सफल हुई।" : "The voice check passed.");
       }
       if (box) box.classList.add("hidden");
       speakVoiceAssistant("approved");
@@ -3363,74 +2727,9 @@ function initRoleSwitcherPills() {
     }
   });
 
-  // Wire up Bank Console live clone attack injection button
-  const consoleCloneBtn = $("consoleBtnInjectClone");
-  if (consoleCloneBtn) {
-    consoleCloneBtn.onclick = () => {
-      sendConsentedCloneClip();
-    };
-  }
-
-  // Initialize Local Wi-Fi Phone QR modal, virtual clock, and keypad
-  initPhoneQrModal();
+  // Initialize the local caller clock and keypad
   initVirtualPhoneClock();
   init123PayKeypadToggle();
-}
-
-function initPhoneQrModal() {
-  const btnShow = $("btnShowPhoneQR");
-  const modal = $("phoneQrModal");
-  const btnClose = $("btnClosePhoneQR");
-  const backdrop = $("phoneQrModalBackdrop");
-  const urlInput = $("phoneLanUrlInput");
-  const btnCopy = $("btnCopyPhoneUrl");
-  const btnCopyText = $("btnCopyPhoneUrlText");
-  const qrContainer = $("qrCodeContainer");
-
-  const detectedHost = (window.location.hostname && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
-    ? `${window.location.hostname}:8000`
-    : "10.80.20.113:8000";
-  const callerUrl = `http://${detectedHost}/?mode=caller`;
-
-  if (urlInput) {
-    urlInput.value = callerUrl;
-  }
-
-  if (qrContainer) {
-    qrContainer.innerHTML = `<img src="/api/qr-code.svg?url=${encodeURIComponent(callerUrl)}" onerror="this.src='/qr_code_phone.svg'" class="size-48 mx-auto" alt="Phone Wi-Fi QR Code" />`;
-  }
-
-  if (btnShow && modal) {
-    btnShow.onclick = () => {
-      modal.classList.remove("hidden");
-    };
-  }
-
-  const closeModal = () => {
-    if (modal) modal.classList.add("hidden");
-  };
-
-  if (btnClose) btnClose.onclick = closeModal;
-  if (backdrop) backdrop.onclick = closeModal;
-
-  if (btnCopy && urlInput) {
-    btnCopy.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(urlInput.value);
-        if (btnCopyText) btnCopyText.textContent = "✅ Copied!";
-        setTimeout(() => {
-          if (btnCopyText) btnCopyText.textContent = "📋 Copy Link";
-        }, 2000);
-      } catch (e) {
-        urlInput.select();
-        document.execCommand("copy");
-        if (btnCopyText) btnCopyText.textContent = "✅ Copied!";
-        setTimeout(() => {
-          if (btnCopyText) btnCopyText.textContent = "📋 Copy Link";
-        }, 2000);
-      }
-    };
-  }
 }
 
 function initVirtualPhoneClock() {
@@ -3509,30 +2808,19 @@ function initCallerPhoneControls() {
   const callerEnroll = $("callerBtnEnroll");
   if (callerEnroll) {
     callerEnroll.onclick = async () => {
-      const enrollRec = $("btnEnrollRecord") || $("btnEnroll");
-      if (enrollRec) {
-        enrollRec.click();
-      } else {
-        showOverlay("Enrolling Voice Profile (DetectifAI Eidos Engine)…");
-        try {
-          await safeApiFetch(`${BACKEND_URL}/api/demo/quick-test/enroll`, { method: "POST" });
-          setStatusCard("APPROVE", "Voice Biometric Enrollment Complete · Ramesh Patel (Kisan Account #4192) secured.");
-        } catch (e) {
-          setStatusCard("APPROVE", "Voice Biometric Profile Active (Ramesh Patel · 16s Enrollment).");
-        } finally {
-          hideOverlay();
-        }
+      if (!isRecording) {
+        await startRecording("enroll");
+        return;
       }
+      if (recordTarget !== "enroll") {
+        showError("Stop the current recording before enrolling a voice profile.", false);
+        return;
+      }
+      await stopRecording();
+      $("btnEnroll")?.click();
     };
   }
 
-  // Wire up subtle Test Clone Attack button on Phone 1
-  const callerClone = $("callerBtnClone");
-  if (callerClone) {
-    callerClone.onclick = () => {
-      sendConsentedCloneClip();
-    };
-  }
 }
 
 // ========== 10. SYSTEM INITIALIZATION & MULTI-DEVICE PROTOCOL ==========
@@ -3546,8 +2834,8 @@ function initCallerPhoneControls() {
   setStatusCard(null);
   renderPhraseChips();
 
-  // Initialize visualizers with baseline radar
-  renderGateMatrix(0.74, 0.945, "BLOCK_ALERT");
+  // Keep scores empty until a live provider response arrives.
+  renderGateMatrix(null, null, null);
   renderSpectrogramSnapshot(false, "STANDBY");
 
   // Wire Language Selector Bar
@@ -3555,11 +2843,7 @@ function initCallerPhoneControls() {
     btn.addEventListener("click", () => setLanguage(btn.dataset.lang));
   });
 
-  // Wire Device Selector Bar & Prominent Buttons
-  $("btnDevicePhone1")?.addEventListener("click", () => setDevice("phone1"));
-  $("btnDevicePhone2")?.addEventListener("click", () => setDevice("phone2"));
-  $("btnSendCloneClip")?.addEventListener("click", sendConsentedCloneClip);
-  $("btnSendCloneClipProminent")?.addEventListener("click", sendConsentedCloneClip);
+  // The farmer and bank are the only product views. Test attacks use labeled controls.
 
   // Wire Backend Configuration Modal
   $("btnModalSaveBackend")?.addEventListener("click", () => applyBackendUrl($("modalBackendUrlInput")?.value));
@@ -3577,17 +2861,16 @@ function initCallerPhoneControls() {
 
   // Set default speaker profile
   if ($("currentSpeakerLabel")) {
-    $("currentSpeakerLabel").textContent = "Ramesh Patel (Kisan Account)";
+    $("currentSpeakerLabel").textContent = currentSpeakerName || "No voice profile enrolled";
   }
 
   // Initialize 1-Tap Role Switcher Pills
   initRoleSwitcherPills();
 
-  // Initialize Active View & Multi-Device Query Params (?mode=caller&device=phone1 / phone2 / ?mode=console)
+  // Initialize the farmer, bank console, or split view. Legacy device query values are ignored.
   try {
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get("mode");
-    const deviceParam = urlParams.get("device");
     const viewParam = urlParams.get("view") || urlParams.get("tab") || window.location.hash.replace("#", "");
     const backendParam = urlParams.get("backend") || urlParams.get("api");
     const path = window.location.pathname.toLowerCase();
@@ -3607,7 +2890,7 @@ function initCallerPhoneControls() {
     if (modeParam === "console" || path.includes("judge") || path.includes("console")) {
       switchStageMode("console");
     } else if (modeParam === "caller") {
-      switchStageMode("caller", deviceParam || "phone1");
+      switchStageMode("caller");
     } else if (viewParam && ["farmer", "judge", "split"].includes(viewParam.toLowerCase())) {
       switchStageMode(viewParam.toLowerCase());
     } else {
@@ -3616,14 +2899,17 @@ function initCallerPhoneControls() {
     }
 
     if (urlParams.get("lang")) setLanguage(urlParams.get("lang"));
-    if (deviceParam && modeParam !== "caller") setDevice(deviceParam);
   } catch (e) {
     switchStageMode("split");
   }
 
   // Initial queries
   await apiHealth();
-  await generateChallenge();
+  try {
+    await generateChallenge();
+  } catch (err) {
+    setChallengeStatus(err.message || "Challenge service unavailable.", true);
+  }
   await refreshStats();
   await refreshAudit();
 

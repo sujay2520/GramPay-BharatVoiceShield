@@ -648,6 +648,66 @@ pre::-webkit-scrollbar,
 }
 
 /* --------------------------------------------------------------------------
+   0. Mode: Judge Split (Farmer Phone + Bank Console)
+   -------------------------------------------------------------------------- */
+body.mode-split main {
+  display: grid !important;
+  grid-template-columns: minmax(19rem, 28rem) minmax(0, 1fr);
+  align-items: start;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 100rem;
+  margin: 0 auto;
+}
+
+body.mode-split #topRoleSwitcherContainer {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+  margin-bottom: 0;
+}
+
+body.mode-split #standardView {
+  display: none !important;
+}
+
+body.mode-split #callerPhoneView {
+  display: flex !important;
+  grid-column: 1;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
+  align-self: start;
+}
+
+body.mode-split #judgeConsoleView {
+  display: flex !important;
+  grid-column: 2;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  body.mode-split main {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 42rem;
+  }
+
+  body.mode-split #topRoleSwitcherContainer,
+  body.mode-split #callerPhoneView,
+  body.mode-split #judgeConsoleView {
+    grid-column: 1;
+  }
+
+  body.mode-split #callerPhoneView {
+    max-width: 28rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
    1. Mode: Caller (Physical Mobile Phone Card View)
    -------------------------------------------------------------------------- */
 

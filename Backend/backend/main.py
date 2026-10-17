@@ -232,10 +232,10 @@ async def enroll_speaker_endpoint(
             is_demo=is_demo_run
         )
 
-        credits_remaining = detectif_client.remaining_credits or 4950
+        credits_remaining = detectif_client.remaining_credits
         try:
             credits_data = detectif_client.get_credits()
-            credits_remaining = credits_data.get("available") or credits_remaining
+            credits_remaining = credits_data.get("available", credits_remaining)
         except Exception:
             pass
 
@@ -375,8 +375,8 @@ async def check_audio_endpoint(
     audio: Optional[UploadFile] = File(None),
     file: Optional[UploadFile] = File(None),
     speaker_id: str = Form("senior_user_01"),
-    action: str = Form("TRANSFER_FUNDS"),
-    amount: Optional[float] = Form(1000.0),
+    action: str = Form("VOICE_VERIFY"),
+    amount: Optional[float] = Form(None),
     lang: Optional[str] = Form("kn"),
     device: Optional[str] = Form("phone1"),
     source: Optional[str] = Form("live_mic")
@@ -402,10 +402,10 @@ async def check_audio_endpoint(
         prep_bytes, mime_type, filename = prepare_audio_for_detectif(raw_bytes, audio_upload.filename or "check.wav")
         
         # Read live credits before inference
-        initial_credits = detectif_client.remaining_credits or 4950
+        initial_credits = detectif_client.remaining_credits
         try:
             credits_data = detectif_client.get_credits()
-            initial_credits = credits_data.get("available") or initial_credits
+            initial_credits = credits_data.get("available", initial_credits)
         except Exception:
             pass
 
@@ -445,14 +445,6 @@ async def check_audio_endpoint(
                     "raw": {"error": str(err)},
                     "latency_ms": 0
                 }
-
-        # Check acoustic profile fallback if live API has insufficient credits
-        if api_error and ("insufficient_credits" in api_error.lower() or "credits" in api_error.lower()):
-            acoustic_profile = _analyze_audio_acoustics(prep_bytes, filename, speaker_id, audio_source)
-            if acoustic_profile:
-                detection_res = acoustic_profile["detection"]
-                verification_res = acoustic_profile["verification"]
-                api_error = None
 
         # ----------------------------------------------------------------------
         # Measure Gate Overhead Separately
@@ -524,7 +516,7 @@ async def check_audio_endpoint(
                 "amount": intent_res["amount"],
                 "payee": intent_res["payee"]
             }
-            tool_status = "EXECUTED"
+            tool_status = "VOICE_VERIFIED"
             steps_skipped = 0
             est_inr = 0.0
 
@@ -535,7 +527,7 @@ async def check_audio_endpoint(
             est_inr = round(1 * GLOBAL_ASSUMED_MINUTES * GLOBAL_ASSUMED_RS_PER_MIN, 2)
 
         localized_reason = get_localized_reason(reason_key, norm_lang)
-        credits_remaining = max(0, initial_credits - (2 if not api_error else 0))
+        credits_remaining = max(0, initial_credits - (2 if not api_error else 0)) if initial_credits is not None else None
 
         # Build Contract Response Object
         contract_response = {
@@ -562,9 +554,9 @@ async def check_audio_endpoint(
             "transcript": transcript_payload,
             "intent": intent_payload,
             "tool": {
-                "name": "pay_upi",
+                "name": "downstream_action",
                 "status": tool_status,
-                "result": {"transaction_id": f"TXN-NPCI-123PAY-{int(time.time()*1000)}", "status": "COMPLETED", "amount": 1000.0, "payee": "IFFCO Fertilizer Co-op"} if tool_status == "EXECUTED" else None
+                "result": None
             },
             "cost": {
                 "steps_skipped": steps_skipped,
@@ -647,10 +639,10 @@ async def submit_challenge_endpoint(
         raw_challenge_bytes = await audio_upload.read()
         prep_bytes, mime_type, filename = prepare_audio_for_detectif(raw_challenge_bytes, audio_upload.filename or "challenge.wav")
 
-        initial_credits = detectif_client.remaining_credits or 4950
+        initial_credits = detectif_client.remaining_credits
         try:
             credits_data = detectif_client.get_credits()
-            initial_credits = credits_data.get("available") or initial_credits
+            initial_credits = credits_data.get("available", initial_credits)
         except Exception:
             pass
 
@@ -674,14 +666,6 @@ async def submit_challenge_endpoint(
                 if not api_error:
                     api_error = str(err)
                 verification_res = {"status": "error", "error": str(err), "match_score": None, "latency_ms": 0, "raw": {}}
-
-        # Check acoustic profile fallback if live API has insufficient credits
-        if api_error and ("insufficient_credits" in api_error.lower() or "credits" in api_error.lower()):
-            acoustic_profile = _analyze_audio_acoustics(prep_bytes, filename, speaker_id, source)
-            if acoustic_profile:
-                detection_res = acoustic_profile["detection"]
-                verification_res = acoustic_profile["verification"]
-                api_error = None
 
         t_gate_start = time.perf_counter()
         synth_val = detection_res.get("synthetic_score") if detection_res.get("synthetic_score") is not None else detection_res.get("score")
@@ -721,7 +705,7 @@ async def submit_challenge_endpoint(
                 "amount": intent_res["amount"],
                 "payee": intent_res["payee"]
             }
-            tool_status = "EXECUTED"
+            tool_status = "VOICE_VERIFIED"
             steps_skipped = 0
             est_inr = 0.0
         else:
@@ -731,7 +715,7 @@ async def submit_challenge_endpoint(
 
         # Cleanup cached challenge
         remove_pending_challenge(challenge_id)
-        credits_remaining = max(0, initial_credits - (2 if not api_error else 0))
+        credits_remaining = max(0, initial_credits - (2 if not api_error else 0)) if initial_credits is not None else None
 
         contract_response = {
             "event_id": event_id,
@@ -758,9 +742,9 @@ async def submit_challenge_endpoint(
             "transcript": transcript_payload,
             "intent": intent_payload,
             "tool": {
-                "name": "pay_upi",
+                "name": "downstream_action",
                 "status": tool_status,
-                "result": {"transaction_id": f"TXN-NPCI-123PAY-{int(time.time()*1000)}", "status": "COMPLETED", "amount": 1000.0, "payee": "IFFCO Fertilizer Co-op"} if tool_status == "EXECUTED" else None
+                "result": None
             },
             "cost": {
                 "steps_skipped": steps_skipped,
@@ -824,7 +808,12 @@ async def get_latest_state_endpoint(since: Optional[str] = Query(None)):
     events = get_events_since(since_event_id=since, limit=50)
     stats = get_contract_stats(GLOBAL_ASSUMED_RS_PER_MIN, GLOBAL_ASSUMED_MINUTES)
 
-    credits_remaining = detectif_client.remaining_credits if detectif_client.remaining_credits is not None else 4950
+    credits_remaining = detectif_client.remaining_credits
+    try:
+        credits_data = detectif_client.get_credits()
+        credits_remaining = credits_data.get("available", credits_remaining)
+    except Exception:
+        pass
 
     return {
         "events": events,

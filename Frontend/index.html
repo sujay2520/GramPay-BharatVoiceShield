@@ -115,73 +115,21 @@
             <span>📊</span>
             <span>Bank Console</span>
           </button>
-          <!-- Local Wi-Fi QR Pill (Direct local connection, no ngrok required) -->
-          <button type="button" id="btnShowPhoneQR"
-            class="inline-flex items-center gap-1.5 rounded-xl border-2 border-gold/50 bg-gold/15 hover:bg-gold/30 text-ink px-3 py-1.5 text-xs sm:text-sm font-bold shadow-2xs transition cursor-pointer whitespace-nowrap"
-            title="Scan QR Code to open on physical phone via BMSCE Wi-Fi">
-            <span>📲</span>
-            <span>Wi-Fi QR</span>
-          </button>
         </div>
       </div>
 
       <!-- Row 2: 4-Step Pipeline Flow Strip -->
-      <div class="pt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] sm:text-xs font-bold text-ink">
+          <div class="pt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] sm:text-xs font-bold text-ink">
         <span class="text-muted font-bold uppercase tracking-wider text-[10px] mr-1">Pipeline:</span>
-        <span class="rounded-lg bg-cream px-2 py-0.5 border border-line">1. Enroll Voice (5s)</span>
+        <span class="rounded-lg bg-cream px-2 py-0.5 border border-line">1. Enroll Voice</span>
         <span class="text-muted">&rarr;</span>
         <span class="rounded-lg bg-cream px-2 py-0.5 border border-line">2. Speak (ಕನ್ನಡ / हिन्दी / EN)</span>
         <span class="text-muted">&rarr;</span>
         <span class="rounded-lg bg-cream px-2 py-0.5 border border-line">3. DetectifAI Dual Check</span>
         <span class="text-muted">&rarr;</span>
-        <span class="rounded-lg bg-safe-bg text-safe px-2 py-0.5 border border-safe/30">4. Pay ₹1,000 or Block Clone</span>
+        <span class="rounded-lg bg-safe-bg text-safe px-2 py-0.5 border border-safe/30">4. Allow or block the request</span>
       </div>
     </section>
-
-    <!-- ========================================================================== -->
-    <!-- LOCAL WI-FI PHONE QR MODAL (Pure Client-Side, No ngrok Required)            -->
-    <!-- ========================================================================== -->
-    <div id="phoneQrModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div id="phoneQrModalBackdrop" class="fixed inset-0 bg-ink/60 transition-opacity"></div>
-      <div class="relative w-full max-w-md rounded-3xl border-3 border-line bg-paper p-6 sm:p-7 shadow-2xl z-10 flex flex-col items-center text-center space-y-4">
-        <div class="flex items-center justify-between w-full border-b border-line pb-3">
-          <div class="flex items-center gap-2 text-left">
-            <span class="text-2xl">📲</span>
-            <div>
-              <h3 class="font-display text-lg sm:text-xl font-bold text-ink">Test on Physical Phone</h3>
-              <p class="text-[11px] text-muted">Direct local Wi-Fi connection &bull; No ngrok required</p>
-            </div>
-          </div>
-          <button type="button" id="btnClosePhoneQR" class="size-8 rounded-full bg-cream border border-line text-ink font-bold hover:bg-cream-2 transition flex items-center justify-center cursor-pointer">&times;</button>
-        </div>
-
-        <p class="text-xs sm:text-sm text-muted">
-          Connect your phone to the same Wi-Fi (<strong>BMSCE / Campus / Hotspot</strong>) and scan this QR code with your phone camera:
-        </p>
-
-        <!-- QR Code Display Box -->
-        <div class="p-4 rounded-2xl bg-white border-2 border-line shadow-xs flex items-center justify-center">
-          <div id="qrCodeContainer" class="size-48 flex items-center justify-center">
-            <!-- Dynamic SVG QR Code injected by app.js -->
-          </div>
-        </div>
-
-        <!-- URL Input & 1-Click Copy Button -->
-        <div class="w-full space-y-2">
-          <div class="flex items-center gap-1.5 rounded-xl border-2 border-line bg-cream p-1.5">
-            <input type="text" id="phoneLanUrlInput" readonly value="http://10.80.20.113:8000/?mode=caller"
-              class="flex-1 bg-transparent px-2 text-xs font-mono font-bold text-ink outline-none select-all" />
-            <button type="button" id="btnCopyPhoneUrl"
-              class="px-3 py-1.5 rounded-lg bg-ink text-paper text-xs font-bold hover:bg-ink-soft active:scale-95 transition cursor-pointer shrink-0">
-              <span id="btnCopyPhoneUrlText">📋 Copy Link</span>
-            </button>
-          </div>
-          <p class="text-[10px] text-muted">
-            Tip: iOS &amp; Android camera apps open this directly. You can also paste it into Chrome.
-          </p>
-        </div>
-      </div>
-    </div>
 
     <!-- STANDARD FULL VIEW (Used by default / developer / tests) -->
     <div id="standardView">
@@ -200,14 +148,14 @@
               GramPay · BharatVoice Shield for NPCI Hello! UPI &amp; 123Pay
             </span>
             <span class="rounded-md bg-safe/20 px-2.5 py-0.5 text-xs font-bold text-safe flex items-center gap-1.5 border border-safe/30">
-              <span class="size-2 rounded-full bg-safe animate-pulse"></span> Secure Gateway Online · 16 kHz Audio
+              <span class="size-2 rounded-full bg-muted"></span> Checking local voice gateway
             </span>
           </div>
           <h1 class="font-display mt-2 text-3xl font-bold leading-tight text-ink md:text-5xl">
             Your voice is your <em class="text-gold italic font-serif">secure key.</em>
           </h1>
-          <p class="mt-2 max-w-2xl text-sm md:text-base text-muted leading-relaxed">
-            GramPay listens before the banking tool executes. Every call is screened for synthetic AI voice clones and speaker identity in under 300ms.
+        <p class="mt-2 max-w-2xl text-sm md:text-base text-muted leading-relaxed">
+            GramPay checks live caller audio before a connected bank service considers an action. This local app does not transfer money.
           </p>
         </div>
       </div>
@@ -284,11 +232,6 @@
             <button id="btnRefreshStats" type="button" class="inline-flex items-center gap-1 text-xs font-semibold text-gold hover:underline">
               <span>🔄</span> Refresh Telemetry
             </button>
-            <div class="flex items-center gap-1.5 text-xs text-muted">
-              <label for="costAssumption" class="text-[11px] font-semibold text-ink">Rate (₹/min):</label>
-              <input id="costAssumption" type="number" value="10" min="1" step="1"
-                class="w-14 rounded-lg border border-line bg-cream px-2 py-0.5 text-xs text-center font-mono font-bold text-ink outline-none focus:border-gold" />
-            </div>
           </div>
         </div>
 
@@ -296,147 +239,41 @@
           <!-- 1. Checks Run -->
           <div class="rounded-xl border border-line bg-cream/70 p-3.5 transition hover:shadow-xs">
             <span class="text-[11px] font-bold tracking-wider text-muted uppercase font-sans">Checks Run</span>
-            <p id="checks_run" class="mt-1 font-display text-2xl md:text-3xl font-bold text-ink">0</p>
-            <span class="text-[10px] text-muted font-sans block mt-0.5">Calls pre-gated &lt;300ms</span>
+            <p id="checks_run" class="mt-1 font-display text-2xl md:text-3xl font-bold text-ink">—</p>
+            <span class="text-[10px] text-muted font-sans block mt-0.5">Reported by backend</span>
           </div>
 
           <!-- 2. Clones Blocked -->
           <div class="rounded-xl border border-alert/30 bg-alert-bg/60 p-3.5 transition hover:shadow-xs">
             <span class="text-[11px] font-bold tracking-wider text-alert uppercase font-sans">Clones Blocked</span>
-            <p id="clones_blocked" class="mt-1 font-display text-2xl md:text-3xl font-bold text-alert">0</p>
-            <span class="text-[10px] text-alert/80 font-sans block mt-0.5">Vocoder synthetics</span>
+            <p id="clones_blocked" class="mt-1 font-display text-2xl md:text-3xl font-bold text-alert">—</p>
+            <span class="text-[10px] text-alert/80 font-sans block mt-0.5">Reported by backend</span>
           </div>
 
           <!-- 3. LLM Turns Saved -->
           <div class="rounded-xl border border-gold/40 bg-wait-bg/50 p-3.5 transition hover:shadow-xs">
             <span class="text-[11px] font-bold tracking-wider text-gold uppercase font-sans">LLM Turns Saved</span>
-            <p id="agent_steps_skipped" class="mt-1 font-display text-2xl md:text-3xl font-bold text-gold">0</p>
-            <span class="text-[10px] text-muted font-sans block mt-0.5">Inference avoided</span>
+            <p id="agent_steps_skipped" class="mt-1 font-display text-2xl md:text-3xl font-bold text-gold">—</p>
+            <span class="text-[10px] text-muted font-sans block mt-0.5">Reported by backend</span>
           </div>
 
           <!-- 4. INR Saved -->
           <div class="rounded-xl border border-safe/30 bg-safe-bg/60 p-3.5 transition hover:shadow-xs">
             <span class="text-[11px] font-bold tracking-wider text-safe uppercase font-sans">INR Saved</span>
-            <p id="agent_time_saved_inr" class="mt-1 font-display text-2xl md:text-3xl font-bold text-safe">₹0.00</p>
-            <span id="costAssumptionText" class="text-[10px] text-safe/80 font-sans block mt-0.5">Saved @ ₹10/min</span>
+            <p id="agent_time_saved_inr" class="mt-1 font-display text-2xl md:text-3xl font-bold text-safe">—</p>
+            <span id="costAssumptionText" class="text-[10px] text-safe/80 font-sans block mt-0.5">Reported by backend</span>
           </div>
         </div>
 
         <!-- Secondary counter targets required by app.js -->
         <div class="mt-3 pt-2 border-t border-line/60 flex items-center justify-between text-xs text-muted font-mono">
           <div class="flex items-center gap-3">
-            <span>Steps: <strong id="costSteps" class="text-ink">0</strong></span>
-            <span>Secs: <strong id="costSeconds" class="text-ink">0</strong>s</span>
-            <span>Saved: <strong id="costInr" class="text-safe">₹0.00</strong></span>
+            <span>Steps: <strong id="costSteps" class="text-ink">—</strong></span>
+            <span>Secs: <strong id="costSeconds" class="text-ink">—</strong></span>
+            <span>Saved: <strong id="costInr" class="text-safe">—</strong></span>
           </div>
-          <span class="text-[11px] font-sans text-muted hidden sm:inline">Aletheia + Eidos Dual-Stage Savings</span>
+          <span class="text-[11px] font-sans text-muted hidden sm:inline">Backend telemetry</span>
         </div>
-    </div>
-
-    <!-- ========================================================================== -->
-    <!-- 4. 1-CLICK LIVE JUDGE DEMO BAR (3 LARGE FRIENDLY HERO CARDS/BUTTONS)       -->
-    <!-- ========================================================================== -->
-    <div id="quickDemoSection" class="mx-auto mb-6 max-w-6xl">
-      <section class="rounded-2xl border-2 border-gold/40 bg-gradient-to-r from-cream via-paper to-cream p-4 md:p-6 shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-          <div class="flex items-center gap-2.5">
-            <span class="flex size-8 items-center justify-center rounded-xl bg-gold text-paper font-bold text-base shadow-xs">⚡</span>
-            <div>
-              <h2 class="font-display text-xl md:text-2xl font-bold text-ink">1-Click Live Judge Demo</h2>
-              <p class="text-xs md:text-sm text-muted">Instant one-touch evaluation scenarios designed for hackathon jury walkthroughs</p>
-            </div>
-          </div>
-          <span class="rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold uppercase tracking-wider border border-gold/30">
-            Jury Fast-Track
-          </span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-          <!-- 🟢 Case 1: Authentic Farmer Voice -->
-          <button type="button" id="btnQuickAuthentic"
-            class="hero-demo-card group relative text-left rounded-2xl border-2 border-safe/50 bg-safe-bg/60 hover:bg-safe-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs cursor-pointer">
-            <span id="demoCase1" class="hidden"></span>
-            <div>
-              <div class="flex items-center justify-between mb-2.5">
-                <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-safe uppercase">
-                  <span class="size-2.5 rounded-full bg-safe animate-pulse"></span> Case 1
-                </span>
-                <span class="rounded-full bg-safe text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
-                  Gate Approves
-                </span>
-              </div>
-              <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-safe transition">
-                Authentic Farmer Voice
-              </h3>
-              <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
-                Ramesh Patel pays <strong>₹1,000</strong> for fertilizer &rarr; Gate <strong>APPROVES</strong> in &lt;300ms, speaks voice confirmation.
-              </p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-safe/20 flex items-center justify-between text-xs font-bold text-safe">
-              <span class="flex items-center gap-1.5">
-                <span class="text-base">🟢</span> Run Authentic Payment
-              </span>
-              <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
-            </div>
-          </button>
-
-          <!-- 🔴 Case 2: AI Voice Clone Attack -->
-          <button type="button" id="btnQuickClone"
-            class="hero-demo-card group relative text-left rounded-2xl border-2 border-alert/50 bg-alert-bg/60 hover:bg-alert-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs cursor-pointer">
-            <span id="demoCase2" class="hidden"></span>
-            <div>
-              <div class="flex items-center justify-between mb-2.5">
-                <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-alert uppercase">
-                  <span class="size-2.5 rounded-full bg-alert animate-pulse"></span> Case 2
-                </span>
-                <span class="rounded-full bg-alert text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
-                  Blocks &lt;300ms
-                </span>
-              </div>
-              <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-alert transition">
-                AI Voice Clone Attack
-              </h3>
-              <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
-                Fraudulent neural clone &rarr; Gate <strong>BLOCKS</strong> in &lt;300ms, speaks clone warning, <strong>₹20 saved</strong>.
-              </p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-alert/20 flex items-center justify-between text-xs font-bold text-alert">
-              <span class="flex items-center gap-1.5">
-                <span class="text-base">🔴</span> Simulate Clone Attack
-              </span>
-              <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
-            </div>
-          </button>
-
-          <!-- 🟡 Case 3: Tier-2 Active Cognitive Challenge -->
-          <button type="button" id="btnQuickChallenge"
-            class="hero-demo-card group relative text-left rounded-2xl border-2 border-wait/50 bg-wait-bg/60 hover:bg-wait-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs cursor-pointer">
-            <span id="demoCase3" class="hidden"></span>
-            <div>
-              <div class="flex items-center justify-between mb-2.5">
-                <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-wait uppercase">
-                  <span class="size-2.5 rounded-full bg-wait animate-pulse"></span> Case 3
-                </span>
-                <span class="rounded-full bg-wait text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
-                  Cognitive Liveness
-                </span>
-              </div>
-              <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-wait transition">
-                Tier-2 Active Challenge
-              </h3>
-              <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
-                Noisy audio &rarr; Nemotron dynamic 4-word phrase &amp; response latency timer (&lt;800ms) &rarr; <strong>APPROVES</strong>.
-              </p>
-            </div>
-            <div class="mt-4 pt-3 border-t border-wait/20 flex items-center justify-between text-xs font-bold text-wait">
-              <span class="flex items-center gap-1.5">
-                <span class="text-base">🟡</span> Launch Active Challenge
-              </span>
-              <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
-            </div>
-          </button>
-        </div>
-      </section>
     </div>
 
     <!-- ========================================================================== -->
@@ -473,7 +310,7 @@
             </span>
             <div>
               <p class="text-xs font-black text-safe uppercase tracking-wider font-mono">
-                📞 CALL CONNECTED &bull; 080 4516 3666
+                Local voice check · Awaiting audio
               </p>
               <p class="text-[10px] text-muted font-sans">NPCI Hello! UPI / 123Pay Voice Gateway</p>
             </div>
@@ -488,18 +325,18 @@
         <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-line pb-4">
           <div>
             <span class="text-xs font-extrabold tracking-wider text-safe uppercase bg-safe-bg px-2.5 py-1 rounded-full border border-safe/30">
-              🛡️ 100% ಸುರಕ್ಷಿತ ಧ್ವನಿ ರಕ್ಷಣೆ / Safe Voice Line
+              🛡️ ಧ್ವನಿ ಭದ್ರತಾ ಪರಿಶೀಲನೆ / Voice Security Check
             </span>
             <h2 class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold text-ink mt-1.5">
               ಗ್ರಾಮಪೇ ಧ್ವನಿ ರಕ್ಷಣೆ · GramPay Voice Shield
             </h2>
-            <p class="text-sm sm:text-base text-ink/80 mt-1 font-medium">
-              ಹಿರಿಯ ನಾಗರಿಕರ ಸುರಕ್ಷಿತ ಧ್ವನಿ ಪಾವತಿ • Senior Citizen Voice Payment Gate
+              <p class="text-sm sm:text-base text-ink/80 mt-1 font-medium">
+              ಧ್ವನಿ ಪರಿಶೀಲನೆ / Voice identity and synthetic-audio check
             </p>
           </div>
           <span class="rounded-2xl bg-cream-2/80 border-2 border-line px-4 py-2 text-sm sm:text-base font-bold text-ink shadow-2xs flex items-center gap-2" id="currentSpeakerBadge">
             <span>👤</span>
-            <span>ರಮೇಶ್ ಪಟೇಲ್ / Ramesh Patel</span>
+            <span id="currentSpeakerBadgeName">Account holder</span>
           </span>
         </div>
 
@@ -514,7 +351,7 @@
                 ನಮಸ್ಕಾರ / नमस्ते / Good Morning
               </p>
               <h3 class="text-base sm:text-lg font-bold text-ink leading-tight">
-                ರಮೇಶ್ ಪಟೇಲ್ ಅವರೇ / Ramesh Patel
+                Voice security check
               </h3>
             </div>
           </div>
@@ -556,7 +393,7 @@
               <span>🌐</span> ನಿಮ್ಮ ಭಾಷೆ ಆಯ್ಕೆಮಾಡಿ / अपनी भाषा चुनें / Select Language:
             </span>
             <span class="text-xs sm:text-sm font-bold text-safe bg-safe-bg px-3 py-1 rounded-full border border-safe/30">
-              ✓ ಧ್ವನಿ ಸೇವೆ ಸಿದ್ಧವಾಗಿದೆ / Voice Ready
+              Select a language
             </span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" id="langSelectorBar">
@@ -578,71 +415,6 @@
           </div>
         </div>
 
-        <!-- Mode Selector (Phone 1 Payer vs Phone 2 Impostor Test Mode) -->
-        <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-line bg-cream/50 p-2.5 text-xs">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-muted uppercase">📱 Mode:</span>
-            <div class="inline-flex rounded-xl border border-line bg-paper p-0.5" id="deviceSelectorBar">
-              <button type="button" id="btnDevicePhone1" class="device-btn active rounded-lg px-3 py-1 font-bold text-xs bg-ink text-paper transition" data-device="phone1">
-                Phone 1 (Payer)
-              </button>
-              <button type="button" id="btnDevicePhone2" class="device-btn rounded-lg px-3 py-1 font-medium text-xs text-muted hover:text-ink transition" data-device="phone2">
-                Phone 2 (Attacker / Test)
-              </button>
-            </div>
-          </div>
-          <div id="phone2CloneNotice" class="hidden flex items-center gap-2">
-            <button type="button" id="btnSendCloneClip" class="rounded-xl border border-alert/50 bg-alert-bg px-3 py-1 text-xs font-bold text-alert hover:bg-alert-bg/80 transition flex items-center gap-1 shadow-2xs">
-              <span>🚨</span> Send Consented Clone Clip (Test Audio)
-            </button>
-          </div>
-        </div>
-
-        <!-- Phone 1: Enrolled Farmer Authentic Status Banner -->
-        <div id="phone1AuthenticBanner" class="rounded-2xl border-2 border-safe/40 bg-safe-bg/60 p-3.5 sm:p-4 flex items-center justify-between shadow-2xs">
-          <div class="flex items-center gap-3">
-            <div class="size-10 sm:size-11 rounded-xl bg-safe flex items-center justify-center text-paper text-xl shadow-xs shrink-0">
-              🛡️
-            </div>
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm sm:text-base font-bold text-ink">Ramesh Patel (Enrolled Farmer)</span>
-                <span class="rounded-full bg-safe text-paper text-[10px] font-bold px-2 py-0.5">ENROLLED BIOMETRICS</span>
-              </div>
-              <p class="text-xs text-muted mt-0.5">Kisan Credit Account #9482 · Verified 1:1 Voiceprint on-file</p>
-            </div>
-          </div>
-          <span class="text-safe font-bold text-xs hidden sm:inline-flex items-center gap-1">
-            <span class="size-2 rounded-full bg-safe animate-pulse"></span> Authentic Line
-          </span>
-        </div>
-
-        <!-- Phone 2: Attacker Line Banner with Prominent Send Clone Clip Button -->
-        <div id="phone2AttackerBanner" class="hidden rounded-2xl border-2 border-alert/50 bg-alert-bg/40 p-4 sm:p-5 space-y-3 shadow-md">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <span class="text-2xl sm:text-3xl animate-pulse">🚨</span>
-              <div>
-                <h3 class="text-sm sm:text-base font-bold text-alert">Phone 2: Attacker Line (Impostor Clone Mode)</h3>
-                <p class="text-xs text-muted">Simulating neural voice clone targeting Ramesh Patel's fertilizer subsidy.</p>
-              </div>
-            </div>
-            <span class="rounded-full bg-alert text-paper text-[10px] font-bold px-2.5 py-0.5 uppercase tracking-wide">
-              Impostor Line
-            </span>
-          </div>
-          
-          <button type="button" id="btnSendCloneClipProminent"
-            class="w-full min-h-[58px] sm:min-h-[64px] rounded-2xl bg-alert hover:bg-alert/90 active:scale-[0.99] text-paper text-base sm:text-lg font-bold flex items-center justify-center gap-3 shadow-lg border-2 border-red-600 transition cursor-pointer">
-            <span class="text-xl sm:text-2xl">🚨</span>
-            <span>Send Consented Clone Clip (Test Audio)</span>
-          </button>
-          
-          <p class="text-[11px] text-muted text-center leading-relaxed">
-            ಪರೀಕ್ಷಾರ್ಥ ನಕಲಿ ಧ್ವನಿ ಕಳುಹಿಸಿ ಸುರಕ್ಷತೆ ಪರೀಕ್ಷಿಸಿ • Send test voice clip to verify scam defense.
-          </p>
-        </div>
-
         <!-- ==================================================================== -->
         <!-- HIGH-CONTRAST RESULT / STATUS CARD (VIBRANT GREEN / BOLD RED / READY) -->
         <!-- ==================================================================== -->
@@ -651,10 +423,10 @@
             🛡️
           </div>
           <h3 id="statusTitle" class="font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-ink">
-            ಮಾತನಾಡಿ ಪಾವತಿಸಿ / TAP AND SPEAK TO PAY
+            ಮಾತನಾಡಿ ಧ್ವನಿ ಪರಿಶೀಲಿಸಿ / TAP TO CHECK VOICE
           </h3>
           <p id="statusReason" class="mx-auto mt-2 max-w-xl text-lg sm:text-xl leading-relaxed text-muted font-medium">
-            ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ" (ನಿಮ್ಮ ಪಾವತಿ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತ)
+            ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಸ್ಪಷ್ಟವಾಗಿ ಮಾತನಾಡಿ. (Tap the microphone and speak clearly.)
           </p>
           <div id="tier2PromptAction" class="hidden mt-4">
             <button id="btnOpenChallenge" type="button" class="bg-wait hover:bg-wait/90 active:scale-95 text-paper font-bold px-7 py-3.5 rounded-2xl text-lg flex items-center gap-2 shadow-md transition">
@@ -671,19 +443,19 @@
           </div>
         </div>
 
-        <!-- Verified Bank Security Card (Simple Native Terms, Zero Jargon) -->
+        <!-- Voice check status -->
         <div class="rounded-2xl border border-line bg-cream px-4 py-3 shadow-2xs">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
               <span class="text-gold text-xl">🏛️</span>
-              <span class="text-sm sm:text-base font-bold text-ink">ಅಧಿಕೃತ ಬ್ಯಾಂಕ್ ರಕ್ಷಣೆ · Official Bank Protection</span>
+              <span class="text-sm sm:text-base font-bold text-ink">Voice security status</span>
             </div>
             <span id="badgeLabel" class="rounded-full px-3 py-1 text-xs font-bold tracking-wide bg-cream-2 text-muted border border-line">
               NOT CHECKED
             </span>
           </div>
           <p id="badgeReason" class="mt-1 text-xs sm:text-sm text-muted leading-relaxed">
-            ನಿಮ್ಮ ಖಾತೆ ಅಧಿಕೃತ ಬ್ಯಾಂಕಿಂಗ್ ಭದ್ರತೆಯೊಂದಿಗೆ ನೇರವಾಗಿ ರಕ್ಷಿಸಲ್ಪಟ್ಟಿದೆ • Protected by Official Banking Security.
+            The local app checks voice audio. It does not connect to a bank or transfer money.
           </p>
         </div>
 
@@ -696,66 +468,18 @@
                 ಸರಳ ಸೂಚನೆಗಳು / Simple Instructions
               </h3>
               <p class="text-base sm:text-lg text-ink/90 mt-1 font-medium leading-relaxed">
-                ದೊಡ್ಡ <strong>'ಮಾತನಾಡಿ'</strong> ಗುಂಡಿಯನ್ನು ಒತ್ತಿ, ಈ ಕೆಳಗಿನ ಉದಾಹರಣೆಯಂತೆ ಸರಳವಾಗಿ ಹೇಳಿ:
+              ದೊಡ್ಡ <strong>'ಮಾತನಾಡಿ'</strong> ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮತ್ತು ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಹೇಳಿ:
               </p>
               <div class="mt-2 inline-flex items-center gap-2 rounded-xl bg-paper px-4 py-2 border-2 border-emerald-600/40 shadow-xs">
                 <span class="text-2xl">🗣️</span>
-                <span class="text-lg sm:text-xl font-extrabold text-emerald-800">
-                  "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ"
-                </span>
+                <span class="text-lg sm:text-xl font-extrabold text-emerald-800">Speak your request clearly</span>
               </div>
               <p class="text-xs sm:text-sm text-muted mt-1.5 font-medium">
-                (Press the big Speak button and say: <em>"Send ₹1,000 for fertilizer"</em>)
+                (Tap the microphone button and speak your request.)
               </p>
             </div>
           </div>
 
-          <!-- One-Touch Presets with Big 18px-20px Font -->
-          <div class="pt-2 border-t border-emerald-600/20">
-            <p class="text-xs sm:text-sm font-bold text-emerald-900 uppercase tracking-wider mb-2.5">
-              🌾 ತ್ವರಿತ ಪಾವತಿ ಉದಾಹರಣೆಗಳು / One-Touch Examples:
-            </p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <!-- 1. Rs 1,000 Fertilizer -->
-              <button type="button" id="presetFertilizer" class="p-4 min-h-[88px] bg-paper hover:bg-cream-2 border-2 border-line hover:border-ink rounded-2xl text-left transition shadow-xs flex flex-col justify-between group active:scale-[0.98]">
-                <div>
-                  <span class="text-base sm:text-lg font-bold text-ink group-hover:text-gold flex items-center gap-2">
-                    <span class="text-2xl">🌱</span> ಇಫ್ಕೊ ಗೊಬ್ಬರ
-                  </span>
-                  <span class="text-xs sm:text-sm text-muted block mt-0.5">IFFCO Urea &amp; Seeds</span>
-                </div>
-                <span class="text-sm font-extrabold font-mono text-emerald-700 mt-2 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200 self-start">
-                  ₹1,000 ಕಳುಹಿಸಿ
-                </span>
-              </button>
-
-              <!-- 2. Rs 2,500 Fuel -->
-              <button type="button" id="presetFuel" class="p-4 min-h-[88px] bg-paper hover:bg-cream-2 border-2 border-line hover:border-ink rounded-2xl text-left transition shadow-xs flex flex-col justify-between group active:scale-[0.98]">
-                <div>
-                  <span class="text-base sm:text-lg font-bold text-ink group-hover:text-gold flex items-center gap-2">
-                    <span class="text-2xl">🚜</span> ಟ್ರ್ಯಾಕ್ಟರ್ ಡೀಸೆಲ್
-                  </span>
-                  <span class="text-xs sm:text-sm text-muted block mt-0.5">Tractor Diesel</span>
-                </div>
-                <span class="text-sm font-extrabold font-mono text-emerald-700 mt-2 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200 self-start">
-                  ₹2,500 ಕಳುಹಿಸಿ
-                </span>
-              </button>
-
-              <!-- 3. Check Kisan Balance -->
-              <button type="button" id="presetBalance" class="p-4 min-h-[88px] bg-paper hover:bg-cream-2 border-2 border-line hover:border-ink rounded-2xl text-left transition shadow-xs flex flex-col justify-between group active:scale-[0.98]">
-                <div>
-                  <span class="text-base sm:text-lg font-bold text-ink group-hover:text-gold flex items-center gap-2">
-                    <span class="text-2xl">🔍</span> ಬ್ಯಾಲೆನ್ಸ್ ಪರಿಶೀಲಿಸಿ
-                  </span>
-                  <span class="text-xs sm:text-sm text-muted block mt-0.5">Check Kisan Balance</span>
-                </div>
-                <span class="text-sm font-extrabold font-mono text-muted mt-2 bg-cream px-3 py-1 rounded-lg border border-line self-start">
-                  ವಿಚಾರಣೆ ₹0
-                </span>
-              </button>
-            </div>
-          </div>
         </div>
 
         <!-- Voice Recording Controls: Enormous 100px Pulsating Speak Button -->
@@ -832,13 +556,13 @@
                   <label class="block text-xs font-bold text-muted uppercase">Action</label>
                   <select id="actionSelect" class="mt-1 min-h-12 w-full rounded-xl border-2 border-line bg-paper px-3 text-sm font-medium text-ink outline-none focus:border-gold">
                     <option value="TRANSFER_FUNDS">Pay / Transfer (Hello! UPI)</option>
-                    <option value="CHECK_BALANCE">Check Kisan Balance</option>
+                    <option value="CHECK_BALANCE">Check balance</option>
                     <option value="PAY_UPI">NPCI Merchant Payment</option>
                   </select>
                 </div>
                 <div>
                   <label class="block text-xs font-bold text-muted uppercase">Amount (₹)</label>
-                  <input id="amountInput" type="number" value="1000" placeholder="1000" min="0" step="100"
+                  <input id="amountInput" type="number" value="" placeholder="Enter amount" min="0" step="0.01"
                     class="mt-1 min-h-12 w-full rounded-xl border-2 border-line bg-paper px-3 text-sm font-medium font-mono text-ink outline-none focus:border-gold" />
                 </div>
               </div>
@@ -885,13 +609,10 @@
               ದಯವಿಟ್ಟು ಈ 4 ಸರಳ ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ / Please say these 4 words aloud:
             </p>
             <div id="phraseChips" class="flex flex-wrap justify-center gap-2.5 py-2">
-              <span class="px-4 py-2 bg-wait-bg border-2 border-wait text-wait font-bold text-xl sm:text-2xl rounded-xl shadow-xs">ಹಸಿರು</span>
-              <span class="px-4 py-2 bg-wait-bg border-2 border-wait text-wait font-bold text-xl sm:text-2xl rounded-xl shadow-xs">ಮಳೆ</span>
-              <span class="px-4 py-2 bg-wait-bg border-2 border-wait text-wait font-bold text-xl sm:text-2xl rounded-xl shadow-xs">ಕಮಲ</span>
-              <span class="px-4 py-2 bg-wait-bg border-2 border-wait text-wait font-bold text-xl sm:text-2xl rounded-xl shadow-xs">ನವಿಲು</span>
+              <span class="text-muted">Request a voice challenge to load a phrase.</span>
             </div>
             <p class="text-xs sm:text-sm text-muted">
-              &ldquo;ನಮಸ್ಕಾರ ರಮೇಶ್ ಅವರೇ. ಸುರಕ್ಷತೆಗಾಗಿ, ದಯವಿಟ್ಟು ಈ ನಾಲ್ಕು ಪದಗಳನ್ನು ಹೇಳಿ.&rdquo;
+              Follow the phrase returned by the challenge service.
             </p>
           </div>
 
@@ -911,7 +632,7 @@
           <p id="challengeResult" class="text-sm text-center font-bold hidden"></p>
         </div>
 
-        <!-- Optional Simulated 123Pay Keypad (For feature phone keypad interaction) -->
+        <!-- Optional keypad controls for entering a request -->
         <div class="border-t-2 border-line/70 pt-3">
           <button type="button" id="btnToggleKeypad"
             class="w-full py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs font-bold text-muted hover:text-ink transition flex items-center justify-between cursor-pointer shadow-2xs">
@@ -923,7 +644,7 @@
           </button>
           <div id="virtualKeypadBox" class="hidden mt-3 p-3.5 rounded-2xl bg-cream-2/70 border-2 border-line space-y-2.5 shadow-inner">
             <p class="text-[11px] text-center text-muted font-bold uppercase tracking-wider">
-              NPCI 123Pay IVR Menu Keys (Simulated Keypad)
+              Keypad
             </p>
             <div class="keypad-grid font-mono">
               <button type="button" class="keypad-btn" onclick="document.getElementById('actionSelect').value='TRANSFER_FUNDS';">
@@ -1106,20 +827,18 @@
           <div class="rounded-2xl bg-ink-soft p-3.5 flex flex-col justify-between border border-ink-soft shadow-xs">
             <div class="flex items-center justify-between mb-2">
               <div>
-                <p class="text-xs font-bold tracking-wider text-gold-bright uppercase">Live Acoustic Spectrogram</p>
-                <p class="text-[11px] text-cream-2/70">High-frequency vocoder phase artifact monitor</p>
+                <p class="text-xs font-bold tracking-wider text-gold-bright uppercase">Audio Analysis Data</p>
+                <p class="text-[11px] text-cream-2/70">Spectrogram data is not returned by the provider.</p>
               </div>
               <span id="spectrogramStatusBadge" class="rounded-md px-2 py-0.5 text-[10px] font-mono font-bold bg-ink border border-line text-cream-2">
-                Acoustic: Standby
+                Provider data unavailable
               </span>
             </div>
             <div class="relative w-full h-[220px] bg-ink rounded-xl overflow-hidden border border-ink/80 flex items-center justify-center">
               <canvas id="spectrogramCanvas" width="360" height="220" class="w-full h-full block"></canvas>
             </div>
             <div class="flex items-center justify-between mt-2.5 text-[10px] text-cream-2/70 font-mono">
-              <span>0 Hz (Fundamental)</span>
-              <span class="text-alert font-bold">Vocoder Anomaly Band (&gt;8kHz)</span>
-              <span>16 kHz</span>
+              <span>Provider response</span>
             </div>
           </div>
         </div>
@@ -1144,9 +863,9 @@
               <span class="text-cream-2 font-medium">Response Latency Timer:</span>
               <span id="challengeTimerVal" class="font-mono text-base font-bold text-cream">0.00 s</span>
             </div>
-            <div id="challengeLatencyFlag" class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold latency-flag-ok border border-safe/40 bg-safe-bg/20 text-safe">
+            <div id="challengeLatencyFlag" class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold border border-line bg-cream text-muted">
               <span>⏱️</span>
-              <span id="challengeLatencyFlagText">&le;800ms: Natural Human Latency (Safe)</span>
+              <span id="challengeLatencyFlagText">No measurement</span>
             </div>
           </div>
 
@@ -1160,16 +879,6 @@
             Status: Ready to capture 4-word recitation
           </p>
 
-          <!-- Forensic Test Latency Scenarios -->
-          <div class="pt-2 border-t border-ink flex flex-wrap items-center gap-2 text-xs">
-            <span class="font-semibold text-cream-2">Forensic Latency Scenarios:</span>
-            <button type="button" onclick="window.simLatency && window.simLatency(560)" class="rounded-lg border border-cream-2/30 bg-ink px-2.5 py-1 font-medium hover:bg-ink-soft text-cream transition">
-              Human Latency (560ms - Pass)
-            </button>
-            <button type="button" onclick="window.simLatency && window.simLatency(1180)" class="rounded-lg border border-alert/40 bg-alert-bg/20 px-2.5 py-1 font-semibold text-alert-light hover:bg-alert-bg/30 transition">
-              Voice Changer Lag (1,180ms - FLAGGED)
-            </button>
-          </div>
         </div>
 
         <!-- 2. Speaker Voiceprint Enrollment (Eidos) -->
@@ -1179,7 +888,7 @@
               Speaker Voiceprint Enrollment (Eidos)
             </p>
             <span id="currentSpeakerLabel" class="text-xs text-cream-2 font-mono">
-              farmer_ramesh (1:1 Biometrics)
+              No voice profile enrolled
             </span>
           </div>
 
@@ -1191,7 +900,7 @@
             </span>
           </div>
 
-          <input id="enrollName" type="text" value="Ramesh Patel (Kisan Account)" placeholder="Citizen Name (e.g. Ramesh Patel)"
+          <input id="enrollName" type="text" value="" placeholder="Account holder name (optional)"
             class="min-h-11 w-full rounded-xl border border-ink bg-ink px-3 text-sm text-cream outline-none focus:border-gold" />
 
           <div class="flex gap-2">
@@ -1329,9 +1038,7 @@
     </div>
     </div> <!-- /standardView -->
 
-    <!-- ========================================================================== -->
-    <!-- STAGE DEMO: PHONE CALLER VIEW (?mode=caller) - MAX 4 ELEMENTS ONLY        -->
-    <!-- ========================================================================== -->
+    <!-- Farmer voice interface -->
     <div id="callerPhoneView" class="hidden flex-col items-center justify-between min-h-[85vh] max-w-md mx-auto py-4 px-2">
       <!-- (a) Top Bar: Verified Bank Agent Badge + 3 Language Pills -->
       <div class="w-full flex items-center justify-between gap-2 border-b-2 border-line pb-4 mb-4">
@@ -1340,7 +1047,7 @@
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
           </span>
-          <span class="text-xs sm:text-sm font-extrabold text-safe tracking-wide">🛡️ Verified Bank Agent</span>
+          <span id="callerAgentBadge" class="text-xs sm:text-sm font-extrabold text-safe tracking-wide">🛡️ Bank Voice Security Active</span>
         </div>
         <div class="inline-flex rounded-2xl border-2 border-line bg-paper p-1 shadow-2xs" id="callerLangBar">
           <button type="button" class="caller-lang-btn active rounded-xl px-3 py-1.5 text-sm font-black transition border-2 border-ink bg-ink text-paper" data-lang="kn">ಕನ್ನಡ</button>
@@ -1355,19 +1062,17 @@
           🛡️
         </div>
         <h2 id="callerStatusTitle" class="font-display text-2xl sm:text-3xl font-black text-ink leading-tight">
-          ಮಾತನಾಡಿ ಪಾವತಿಸಿ
+          ನಿಮ್ಮ ಧ್ವನಿ ಪರಿಶೀಲಿಸಿ / Check your voice
         </h2>
         <p id="callerStatusReason" class="text-base sm:text-lg text-muted mt-2 font-medium leading-relaxed">
-          ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ"
+          ಪ್ರಾರಂಭಿಸಲು ಮಾತನಾಡಿ ಗುಂಡಿ ಒತ್ತಿ / Tap the microphone and speak naturally.
         </p>
 
         <!-- EXTRA_CHECK: 4 Dynamic Challenge Words in Huge Text -->
         <div id="callerChallengeBox" class="hidden mt-4 w-full">
           <div class="p-4 bg-wait-bg/90 border-3 border-wait rounded-2xl shadow-sm">
             <p class="text-xs font-black text-wait uppercase tracking-wider mb-2">⚡ ಈ 4 ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ / Say 4 Words:</p>
-            <div id="callerChallengeWords" class="text-3xl sm:text-4xl font-black text-wait tracking-wide py-2 leading-relaxed font-sans">
-              ಹಸಿರು &nbsp; ಮಳೆ &nbsp; ಕಮಲ &nbsp; ನವಿಲು
-            </div>
+            <div id="callerChallengeWords" class="text-3xl sm:text-4xl font-black text-wait tracking-wide py-2 leading-relaxed font-sans"></div>
           </div>
         </div>
       </div>
@@ -1384,25 +1089,18 @@
         <span id="callerBtnRecordTimer" class="mt-2 text-xs font-mono font-bold text-muted">00:00.0s</span>
       </div>
 
-      <!-- (d) Compact Footer: Enroll Voice + Test Clone Attack (.wav) -->
-      <div class="w-full pt-4 border-t-2 border-line/80 flex items-center justify-between gap-3">
+      <!-- Voice enrollment uses the caller's live microphone recording. -->
+      <div class="w-full pt-4 border-t-2 border-line/80 flex flex-col items-center gap-2">
         <button id="callerBtnEnroll" type="button"
-          class="flex-1 py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs sm:text-sm font-bold text-ink transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer">
+          class="w-full py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs sm:text-sm font-bold text-ink transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer">
           <span>👤</span>
-          <span>Enroll Voice (5s)</span>
+          <span id="callerEnrollLabel">Enroll voice profile (15+ seconds)</span>
         </button>
-        <button id="callerBtnClone" type="button"
-          class="flex-1 py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs sm:text-sm font-semibold text-muted hover:text-alert transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-          title="Simulate an incoming AI clone attack call">
-          <span>🧪</span>
-          <span>Test Clone Attack (.wav)</span>
-        </button>
+        <p id="callerEnrollHint" class="text-[11px] text-muted text-center">Tap once to start recording; tap again to stop and submit the voice sample to DetectifAI Eidos.</p>
       </div>
     </div>
 
-    <!-- ========================================================================== -->
-    <!-- STAGE DEMO: LAPTOP JUDGE CONSOLE (?mode=console) - 4 GIANT CARDS          -->
-    <!-- ========================================================================== -->
+    <!-- Bank security console -->
     <div id="judgeConsoleView" class="hidden flex-col gap-6 max-w-6xl mx-auto py-6 px-4">
       
       <!-- Card 1: Full-Width Decision Banner (Readable from 10 feet away) -->
@@ -1434,8 +1132,8 @@
             </div>
           </div>
           <div class="text-xs font-semibold text-muted flex items-center justify-between border-t border-line/60 pt-3">
-            <span>Authentic threshold: &lt; 30%</span>
-            <span>Clone threshold: &ge; 50%</span>
+            <span>Review threshold: &ge; 50%</span>
+            <span>Block threshold: &ge; 62%</span>
           </div>
         </div>
 
@@ -1456,8 +1154,8 @@
             </div>
           </div>
           <div class="text-xs font-semibold text-muted flex items-center justify-between border-t border-line/60 pt-3">
-            <span>Verified match: &ge; 80%</span>
-            <span>Target: Ramesh Patel</span>
+            <span>Match review threshold: &lt; 53%</span>
+            <span>Speaker: enrolled profile</span>
           </div>
         </div>
       </div>
@@ -1468,13 +1166,13 @@
           <div class="flex items-center gap-3">
             <span class="text-2xl sm:text-3xl">🛡️</span>
             <div>
-              <span class="text-xs font-black tracking-widest text-muted uppercase">NPCI 123Pay / Hello! UPI Action Gate</span>
-              <h2 class="text-xl sm:text-2xl font-black text-ink font-display">Tool Execution Status</h2>
+              <span class="text-xs font-black tracking-widest text-muted uppercase">Voice Security Gate</span>
+              <h2 class="text-xl sm:text-2xl font-black text-ink font-display">Downstream Action Gate</h2>
             </div>
           </div>
           <div id="consoleToolStatusBadge" class="rounded-2xl px-5 py-2 text-base sm:text-lg font-black tracking-wide border-2 bg-cream text-muted border-line flex items-center gap-2">
             <span id="consoleToolLockIcon">🔒</span>
-            <span id="consoleToolStatusText">HARD-LOCKED</span>
+            <span id="consoleToolStatusText">AWAITING VOICE</span>
           </div>
         </div>
 
@@ -1496,31 +1194,16 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="rounded-2xl border-2 border-line bg-cream p-4 text-center">
             <span class="text-xs font-black text-muted uppercase tracking-wider block">Paid LLM Steps Skipped</span>
-            <span id="consoleStepsSkipped" class="font-mono text-3xl sm:text-4xl font-black text-safe mt-1 block">0</span>
+            <span id="consoleStepsSkipped" class="font-mono text-3xl sm:text-4xl font-black text-safe mt-1 block">—</span>
           </div>
           <div class="rounded-2xl border-2 border-line bg-cream p-4 text-center">
-            <span class="text-xs font-black text-muted uppercase tracking-wider block">Est. Compute Saved</span>
-            <span id="consoleInrSaved" class="font-mono text-3xl sm:text-4xl font-black text-safe mt-1 block">₹0</span>
+            <span class="text-xs font-black text-muted uppercase tracking-wider block">Voice Checks Recorded</span>
+            <span id="consoleCallsScreened" class="font-mono text-3xl sm:text-4xl font-black text-safe mt-1 block">—</span>
           </div>
           <div class="rounded-2xl border-2 border-gold/40 bg-ink p-4 text-center">
             <span class="text-xs font-black text-gold-bright uppercase tracking-wider block">Live DetectifAI Credits</span>
-            <span id="consoleLiveCredits" class="font-mono text-3xl sm:text-4xl font-black text-cream mt-1 block">4,800</span>
+            <span id="consoleLiveCredits" class="font-mono text-3xl sm:text-4xl font-black text-cream mt-1 block">—</span>
           </div>
-        </div>
-
-        <!-- Live Stage Demo Trigger: Inject Consented Clone Attack Clip -->
-        <div class="flex items-center justify-between p-3.5 rounded-2xl bg-alert-bg/50 border-2 border-alert/30">
-          <div class="flex items-center gap-2.5">
-            <span class="text-xl">🚨</span>
-            <div>
-              <p class="text-xs sm:text-sm font-bold text-ink">Simulate Scammer Clone Call (Remote Inbound Attack):</p>
-              <p class="text-[11px] text-muted">Injects synthetic voice clone into gateway — triggers Bank Block &amp; alerts Farmer Phone</p>
-            </div>
-          </div>
-          <button id="consoleBtnInjectClone" type="button"
-            class="rounded-xl border border-alert bg-alert hover:bg-alert/90 active:scale-95 text-paper text-xs sm:text-sm font-bold px-4 py-2 shadow-sm transition cursor-pointer flex items-center gap-1.5 shrink-0">
-            <span>▶️</span> Inject Clone Attack
-          </button>
         </div>
 
         <!-- Clean 5-Row Recent Events Table -->
@@ -1528,7 +1211,7 @@
           <div class="flex items-center justify-between mb-3">
             <h4 class="text-xs sm:text-sm font-black text-muted uppercase tracking-wider">Live Verified Event Stream (Last 5 Events)</h4>
             <span class="text-xs font-mono font-bold text-safe flex items-center gap-1.5">
-              <span class="size-2 rounded-full bg-safe animate-pulse"></span> Streaming 1,000ms
+              <span class="size-2 rounded-full bg-muted"></span> Waiting for live events
             </span>
           </div>
           <div class="overflow-x-auto rounded-2xl border-2 border-line">
@@ -1545,7 +1228,7 @@
               </thead>
               <tbody id="consoleEventsTableBody" class="divide-y divide-line text-ink">
                 <tr>
-                  <td colspan="6" class="p-4 text-center text-muted font-sans font-medium">No calls evaluated yet in this session.</td>
+                  <td colspan="6" class="p-4 text-center text-muted font-sans font-medium">No voice checks recorded in this session.</td>
                 </tr>
               </tbody>
             </table>
@@ -1577,10 +1260,7 @@
             <button id="btnNewPhraseModal" type="button" class="text-xs text-wait font-semibold hover:underline">🔄 New Phrase</button>
           </div>
           <div id="modalPhraseChips" class="flex flex-wrap justify-center gap-2 py-2">
-            <span class="px-3.5 py-1.5 bg-paper border border-wait text-wait font-bold font-mono rounded-lg text-lg shadow-xs">Golden</span>
-            <span class="px-3.5 py-1.5 bg-paper border border-wait text-wait font-bold font-mono rounded-lg text-lg shadow-xs">river</span>
-            <span class="px-3.5 py-1.5 bg-paper border border-wait text-wait font-bold font-mono rounded-lg text-lg shadow-xs">seven</span>
-            <span class="px-3.5 py-1.5 bg-paper border border-wait text-wait font-bold font-mono rounded-lg text-lg shadow-xs">mango</span>
+            <span class="text-muted">Request a phrase from the challenge service.</span>
           </div>
         </div>
 
@@ -1588,13 +1268,13 @@
         <div class="bg-cream p-3.5 rounded-xl border border-line mb-4 space-y-2">
           <div class="flex justify-between text-xs">
             <span class="text-muted font-medium">Response Latency Timer</span>
-            <span id="modalTimerVal" class="font-mono font-bold text-ink">0.00 s</span>
+            <span id="modalTimerVal" class="font-mono font-bold text-ink">—</span>
           </div>
           <div class="h-2.5 bg-paper rounded-full overflow-hidden relative border border-line">
             <div id="modalTimerBar" class="h-full bg-wait transition-all duration-100" style="width: 0%"></div>
           </div>
           <div class="flex justify-between items-center text-[11px] text-muted pt-1">
-            <span id="modalLatencyFlag" class="font-mono font-bold text-safe">&lt; 800ms Human Zone</span>
+            <span id="modalLatencyFlag" class="font-mono font-bold text-muted">No measurement</span>
             <span id="modalTimerStatus">Waiting to speak…</span>
           </div>
         </div>
@@ -1606,8 +1286,8 @@
           <button id="btnModalStop" type="button" disabled class="px-4 py-3 rounded-xl border border-line bg-cream text-muted font-semibold text-sm disabled:opacity-40">
             Stop
           </button>
-          <button id="btnModalVerify" type="button" class="bg-wait hover:bg-wait/90 text-paper font-bold px-4 py-3 rounded-xl text-sm transition">
-            Verify &amp; Pass
+            <button id="btnModalVerify" type="button" class="bg-wait hover:bg-wait/90 text-paper font-bold px-4 py-3 rounded-xl text-sm transition">
+            Verify
           </button>
         </div>
         <p id="modalResult" class="text-xs font-mono mt-3 hidden text-center"></p>
