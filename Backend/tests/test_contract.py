@@ -25,9 +25,21 @@ from backend.audit import (
 
 class TestUnCloneContract(unittest.TestCase):
     def setUp(self):
+        try:
+            from backend.voice_enrollment import reset_enrolled_voice
+            reset_enrolled_voice()
+        except Exception:
+            pass
         self.client = TestClient(app)
         self.sample_wav_path = ROOT_DIR / "tests" / "sample_human.wav"
         self.assertTrue(self.sample_wav_path.exists(), "Sample WAV must exist for testing.")
+
+    def tearDown(self):
+        try:
+            from backend.voice_enrollment import reset_enrolled_voice
+            reset_enrolled_voice()
+        except Exception:
+            pass
 
     # --------------------------------------------------------------------------
     # 1. Gate Logic & 2x2 Matrix Tests

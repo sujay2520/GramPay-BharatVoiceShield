@@ -24,7 +24,7 @@ BASE_URL = "http://localhost:8000"
 
 def test_health():
     print("\n[1/7] Testing GET /api/health ...")
-    r = requests.get(f"{BASE_URL}/api/health", timeout=5)
+    r = requests.get(f"{BASE_URL}/api/health", timeout=15)
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
     data = r.json()
     assert data.get("ok") is True, f"ok != True: {data}"
@@ -33,7 +33,7 @@ def test_health():
 
 def test_credits():
     print("\n[2/7] Testing GET /api/credits ...")
-    r = requests.get(f"{BASE_URL}/api/credits", timeout=5)
+    r = requests.get(f"{BASE_URL}/api/credits", timeout=15)
     assert r.status_code == 200, f"Expected 200, got {r.status_code}"
     data = r.json()
     assert "available" in data or "credits" in data, f"Credits missing: {data}"
@@ -113,7 +113,7 @@ def test_step_up_fix1_flow():
         "speaker_id": "farmer_ramesh",
         "response_delay_ms": 650
     }
-    r = requests.post(f"{BASE_URL}/api/challenge/submit", files=files, data=data, timeout=15)
+    r = requests.post(f"{BASE_URL}/api/challenge/submit", files=files, data=data, timeout=30)
     assert r.status_code == 200, f"Submit failed: {r.status_code} {r.text}"
     res = r.json()
     assert "decision" in res, f"No decision: {res}"

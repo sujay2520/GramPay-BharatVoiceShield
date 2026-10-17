@@ -253,7 +253,38 @@ if (typeof window !== "undefined" && "speechSynthesis" in window) {
   };
 }
 
+// Mobile Audio Gesture Unlock (iOS Safari & Android Chrome)
+let audioUnlocked = false;
+function unlockAudioGesture() {
+  if (audioUnlocked || typeof window === "undefined") return;
+  try {
+    if ("speechSynthesis" in window) {
+      const silent = new SpeechSynthesisUtterance("");
+      silent.volume = 0.01;
+      silent.rate = 2.0;
+      window.speechSynthesis.speak(silent);
+    }
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      const ctx = new AudioCtx();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
+    }
+    audioUnlocked = true;
+    console.log("[Audio] Senior citizen audio gesture unlocked successfully for mobile");
+  } catch (e) {
+    console.warn("[Audio] Audio unlock gesture caught:", e);
+  }
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("click", unlockAudioGesture, { once: true, passive: true });
+  document.addEventListener("touchstart", unlockAudioGesture, { once: true, passive: true });
+}
+
 window.speakVoiceAssistant = speakVoiceAssistant;
+window.unlockAudioGesture = unlockAudioGesture;
 
 // ========== 4. UI OVERLAY & FEEDBACK HELPERS ==========
 function showOverlay(text = "Working…") {
