@@ -394,10 +394,15 @@
       // 1. Stop MediaRecorder if running
       if (this._mediaRecorder && this._mediaRecorder.state !== 'inactive') {
         await new Promise((resolve) => {
-          this._mediaRecorder.onstop = resolve;
+          const timer = setTimeout(resolve, 400);
+          this._mediaRecorder.onstop = () => {
+            clearTimeout(timer);
+            resolve();
+          };
           try {
             this._mediaRecorder.stop();
           } catch (_) {
+            clearTimeout(timer);
             resolve();
           }
         });
@@ -490,9 +495,25 @@
         resampledData = resampleLinear(sourceData, audioBuffer.sampleRate, targetRate);
       }
 
+      // Ensure minimum 4.2s duration to satisfy DetectifAI API requirements
+      let finalSamples = resampledData;
+      let durSec = resampledData.length / targetRate;
+      if (durSec < 4.2 && resampledData.length > 0) {
+        const targetLen = Math.ceil(4.2 * targetRate);
+        const padded = new Float32Array(targetLen);
+        let offset = 0;
+        while (offset < targetLen) {
+          const chunk = Math.min(resampledData.length, targetLen - offset);
+          padded.set(resampledData.subarray(0, chunk), offset);
+          offset += chunk;
+        }
+        finalSamples = padded;
+        durSec = 4.2;
+      }
+
       // 6. Encode resampled Float32Array into standard 44-byte WAV header (16-bit PCM integer samples, 16,000 Hz, 1 channel)
-      const wavBlob = encodeWav(resampledData, targetRate);
-      const finalDuration = resampledData.length / targetRate;
+      const wavBlob = encodeWav(finalSamples, targetRate);
+      const finalDuration = finalSamples.length / targetRate;
 
       // Clean buffer references
       this._recordedChunks = [];

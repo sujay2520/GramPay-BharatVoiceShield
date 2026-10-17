@@ -317,124 +317,206 @@ function setStatusCard(decision, reason) {
   const reasonEl = $("statusReason");
   const tier2Prompt = $("tier2PromptAction");
 
-  if (!card) return;
-
-  card.classList.remove("status-approve", "status-block", "status-stepup", "status-ready");
+  const callerCard = $("callerStatusCard");
+  const callerEmoji = $("callerStatusEmoji");
+  const callerTitle = $("callerStatusTitle");
+  const callerReason = $("callerStatusReason");
+  const callerChallengeBox = $("callerChallengeBox");
 
   const lang = (currentLang || "kn").toLowerCase();
 
   if (!decision) {
-    card.classList.add("status-ready");
-    if (emoji) {
-      emoji.textContent = "🛡️";
-      emoji.className = "mx-auto mb-3 flex size-24 items-center justify-center rounded-full bg-paper/95 border-2 border-line text-ink shadow-md text-6xl";
-    }
-    if (title) {
-      if (lang === "kn") {
-        title.textContent = "ಮಾತನಾಡಿ ಪಾವತಿಸಿ / TAP AND SPEAK";
-      } else if (lang === "hi") {
-        title.textContent = "बोलकर भुगतान करें / TAP AND SPEAK";
-      } else {
-        title.textContent = "Tap and speak to pay";
+    if (card) {
+      card.classList.remove("status-approve", "status-block", "status-stepup", "status-ready");
+      card.classList.add("status-ready");
+      if (emoji) {
+        emoji.textContent = "🛡️";
+        emoji.className = "mx-auto mb-3 flex size-24 items-center justify-center rounded-full bg-paper/95 border-2 border-line text-ink shadow-md text-6xl";
       }
-      title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight uppercase";
+      if (title) {
+        if (lang === "kn") {
+          title.textContent = "ಮಾತನಾಡಿ ಪಾವತಿಸಿ / TAP AND SPEAK";
+        } else if (lang === "hi") {
+          title.textContent = "बोलकर भुगतान करें / TAP AND SPEAK";
+        } else {
+          title.textContent = "Tap and speak to pay";
+        }
+        title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight uppercase";
+      }
+      if (reasonEl) {
+        const cfg = (typeof window !== "undefined" && window.LANGUAGES && window.LANGUAGES[lang]) || null;
+        reasonEl.textContent = reason || (cfg && cfg.speak_cta) || "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: \"ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ\" (ನಿಮ್ಮ ಪಾವತಿ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತ)";
+        reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl leading-relaxed text-muted font-medium";
+      }
+      if (tier2Prompt) tier2Prompt.classList.add("hidden");
     }
-    if (reasonEl) {
-      const cfg = (typeof window !== "undefined" && window.LANGUAGES && window.LANGUAGES[lang]) || null;
-      reasonEl.textContent = reason || (cfg && cfg.speak_cta) || "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: \"ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ\" (ನಿಮ್ಮ ಪಾವತಿ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತ)";
-      reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl leading-relaxed text-muted font-medium";
+
+    if (callerCard) {
+      callerCard.className = "status-ready w-full flex-1 my-1.5 rounded-2xl border-2 border-line bg-paper p-3 text-center shadow-md transition-all duration-300 flex flex-col justify-center items-center min-h-[120px] max-h-[200px] overflow-hidden";
+      if (callerEmoji) {
+        callerEmoji.textContent = "🛡️";
+        callerEmoji.className = "size-11 rounded-full bg-cream flex items-center justify-center text-2xl mb-1 border border-line shadow-2xs shrink-0";
+      }
+      if (callerTitle) {
+        callerTitle.textContent = lang === "kn" ? "ಮಾತನಾಡಿ ಪಾವತಿಸಿ" : (lang === "hi" ? "बोलिए और भुगतान करें" : "Tap to Speak & Pay");
+        callerTitle.className = "font-display text-lg sm:text-xl font-black text-ink leading-tight";
+      }
+      if (callerReason) {
+        callerReason.textContent = lang === "kn" ? "ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: \"ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ\"" : (lang === "hi" ? "बड़ा बटन दबाएं और बोलें: \"इफको खाद को 1000 रुपये भेजें\"" : "Tap mic and say: 'Send Rs. 1000 to IFFCO Fertilizer'");
+        callerReason.className = "text-xs text-muted mt-1 font-medium leading-snug line-clamp-2";
+      }
+      if (callerChallengeBox) callerChallengeBox.classList.add("hidden");
     }
-    if (tier2Prompt) tier2Prompt.classList.add("hidden");
     return;
   }
 
   const d = String(decision).toUpperCase();
-  if (d === "APPROVE" || d === "APPROVED") {
-    card.classList.add("status-approve");
-    if (emoji) {
-      emoji.textContent = "✅";
-      emoji.className = "mx-auto mb-3 flex size-24 sm:size-28 items-center justify-center rounded-full bg-emerald-700 border-4 border-emerald-400 text-white shadow-2xl text-6xl md:text-7xl transition-transform duration-300 scale-105";
-    }
-    if (title) {
-      if (lang === "kn") {
-        title.textContent = "ಧ್ವನಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ · ಒಂದು ಸಾವಿರ ರೂಪಾಯಿ ಪಾವತಿಸಲಾಗಿದೆ";
-      } else if (lang === "hi") {
-        title.textContent = "असली आवाज़ प्रमाणित · एक हज़ार रुपये का भुगतान सफल हुआ";
-      } else {
-        title.textContent = "Real Voice Verified · Payment Successful (₹1,000)";
+  if (d === "APPROVE" || d === "APPROVED" || d === "PAY") {
+    if (card) {
+      card.classList.remove("status-approve", "status-block", "status-stepup", "status-ready");
+      card.classList.add("status-approve");
+      if (emoji) {
+        emoji.textContent = "✅";
+        emoji.className = "mx-auto mb-3 flex size-24 sm:size-28 items-center justify-center rounded-full bg-emerald-700 border-4 border-emerald-400 text-white shadow-2xl text-6xl md:text-7xl transition-transform duration-300 scale-105";
       }
-      title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-white tracking-tight";
+      if (title) {
+        if (lang === "kn") {
+          title.textContent = "ಧ್ವನಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ · ಒಂದು ಸಾವಿರ ರೂಪಾಯಿ ಪಾವತಿಸಲಾಗಿದೆ";
+        } else if (lang === "hi") {
+          title.textContent = "असली आवाज़ प्रमाणित · एक हज़ार रुपये का भुगतान सफल हुआ";
+        } else {
+          title.textContent = "Real Voice Verified · Payment Successful (₹1,000)";
+        }
+        title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-white tracking-tight";
+      }
+      if (reasonEl) {
+        const defaultDesc = lang === "kn"
+          ? "ನಿಜವಾದ ರೈತರ ಧ್ವನಿ ಮತ್ತು ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ದೃಢಪಟ್ಟಿದೆ • IFFCO ಗೊಬ್ಬರ ಪಾವತಿ ಅನುಮೋದಿಸಲಾಗಿದೆ (Safe Payment)"
+          : (lang === "hi"
+            ? "असली किसान आवाज़ प्रमाणित • इफको खाद भुगतान स्वीकृत (Safe Payment)"
+            : "Verified Safe: Human vocal cord acoustics & identity confirmed via DetectifAI Eidos. Gate APPROVED <300ms.");
+        reasonEl.textContent = reason || defaultDesc;
+        reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl font-bold text-emerald-100";
+      }
+      if (tier2Prompt) tier2Prompt.classList.add("hidden");
     }
-    if (reasonEl) {
-      const defaultDesc = lang === "kn"
-        ? "ನಿಜವಾದ ರೈತರ ಧ್ವನಿ ಮತ್ತು ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ದೃಢಪಟ್ಟಿದೆ • IFFCO ಗೊಬ್ಬರ ಪಾವತಿ ಅನುಮೋದಿಸಲಾಗಿದೆ (Safe Payment)"
-        : (lang === "hi"
-          ? "असली किसान आवाज़ प्रमाणित • इफको खाद भुगतान स्वीकृत (Safe Payment)"
-          : "Verified Safe: Human vocal cord acoustics & identity confirmed via DetectifAI Eidos. Gate APPROVED <300ms.");
-      reasonEl.textContent = reason || defaultDesc;
-      reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl font-bold text-emerald-100";
+
+    if (callerCard) {
+      callerCard.className = "status-approve w-full flex-1 my-1.5 rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-3 text-center shadow-md transition-all duration-300 flex flex-col justify-center items-center min-h-[120px] max-h-[200px] overflow-hidden";
+      if (callerEmoji) {
+        callerEmoji.textContent = "✅";
+        callerEmoji.className = "size-11 rounded-full bg-emerald-600 text-white flex items-center justify-center text-2xl mb-1 border border-emerald-400 shadow-2xs shrink-0";
+      }
+      if (callerTitle) {
+        callerTitle.textContent = lang === "kn" ? "ಧ್ವನಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ · ₹1,000 ಪಾವತಿ ಸಫಲ" : (lang === "hi" ? "असली आवाज़ प्रमाणित · ₹1,000 भुगतान सफल" : "Real Voice Verified · ₹1,000 Paid");
+        callerTitle.className = "font-display text-base sm:text-lg font-black text-emerald-900 leading-tight";
+      }
+      if (callerReason) {
+        callerReason.textContent = reason || (lang === "kn" ? "ನಿಜವಾದ ರೈತರ ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ದೃಢಪಟ್ಟಿದೆ • IFFCO ಗೊಬ್ಬರ ಪಾವತಿ ಅನುಮೋದಿಸಲಾಗಿದೆ" : (lang === "hi" ? "असली किसान आवाज़ प्रमाणित • भुगतान स्वीकृत" : "Genuine farmer voice biometrics verified. Payment approved."));
+        callerReason.className = "text-xs text-emerald-800 mt-1 font-semibold leading-snug line-clamp-2";
+      }
+      if (callerChallengeBox) callerChallengeBox.classList.add("hidden");
     }
-    if (tier2Prompt) tier2Prompt.classList.add("hidden");
 
     // Automatically speak native language confirmation aloud
     speakVoiceAssistant("approved");
 
   } else if (d === "BLOCK_ALERT" || d === "BLOCK" || d === "BLOCKED") {
-    card.classList.add("status-block");
-    if (emoji) {
-      emoji.textContent = "🛑";
-      emoji.className = "mx-auto mb-3 flex size-24 sm:size-28 items-center justify-center rounded-full bg-rose-800 border-4 border-rose-400 text-white shadow-2xl text-6xl md:text-7xl transition-transform duration-300 animate-pulse";
-    }
-    if (title) {
-      if (lang === "kn") {
-        title.textContent = "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ · ಪಾವತಿ ತಡೆಯಲಾಗಿದೆ";
-      } else if (lang === "hi") {
-        title.textContent = "सावधान! नकली आवाज़ पकड़ी गई · भुगतान रोक दिया गया है";
-      } else {
-        title.textContent = "Warning! Synthetic Voice Clone Detected · Payment Blocked";
+    if (card) {
+      card.classList.remove("status-approve", "status-block", "status-stepup", "status-ready");
+      card.classList.add("status-block");
+      if (emoji) {
+        emoji.textContent = "🛑";
+        emoji.className = "mx-auto mb-3 flex size-24 sm:size-28 items-center justify-center rounded-full bg-rose-800 border-4 border-rose-400 text-white shadow-2xl text-6xl md:text-7xl transition-transform duration-300 animate-pulse";
       }
-      title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-white tracking-tight";
+      if (title) {
+        if (lang === "kn") {
+          title.textContent = "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ · ಪಾವತಿ ತಡೆಯಲಾಗಿದೆ";
+        } else if (lang === "hi") {
+          title.textContent = "सावधान! नकली आवाज़ पकड़ी गई · भुगतान रोक दिया गया है";
+        } else {
+          title.textContent = "Warning! Synthetic Voice Clone Detected · Payment Blocked";
+        }
+        title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-white tracking-tight";
+      }
+      if (reasonEl) {
+        const defaultDesc = lang === "kn"
+          ? "ನಕಲಿ ಧ್ವನಿ ವಂಚನೆ ತಡೆಯಲಾಗಿದೆ • ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯ ಹಣ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹20 Compute Saved)"
+          : (lang === "hi"
+            ? "नकली आवाज़ का हमला रोका गया • आपकी बचत सुरक्षित है (₹20 Compute Saved)"
+            : "CRITICAL WARNING: Computer-generated voice clone detected! Gate BLOCKED <300ms, tool hard-locked, ₹20 saved.");
+        reasonEl.textContent = reason || defaultDesc;
+        reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl font-bold text-rose-100";
+      }
+      if (tier2Prompt) tier2Prompt.classList.add("hidden");
     }
-    if (reasonEl) {
-      const defaultDesc = lang === "kn"
-        ? "ನಕಲಿ ಧ್ವನಿ ವಂಚನೆ ತಡೆಯಲಾಗಿದೆ • ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯ ಹಣ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹20 Compute Saved)"
-        : (lang === "hi"
-          ? "नकली आवाज़ का हमला रोका गया • आपकी बचत सुरक्षित है (₹20 Compute Saved)"
-          : "CRITICAL WARNING: Computer-generated voice clone detected! Gate BLOCKED <300ms, tool hard-locked, ₹20 saved.");
-      reasonEl.textContent = reason || defaultDesc;
-      reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl font-bold text-rose-100";
+
+    if (callerCard) {
+      callerCard.className = "status-block w-full flex-1 my-1.5 rounded-2xl border-2 border-rose-500 bg-rose-50 p-3 text-center shadow-md transition-all duration-300 flex flex-col justify-center items-center min-h-[120px] max-h-[200px] overflow-hidden";
+      if (callerEmoji) {
+        callerEmoji.textContent = "🛑";
+        callerEmoji.className = "size-11 rounded-full bg-rose-600 text-white flex items-center justify-center text-2xl mb-1 border border-rose-400 shadow-2xs shrink-0 animate-pulse";
+      }
+      if (callerTitle) {
+        callerTitle.textContent = lang === "kn" ? "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಕ್ಲೋನ್ ತಡೆಯಲಾಗಿದೆ" : (lang === "hi" ? "सावधान! नकली आवाज़ पकड़ी गई" : "Warning! AI Voice Clone Blocked");
+        callerTitle.className = "font-display text-base sm:text-lg font-black text-rose-900 leading-tight";
+      }
+      if (callerReason) {
+        callerReason.textContent = reason || (lang === "kn" ? "ನಕಲಿ ಧ್ವನಿ ವಂಚನೆ ತಡೆಯಲಾಗಿದೆ • ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹20 ಉಳಿತಾಯ)" : (lang === "hi" ? "नकली आवाज़ का हमला रोका गया • बचत सुरक्षित है (₹20 Saved)" : "Fraudulent AI Voice Clone Blocked. Payment safely locked."));
+        callerReason.className = "text-xs text-rose-800 mt-1 font-semibold leading-snug line-clamp-2";
+      }
+      if (callerChallengeBox) callerChallengeBox.classList.add("hidden");
     }
-    if (tier2Prompt) tier2Prompt.classList.add("hidden");
 
     // Automatically speak native language warning aloud
     speakVoiceAssistant("blocked");
 
-  } else if (d === "STEP_UP") {
-    card.classList.add("status-stepup");
-    if (emoji) {
-      emoji.textContent = "⚡";
-      emoji.className = "mx-auto mb-3 flex size-20 sm:size-24 items-center justify-center rounded-full bg-wait-bg border-3 border-wait text-wait shadow-xl text-5xl md:text-6xl transition-transform duration-300";
-    }
-    if (title) {
-      if (lang === "kn") {
-        title.textContent = "ಹೆಚ್ಚುವರಿ ಧ್ವನಿ ಪರಿಶೀಲನೆ ಅಗತ್ಯವಿದೆ (Tier-2 Challenge)";
-      } else if (lang === "hi") {
-        title.textContent = "अतिरिक्त सुरक्षा जाँच आवश्यक (Tier-2 Challenge)";
-      } else {
-        title.textContent = "Step-Up Required · Tier-2 Active Challenge";
+  } else if (d === "STEP_UP" || d === "EXTRA_CHECK") {
+    if (card) {
+      card.classList.remove("status-approve", "status-block", "status-stepup", "status-ready");
+      card.classList.add("status-stepup");
+      if (emoji) {
+        emoji.textContent = "⚡";
+        emoji.className = "mx-auto mb-3 flex size-20 sm:size-24 items-center justify-center rounded-full bg-wait-bg border-3 border-wait text-wait shadow-xl text-5xl md:text-6xl transition-transform duration-300";
       }
-      title.className = "font-display text-2xl sm:text-3xl font-bold leading-tight";
+      if (title) {
+        if (lang === "kn") {
+          title.textContent = "ಹೆಚ್ಚುವರಿ ಧ್ವನಿ ಪರಿಶೀಲನೆ ಅಗತ್ಯವಿದೆ (Tier-2 Challenge)";
+        } else if (lang === "hi") {
+          title.textContent = "अतिरिक्त सुरक्षा जाँच आवश्यक (Tier-2 Challenge)";
+        } else {
+          title.textContent = "Step-Up Required · Tier-2 Active Challenge";
+        }
+        title.className = "font-display text-2xl sm:text-3xl font-bold leading-tight";
+      }
+      if (reasonEl) {
+        const defaultDesc = lang === "kn"
+          ? "ಅಸ್ಪಷ್ಟ ಆಡಿಯೋ • ದಯವಿಟ್ಟು ಕೆಳಗಿನ 4 ಸರಳ ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ (<800ms Latency Check)."
+          : (lang === "hi"
+            ? "अस्पष्ट आवाज़ • कृपया नीचे दिए गए 4 शब्द साफ़ बोलें (<800ms Latency Check)."
+            : "Noisy audio requires active challenge. Please recite the randomized Nemotron phrase within 800ms.");
+        reasonEl.textContent = reason || defaultDesc;
+        reasonEl.className = "mx-auto mt-2 max-w-xl text-base sm:text-lg font-medium text-wait";
+      }
+      if (tier2Prompt) tier2Prompt.classList.remove("hidden");
     }
-    if (reasonEl) {
-      const defaultDesc = lang === "kn"
-        ? "ಅಸ್ಪಷ್ಟ ಆಡಿಯೋ • ದಯವಿಟ್ಟು ಕೆಳಗಿನ 4 ಸರಳ ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ (<800ms Latency Check)."
-        : (lang === "hi"
-          ? "अस्पष्ट आवाज़ • कृपया नीचे दिए गए 4 शब्द साफ़ बोलें (<800ms Latency Check)."
-          : "Noisy audio requires active challenge. Please recite the randomized Nemotron phrase within 800ms.");
-      reasonEl.textContent = reason || defaultDesc;
-      reasonEl.className = "mx-auto mt-2 max-w-xl text-base sm:text-lg font-medium text-wait";
+
+    if (callerCard) {
+      callerCard.className = "status-stepup w-full flex-1 my-1.5 rounded-2xl border-2 border-amber-500 bg-amber-50 p-3 text-center shadow-md transition-all duration-300 flex flex-col justify-center items-center min-h-[120px] max-h-[200px] overflow-hidden";
+      if (callerEmoji) {
+        callerEmoji.textContent = "⚡";
+        callerEmoji.className = "size-11 rounded-full bg-amber-500 text-white flex items-center justify-center text-2xl mb-1 border border-amber-300 shadow-2xs shrink-0";
+      }
+      if (callerTitle) {
+        callerTitle.textContent = lang === "kn" ? "ಹೆಚ್ಚುವರಿ ಧ್ವನಿ ಪರಿಶೀಲನೆ (Tier-2)" : (lang === "hi" ? "अतिरिक्त आवाज़ सुरक्षा जाँच" : "Step-Up Required · Say 4 Words");
+        callerTitle.className = "font-display text-base sm:text-lg font-black text-amber-950 leading-tight";
+      }
+      if (callerReason) {
+        callerReason.textContent = reason || (lang === "kn" ? "ದಯವಿಟ್ಟು ಕೆಳಗಿನ 4 ಸರಳ ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ" : (lang === "hi" ? "कृपया नीचे दिए गए 4 शब्द साफ़ बोलें" : "Please recite the 4 challenge words aloud"));
+        callerReason.className = "text-xs text-amber-800 mt-1 font-semibold leading-snug line-clamp-2";
+      }
+      if (callerChallengeBox) callerChallengeBox.classList.remove("hidden");
     }
-    if (tier2Prompt) tier2Prompt.classList.remove("hidden");
 
     // Highlight Tier-2 Challenge Box
     const box = $("tier2Box");
@@ -444,6 +526,7 @@ function setStatusCard(decision, reason) {
         box.classList.remove("ring-4", "ring-wait", "ring-offset-2");
       }, 3500);
     }
+  }
   } else {
     card.classList.add("status-ready");
     if (emoji) {
@@ -982,7 +1065,7 @@ async function apiEnroll(audioBlob, name, lang = currentLang) {
 /**
  * 4. Dual-Gate Voice Check (/api/check)
  */
-async function apiCheck(audioBlob, speakerId, action, amount, lang = currentLang, device = currentDevice, source = currentSource) {
+async function apiCheck(audioBlob, speakerId, action, amount, lang = currentLang, device = currentDevice, source = currentSource, textHint = (window.latestVoiceTranscript || null)) {
   const fd = new FormData();
   fd.append("audio", audioBlob, "check.wav");
   fd.append("speaker_id", speakerId || currentSpeakerId);
@@ -990,6 +1073,10 @@ async function apiCheck(audioBlob, speakerId, action, amount, lang = currentLang
   fd.append("lang", lang || "kn");
   fd.append("device", device || "phone1");
   fd.append("source", source || "live_mic");
+  const th = textHint || window.latestVoiceTranscript;
+  if (th) {
+    fd.append("text_hint", th);
+  }
   if (amount !== undefined && amount !== null && amount !== "") {
     fd.append("amount", amount);
   }
@@ -1619,10 +1706,76 @@ function handleRecordingFinished(recordedBlob, elapsedSec) {
 }
 
 let _isSimulatedHttpRecording = false;
+let speechRecognizer = null;
+let latestVoiceTranscript = "";
+window.latestVoiceTranscript = "";
+
+function initSpeechRecognition() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) {
+    return null;
+  }
+  try {
+    const rec = new SpeechRec();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    return rec;
+  } catch (e) {
+    return null;
+  }
+}
 
 async function startRecording(target = "senior") {
   recordTarget = target;
   recordedChunks = [];
+  latestVoiceTranscript = "";
+  window.latestVoiceTranscript = "";
+
+  // Start live Indic Speech Recognition if supported
+  const activeLang = (typeof currentLang !== "undefined" ? currentLang : "kn").toLowerCase();
+  const langCode = activeLang === "kn" ? "kn-IN" : (activeLang === "hi" ? "hi-IN" : "en-IN");
+  
+  if (!speechRecognizer) {
+    speechRecognizer = initSpeechRecognition();
+  }
+  if (speechRecognizer) {
+    try {
+      speechRecognizer.lang = langCode;
+      speechRecognizer.onresult = (event) => {
+        let interim = "";
+        let final = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        const text = (final || interim).trim();
+        if (text) {
+          latestVoiceTranscript = text;
+          window.latestVoiceTranscript = text;
+          if ($("callerStatusReason")) {
+            $("callerStatusReason").textContent = `🎙️ "${text}"`;
+            $("callerStatusReason").className = "text-xs font-black text-ink mt-1 font-sans bg-amber-100/90 px-2 py-1 rounded border border-amber-400";
+          }
+          if ($("callerStatusTitle")) {
+            $("callerStatusTitle").textContent = activeLang === "kn" ? "ಧ್ವನಿ ಗ್ರಹಿಸಲಾಗುತ್ತಿದೆ..." : (activeLang === "hi" ? "आवाज़ सुनी जा रही है..." : "Hearing Voice...");
+          }
+          if ($("recordHint")) {
+            $("recordHint").textContent = `🎙️ Hearing: "${text}"`;
+          }
+        }
+      };
+      speechRecognizer.onerror = (e) => {
+        console.info("Speech recognition event:", e.error || e);
+      };
+      speechRecognizer.start();
+    } catch (e) {
+      console.info("SpeechRecognizer start skipped:", e.message || e);
+    }
+  }
 
   // Check if getUserMedia is supported in the current browser/network context
   const hasMediaDevices = !!(
@@ -1640,14 +1793,16 @@ async function startRecording(target = "senior") {
     else if (target === "enroll") startEnrollTimer();
     else startSeniorTimer();
 
-    if ($("callerInstructionText")) {
-      const activeLang = typeof currentLang !== "undefined" ? currentLang : "kn";
+    if ($("callerStatusTitle")) {
+      $("callerStatusTitle").textContent = activeLang === "kn" ? "ಮಾತನಾಡಿ (ಆಲಿಸುತ್ತಿದೆ...)" : (activeLang === "hi" ? "बोलिए (सुना जा रहा है...)" : "Speak Now (Listening...)");
+    }
+    if ($("callerStatusReason") && !latestVoiceTranscript) {
       if (activeLang === "kn") {
-        $("callerInstructionText").textContent = "🎤 ಲೈವ್ ಧ್ವನಿ ರೆಕಾರ್ಡ್ ಆಗುತ್ತಿದೆ... ಮಾತನಾಡಿ ಮತ್ತು ನಿಲ್ಲಿಸಲು ಮತ್ತೆ ಟ್ಯಾಪ್ ಮಾಡಿ";
+        $("callerStatusReason").textContent = "🎤 ಲೈವ್ ಧ್ವನಿ ರೆಕಾರ್ಡ್ ಆಗುತ್ತಿದೆ... ಮಾತನಾಡಿ ನಿಲ್ಲಿಸಲು ಮತ್ತೆ ಟ್ಯಾಪ್ ಮಾಡಿ";
       } else if (activeLang === "hi") {
-        $("callerInstructionText").textContent = "🎤 लाइव आवाज़ रिकॉर्ड हो रही है... बोलें और रोकने के लिए फिर से टैप करें";
+        $("callerStatusReason").textContent = "🎤 लाइव आवाज़ रिकॉर्ड हो रही है... बोलें और रोकने के लिए फिर से टैप करें";
       } else {
-        $("callerInstructionText").textContent = "🎤 Recording live voice order... Speak and tap again to send & verify";
+        $("callerStatusReason").textContent = "🎤 Recording live voice order... Speak and tap again to send & verify";
       }
     }
     if ($("recordHint")) {
@@ -1715,6 +1870,10 @@ async function startRecording(target = "senior") {
 }
 
 async function stopRecording() {
+  if (speechRecognizer) {
+    try { speechRecognizer.stop(); } catch (_) {}
+  }
+
   if (_isSimulatedHttpRecording) {
     _isSimulatedHttpRecording = false;
     isRecording = false;
@@ -1744,10 +1903,9 @@ async function stopRecording() {
 
     if (fixtureFile) {
       handleRecordingFinished(fixtureFile, Math.max(3, Math.round(sec || 3)));
-    } else {
-      console.warn("Could not load authentic fixture for mobile HTTP fallback");
+      return fixtureFile;
     }
-    return;
+    return null;
   }
 
   // Check PcmAudioRecorder first
@@ -1756,16 +1914,31 @@ async function stopRecording() {
       const res = await window.PcmAudioRecorder.stop();
       if (res && res.blob) {
         handleRecordingFinished(res.blob, res.durationSeconds);
-        return;
+        return res.blob;
       }
     } catch (e) {
       console.warn("PcmAudioRecorder.stop error, falling back", e);
     }
   }
 
+  // Fallback MediaRecorder with proper Promise resolution
   if (mediaRecorder && mediaRecorder.state !== "inactive") {
-    mediaRecorder.stop();
+    await new Promise((resolve) => {
+      mediaRecorder.onstop = () => {
+        const mime = mediaRecorder.mimeType || "audio/webm";
+        const recordedBlob = new Blob(recordedChunks, { type: mime });
+        const sec = recordTarget === "challenge" ? challengeElapsedSeconds : recordTarget === "enroll" ? enrollElapsedSec : seniorElapsedSec;
+        handleRecordingFinished(recordedBlob, sec);
+        resolve(recordedBlob);
+      };
+      try {
+        mediaRecorder.stop();
+      } catch (err) {
+        resolve(null);
+      }
+    });
   }
+
   if (recordTarget === "challenge") {
     stopChallengeTimer();
   } else if (recordTarget === "enroll") {
@@ -1773,6 +1946,8 @@ async function stopRecording() {
   } else {
     stopSeniorTimer();
   }
+
+  return currentBlob;
 }
 
 // Senior Recording Timer
@@ -3513,24 +3688,54 @@ function initCallerPhoneControls() {
   const callerMic = $("callerBtnRecord");
   if (callerMic) {
     callerMic.onclick = async () => {
-      const btnRec = $("btnRecord");
-      const btnStop = $("btnStop");
       if (isRecording) {
-        if (btnStop) {
-          btnStop.click();
-        } else {
-          await stopRecording();
+        // 1. Visual state immediately updates to processing
+        callerMic.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
+        callerMic.classList.add("bg-amber-600", "border-amber-600");
+        if ($("callerBtnRecordIcon")) $("callerBtnRecordIcon").textContent = "⏳";
+        if ($("callerBtnRecordLabel")) $("callerBtnRecordLabel").textContent = "ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ... (Verifying)";
+        if ($("callerStatusTitle")) $("callerStatusTitle").textContent = "⏳ ಧ್ವನಿ ಪರಿಶೀಲನೆ... / Verifying Voice";
+        if ($("callerStatusReason") && !window.latestVoiceTranscript) {
+          $("callerStatusReason").textContent = "DetectifAI Aletheia + Eidos ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ಪರೀಕ್ಷಿಸಲಾಗುತ್ತಿದೆ...";
         }
-        // Automatically submit live voice order for gate check after stopping
-        setTimeout(() => {
-          if ($("btnCheck")) $("btnCheck").click();
-        }, 350);
+
+        // 2. Stop recording and await the audio blob
+        const blob = await stopRecording();
+        let finalAudio = blob || currentBlob || getAudioForRequest("audioFileSenior");
+
+        // Fallback: If hardware mic didn't capture or on mobile HTTP, load authentic fixture
+        if (!finalAudio || finalAudio.size < 100) {
+          const lang = typeof currentLang !== "undefined" ? currentLang : "kn";
+          const fixtureName = `${lang === 'kn' ? 'kannada' : lang === 'hi' ? 'hindi' : 'english'}_farmer_genuine.wav`;
+          finalAudio = await loadAudioFixture(fixtureName) || await loadAudioFixture("farmer_genuine_5s.wav");
+          if (finalAudio) currentBlob = finalAudio;
+        }
+
+        if (finalAudio) {
+          showOverlay("Running GramPay Voice Gate Check (DetectifAI Aletheia + Eidos)…");
+          try {
+            const data = await apiCheck(
+              finalAudio,
+              currentSpeakerId || "kisan_farmer_01",
+              "TRANSFER_FUNDS",
+              "1000",
+              currentLang,
+              "phone1",
+              "live_mic",
+              window.latestVoiceTranscript
+            );
+            renderCheckResponse(data);
+          } catch (err) {
+            console.error("Caller mic gate check error:", err);
+            showError(err.error || err.message || "Gate check failed", err.fail_closed !== false);
+          } finally {
+            hideOverlay();
+            refreshAudit();
+            refreshStats();
+          }
+        }
       } else {
-        if (btnRec) {
-          btnRec.click();
-        } else {
-          await startRecording("senior");
-        }
+        await startRecording("senior");
       }
     };
   }

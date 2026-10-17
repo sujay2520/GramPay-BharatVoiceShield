@@ -417,7 +417,8 @@ async def check_audio_endpoint(
     amount: Optional[float] = Form(1000.0),
     lang: Optional[str] = Form("kn"),
     device: Optional[str] = Form("phone1"),
-    source: Optional[str] = Form("live_mic")
+    source: Optional[str] = Form("live_mic"),
+    text_hint: Optional[str] = Form(None)
 ):
     """Executes parallel DetectifAI Aletheia + Eidos evaluation and applies the Day 2 Contract Gate."""
     meta = make_metadata()
@@ -580,7 +581,7 @@ async def check_audio_endpoint(
 
         elif decision == "PAY":
             # Approved: Transcribe and parse financial intent
-            intent_res = extract_intent_and_transcript(raw_bytes, norm_lang)
+            intent_res = extract_intent_and_transcript(raw_bytes, norm_lang, text_hint=text_hint)
             transcript_payload = {
                 "text": intent_res["text"],
                 "english": intent_res["english"]
@@ -1902,6 +1903,47 @@ async def serve_index():
     if not index_file.exists():
         raise HTTPException(status_code=404, detail="index.html not found")
     return HTMLResponse(content=index_file.read_text(encoding="utf-8"), media_type="text/html")
+
+
+@app.get("/simulator", response_class=HTMLResponse)
+async def serve_simulator():
+    sim_file = FRONTEND_DIR / "index_old_simulator.html"
+    if not sim_file.exists():
+        sim_file = FRONTEND_DIR / "index.html"
+    return HTMLResponse(content=sim_file.read_text(encoding="utf-8"), media_type="text/html")
+
+
+@app.get("/assets/{file_path:path}")
+async def serve_assets(file_path: str):
+    p = FRONTEND_DIR / "assets" / file_path
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="Asset not found")
+    if file_path.endswith(".js"):
+        media_type = "application/javascript"
+    elif file_path.endswith(".css"):
+        media_type = "text/css"
+    elif file_path.endswith(".svg"):
+        media_type = "image/svg+xml"
+    else:
+        media_type = "application/octet-stream"
+    return Response(content=p.read_bytes(), media_type=media_type)
+
+
+@app.get("/favicon.svg")
+async def serve_favicon():
+    p = FRONTEND_DIR / "favicon.svg"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="favicon not found")
+    return Response(content=p.read_bytes(), media_type="image/svg+xml")
+
+
+@app.get("/icons.svg")
+async def serve_icons():
+    p = FRONTEND_DIR / "icons.svg"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="icons not found")
+    return Response(content=p.read_bytes(), media_type="image/svg+xml")
+
 
 
 @app.get("/app.js")

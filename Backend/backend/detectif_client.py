@@ -926,6 +926,25 @@ class DetectifClient:
                     continue
 
                 if resp.status_code >= 400:
+                    if resp.status_code == 404:
+                        try:
+                            err_payload = resp.json()
+                            err_obj = err_payload.get("error", {})
+                            if err_obj.get("code") == "speaker_not_found":
+                                return {
+                                    "decision": "no_match",
+                                    "similarity": 0.0,
+                                    "threshold": 0.53,
+                                    "matched": False,
+                                    "match_score": 0.0,
+                                    "speaker_id": clean_speaker_id,
+                                    "not_enrolled": True,
+                                    "error": "speaker_not_found",
+                                    "latency_ms": latency_ms,
+                                    "raw": err_payload,
+                                }
+                        except Exception:
+                            pass
                     self._raise_for_error(resp)
 
                 raw_json = resp.json()
