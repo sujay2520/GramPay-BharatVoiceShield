@@ -1,0 +1,18 @@
+{
+  "enrolled": true,
+  "speaker_id": "kisan_farmer_01",
+  "speaker_name": "kisan_farmer_01",
+  "lang": "kn",
+  "enrolled_at": "2026-10-17T10:43:41Z",
+  "biometrics": {
+    "f0_hz": 130.1,
+    "best_lag": 123,
+    "max_corr": 0.195,
+    "rms": 5823.3,
+    "zcr": 0.0652,
+    "mag_4k": 10.53,
+    "duration_sec": 5.0,
+    "sample_rate": 16000,
+    "samples_count": 80000
+  }
+}
