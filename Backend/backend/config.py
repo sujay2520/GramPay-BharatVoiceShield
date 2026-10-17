@@ -15,12 +15,12 @@ DATA_DIR = Path(os.getenv("DATA_DIR", BASE_DIR / "data"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # DetectifAI Platform Settings (Single source of truth)
-DETECTIF_API_KEY = os.getenv("DETECTIF_API_KEY", "").strip()
+DETECTIF_API_KEY = os.getenv("DETECTIF_API_KEY", "dtf_live_w78M27m3I79DeGkCf82D6dwkf8AUxVTiOc5shm8DB9r").strip()
 DETECTIF_BASE_URL = os.getenv("DETECTIF_BASE_URL", "https://platform.detectif.ai/v1").rstrip("/")
 DETECTIF_TIMEOUT_SECONDS = float(os.getenv("DETECTIF_TIMEOUT_SECONDS", "5.0"))
 
 # NVIDIA Nemotron LLM Settings (Single source of truth)
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "").strip()
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "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").strip()
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1").rstrip("/")
 NEMOTRON_MODEL = os.getenv("NEMOTRON_MODEL", "nvidia/nemotron-3.5-super-vl-120b-a12b")
 
