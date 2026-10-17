@@ -2,9 +2,9 @@
 Track 3: UNCLONE Agents - Zero-Trust Voice Security & Cost Optimization Gateway.
 
 Configures and boots the Uvicorn ASGI server with:
-- Deterministic host (0.0.0.0) and port (8000) binding (configurable via HOST / PORT env vars).
+- Loopback-only host (127.0.0.1) and port (8000) binding (configurable via HOST / PORT env vars).
 - Graceful logging configuration.
-- Informative CORS notice for frontend and client integrations.
+- Local-only CORS and network binding.
 - Detailed startup banner displaying DetectifAI platform and NVIDIA Nemotron status.
 """
 
@@ -26,7 +26,6 @@ from backend.config import (
     NVIDIA_API_KEY,
     NVIDIA_BASE_URL,
     NEMOTRON_MODEL,
-    ALLOWED_ORIGIN,
     MATCH_HIGH,
     SYNTH_HIGH,
     SYNTH_LOW,
@@ -83,11 +82,7 @@ def print_startup_banner(host: str, port: int, logger: logging.Logger):
     nemotron_configured = bool(NVIDIA_API_KEY and NVIDIA_API_KEY.startswith("nvapi-"))
     nemotron_key_status = mask_secret(NVIDIA_API_KEY)
 
-    # CORS evaluation notice
-    if ALLOWED_ORIGIN == "*":
-        cors_notice = "PERMISSIVE ('*') - Accepts requests from any UI / Grok origin"
-    else:
-        cors_notice = f"RESTRICTED - Explicitly locked to: {ALLOWED_ORIGIN}"
+    cors_notice = "Local UI only: localhost and 127.0.0.1 on port 8000"
 
     print(banner_border)
     print(r"""  _   _            ____ _                     ____       _       
@@ -139,7 +134,7 @@ def print_startup_banner(host: str, port: int, logger: logging.Logger):
 
 def main():
     """Main execution point for starting the Uvicorn application server."""
-    host = os.getenv("HOST", "0.0.0.0")
+    host = os.getenv("HOST", "127.0.0.1")
     port = int(os.getenv("PORT", "8000"))
     log_level = os.getenv("LOG_LEVEL", "info")
     reload_enabled = os.getenv("RELOAD", "false").lower() in ("true", "1", "yes")

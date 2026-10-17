@@ -30,7 +30,7 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 CREDENTIAL_VALIDITY_SECONDS = int(os.getenv("CREDENTIAL_VALIDITY_SECONDS", "300"))  # 5 minutes
 
 # CORS Settings
-ALLOWED_ORIGIN = os.getenv("ALLOWED_ORIGIN", "*")
+ALLOWED_ORIGIN = "http://127.0.0.1:8000"
 
 # Cost Optimization Model (INR)
 ASSUMED_COST_PER_MIN_INR = float(os.getenv("ASSUMED_COST_PER_MIN_INR", "10.0"))
@@ -56,4 +56,3 @@ CREDIT_RESERVE_FLOOR = int(os.getenv("CREDIT_RESERVE_FLOOR", "3000"))
 
 # SQLite Storage
 SQLITE_DB_PATH = Path(os.getenv("SQLITE_DB_PATH", DATA_DIR / "audit.db"))
-

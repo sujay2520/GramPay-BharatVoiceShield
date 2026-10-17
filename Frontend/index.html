@@ -127,7 +127,7 @@
         <span class="text-muted">&rarr;</span>
         <span class="rounded-lg bg-cream px-2 py-0.5 border border-line">3. DetectifAI Dual Check</span>
         <span class="text-muted">&rarr;</span>
-        <span class="rounded-lg bg-safe-bg text-safe px-2 py-0.5 border border-safe/30">4. Allow or block the request</span>
+        <span class="rounded-lg bg-safe-bg text-safe px-2 py-0.5 border border-safe/30">4. Report the voice result</span>
       </div>
     </section>
 
@@ -172,11 +172,11 @@
         <!-- Live DetectifAI Platform Credits Badge -->
         <div class="flex items-center gap-2 rounded-full border border-gold/40 bg-ink px-4 py-2 text-sm font-semibold text-gold-bright shadow-sm">
           <span>💳</span>
-          <span>DetectifAI: <strong id="creditsCounter" class="font-mono text-cream font-bold">4,950</strong> credits available</span>
+          <span>DetectifAI: <strong id="creditsCounter" class="font-mono text-cream font-bold">—</strong> credits available</span>
         </div>
 
         <!-- Health / Reachable Badge -->
-        <div id="healthBadge" class="flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold shadow-sm text-ink cursor-pointer hover:border-gold hover:shadow transition" title="Backend Gateway Status. Click to configure backend URL">
+        <div id="healthBadge" class="flex items-center gap-2 rounded-full border border-line bg-paper px-4 py-2 text-sm font-semibold shadow-sm text-ink transition" title="Local voice gateway and DetectifAI status">
           <span id="healthDot" class="relative flex h-2.5 w-2.5">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
@@ -235,7 +235,7 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 font-mono">
+        <div class="grid grid-cols-2 gap-3 font-mono">
           <!-- 1. Checks Run -->
           <div class="rounded-xl border border-line bg-cream/70 p-3.5 transition hover:shadow-xs">
             <span class="text-[11px] font-bold tracking-wider text-muted uppercase font-sans">Checks Run</span>
@@ -250,30 +250,11 @@
             <span class="text-[10px] text-alert/80 font-sans block mt-0.5">Reported by backend</span>
           </div>
 
-          <!-- 3. LLM Turns Saved -->
-          <div class="rounded-xl border border-gold/40 bg-wait-bg/50 p-3.5 transition hover:shadow-xs">
-            <span class="text-[11px] font-bold tracking-wider text-gold uppercase font-sans">LLM Turns Saved</span>
-            <p id="agent_steps_skipped" class="mt-1 font-display text-2xl md:text-3xl font-bold text-gold">—</p>
-            <span class="text-[10px] text-muted font-sans block mt-0.5">Reported by backend</span>
-          </div>
 
-          <!-- 4. INR Saved -->
-          <div class="rounded-xl border border-safe/30 bg-safe-bg/60 p-3.5 transition hover:shadow-xs">
-            <span class="text-[11px] font-bold tracking-wider text-safe uppercase font-sans">INR Saved</span>
-            <p id="agent_time_saved_inr" class="mt-1 font-display text-2xl md:text-3xl font-bold text-safe">—</p>
-            <span id="costAssumptionText" class="text-[10px] text-safe/80 font-sans block mt-0.5">Reported by backend</span>
-          </div>
+        </div>
         </div>
 
-        <!-- Secondary counter targets required by app.js -->
-        <div class="mt-3 pt-2 border-t border-line/60 flex items-center justify-between text-xs text-muted font-mono">
-          <div class="flex items-center gap-3">
-            <span>Steps: <strong id="costSteps" class="text-ink">—</strong></span>
-            <span>Secs: <strong id="costSeconds" class="text-ink">—</strong></span>
-            <span>Saved: <strong id="costInr" class="text-safe">—</strong></span>
-          </div>
-          <span class="text-[11px] font-sans text-muted hidden sm:inline">Backend telemetry</span>
-        </div>
+    </div>
     </div>
 
     <!-- ========================================================================== -->
@@ -295,13 +276,11 @@
             <div class="virtual-phone-camera-dot"></div>
           </div>
           <div class="flex items-center gap-1.5 text-[10px]">
-            <span class="rounded bg-white/20 px-1 py-0.2 font-mono">VoLTE</span>
-            <span>📶 4G</span>
-            <span>🔋 98%</span>
+            <span class="rounded bg-white/20 px-1 py-0.2 font-mono">LOCAL</span>
           </div>
         </div>
 
-        <!-- In-Call Voice Payment Rail Banner -->
+        <!-- Local voice verification status -->
         <div class="virtual-phone-call-header w-full">
           <div class="flex items-center gap-2">
             <span class="relative flex h-2.5 w-2.5">
@@ -524,15 +503,15 @@
           <button id="btnCheck" type="button"
             class="min-h-16 sm:min-h-18 rounded-2xl bg-safe text-xl sm:text-2xl font-bold text-paper transition-all hover:bg-safe/90 active:scale-99 shadow-lg flex items-center justify-center gap-3 border-2 border-safe/80">
             <span class="text-2xl">🛡️</span>
-            <span>ಧ್ವನಿ ಪರಿಶೀಲಿಸಿ ಪಾವತಿಸಿ / Verify &amp; Pay</span>
+            <span>ಧ್ವನಿ ಪರಿಶೀಲಿಸಿ / Verify voice</span>
           </button>
 
-          <!-- Collapsible: Advanced & Manual Payment Options -->
+          <!-- Optional local audio file upload -->
           <details class="group rounded-2xl border-2 border-line bg-cream/40 p-4 transition mt-1">
             <summary class="cursor-pointer text-sm font-bold text-ink/80 hover:text-ink flex items-center justify-between select-none">
               <span class="flex items-center gap-2">
                 <span>⚙️</span>
-                <span>ಸುಧಾರಿತ ಆಯ್ಕೆಗಳು / Advanced &amp; Manual Options</span>
+                <span>ಆಡಿಯೋ ಫೈಲ್ / Audio file</span>
               </span>
               <span class="text-xs text-muted transition group-open:rotate-180">▼</span>
             </summary>
@@ -550,36 +529,6 @@
                 </div>
               </div>
 
-              <!-- Action & Amount Form -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-bold text-muted uppercase">Action</label>
-                  <select id="actionSelect" class="mt-1 min-h-12 w-full rounded-xl border-2 border-line bg-paper px-3 text-sm font-medium text-ink outline-none focus:border-gold">
-                    <option value="TRANSFER_FUNDS">Pay / Transfer (Hello! UPI)</option>
-                    <option value="CHECK_BALANCE">Check balance</option>
-                    <option value="PAY_UPI">NPCI Merchant Payment</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-bold text-muted uppercase">Amount (₹)</label>
-                  <input id="amountInput" type="number" value="" placeholder="Enter amount" min="0" step="0.01"
-                    class="mt-1 min-h-12 w-full rounded-xl border-2 border-line bg-paper px-3 text-sm font-medium font-mono text-ink outline-none focus:border-gold" />
-                </div>
-              </div>
-
-              <!-- Full Agent Turn & Tool Buttons -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                <button id="btnAgentTurn" type="button"
-                  class="min-h-12 rounded-xl border-2 border-ink text-sm font-bold text-ink transition-all hover:bg-ink hover:text-paper shadow-2xs flex items-center justify-center gap-1.5">
-                  <span>🤖</span>
-                  <span>ಧ್ವನಿ ಸಹಾಯಕ ಪಾವತಿ / Voice Assistant</span>
-                </button>
-                <button id="btnExecutePay" type="button"
-                  class="min-h-12 rounded-xl border-2 border-gold bg-gold/15 text-sm font-bold text-ink transition-all hover:bg-gold hover:text-paper shadow-2xs flex items-center justify-center gap-1.5">
-                  <span>⚡</span>
-                  <span>ತ್ವರಿತ ಪಾವತಿ / Quick Pay</span>
-                </button>
-              </div>
             </div>
           </details>
 
@@ -630,73 +579,6 @@
             </button>
           </div>
           <p id="challengeResult" class="text-sm text-center font-bold hidden"></p>
-        </div>
-
-        <!-- Optional keypad controls for entering a request -->
-        <div class="border-t-2 border-line/70 pt-3">
-          <button type="button" id="btnToggleKeypad"
-            class="w-full py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs font-bold text-muted hover:text-ink transition flex items-center justify-between cursor-pointer shadow-2xs">
-            <span class="flex items-center gap-1.5">
-              <span>⌨️</span>
-              <span>123Pay Numeric Keypad (Feature Phone Dialpad)</span>
-            </span>
-            <span id="keypadToggleIcon" class="text-xs transition-transform duration-200">▼</span>
-          </button>
-          <div id="virtualKeypadBox" class="hidden mt-3 p-3.5 rounded-2xl bg-cream-2/70 border-2 border-line space-y-2.5 shadow-inner">
-            <p class="text-[11px] text-center text-muted font-bold uppercase tracking-wider">
-              Keypad
-            </p>
-            <div class="keypad-grid font-mono">
-              <button type="button" class="keypad-btn" onclick="document.getElementById('actionSelect').value='TRANSFER_FUNDS';">
-                <span class="block text-base font-black text-ink">1</span>
-                <span class="block text-[9px] text-muted">Money Transfer</span>
-              </button>
-              <button type="button" class="keypad-btn" onclick="document.getElementById('actionSelect').value='CHECK_BALANCE';">
-                <span class="block text-base font-black text-ink">2</span>
-                <span class="block text-[9px] text-muted">Check Balance</span>
-              </button>
-              <button type="button" class="keypad-btn" onclick="document.getElementById('actionSelect').value='PAY_UPI';">
-                <span class="block text-base font-black text-ink">3</span>
-                <span class="block text-[9px] text-muted">Merchant Pay</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">4</span>
-                <span class="block text-[9px] text-muted">Recharge</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">5</span>
-                <span class="block text-[9px] text-muted">FASTag</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">6</span>
-                <span class="block text-[9px] text-muted">Account</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">7</span>
-                <span class="block text-[9px] text-muted">PRS</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">8</span>
-                <span class="block text-[9px] text-muted">TUV</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">9</span>
-                <span class="block text-[9px] text-muted">WXYZ</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">*</span>
-                <span class="block text-[9px] text-muted">Main Menu</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">0</span>
-                <span class="block text-[9px] text-muted">Help</span>
-              </button>
-              <button type="button" class="keypad-btn">
-                <span class="block text-base font-black text-ink">#</span>
-                <span class="block text-[9px] text-muted">Confirm</span>
-              </button>
-            </div>
-          </div>
         </div>
 
         </div> <!-- /inner virtual phone content -->
@@ -780,7 +662,7 @@
           <dt class="text-cream-2">Decision</dt>
           <dd id="metricDecision" class="text-right font-bold text-cream">—</dd>
 
-          <dt class="text-cream-2">Payment Tool</dt>
+          <dt class="text-cream-2">Downstream service</dt>
           <dd class="flex items-center justify-end gap-1 font-bold text-cream">
             <span id="metricToolLockIcon">🔒</span>
             <span id="metricTool">LOCKED</span>
@@ -796,7 +678,7 @@
               <p class="text-[11px] text-cream-2/70">Aletheia &amp; Eidos biometrics API ledger</p>
             </div>
           </div>
-          <span class="font-mono font-bold text-gold-bright text-sm"><strong id="judgeCreditsVal">4,950</strong> credits available</span>
+          <span class="font-mono font-bold text-gold-bright text-sm"><strong id="judgeCreditsVal">—</strong> credits available</span>
         </div>
 
         <!-- Live Acoustic Spectrogram & 2x2 Gate Decision Matrix Visualizers -->
@@ -869,10 +751,9 @@
             </div>
           </div>
 
-          <!-- Visual Latency Bar with 800ms Threshold -->
+          <!-- Informational response timer -->
           <div class="h-2.5 bg-ink rounded-full overflow-hidden relative border border-line/20">
             <div id="challengeTimerBar" class="h-full bg-gold transition-all duration-75" style="width: 0%"></div>
-            <div class="absolute top-0 bottom-0 left-[16%] w-0.5 bg-alert z-10" title="800ms Threshold"></div>
           </div>
 
           <p id="challengeTimerStatus" class="text-xs font-mono text-cream-2/70">
@@ -954,41 +835,6 @@
           <p id="credResult" class="text-xs font-mono text-cream-2 break-all"></p>
         </div>
 
-        <!-- 4. Backend Gateway Connection URL (Advanced Collapsible) -->
-        <details class="group rounded-2xl bg-ink-soft p-4 space-y-3 border border-ink/40">
-          <summary class="cursor-pointer text-xs font-bold tracking-wider text-cream-2 uppercase select-none flex items-center justify-between list-none">
-            <span class="flex items-center gap-2">
-              <span>⚙️</span>
-              <span>Advanced Gateway Routing</span>
-              <span class="rounded bg-safe/20 px-1.5 py-0.5 text-[10px] font-semibold text-safe">Auto-Integrated</span>
-            </span>
-            <span class="text-xs text-gold-bright group-open:rotate-180 transition">▼</span>
-          </summary>
-          <div class="pt-2 space-y-2">
-            <div class="flex items-center justify-between">
-              <label class="block text-xs font-bold tracking-wider text-cream-2 uppercase">
-                Gateway Origin
-              </label>
-              <span class="text-[11px] text-cream-2/70 font-mono">Relative /api or custom URL</span>
-            </div>
-            <div class="flex gap-2">
-              <input id="backendUrlInput" value="" placeholder="Relative /api or https://your-backend.railway.app or http://localhost:8000"
-                class="min-h-11 flex-1 rounded-xl border border-ink bg-ink px-3 text-sm text-cream outline-none focus:border-gold font-mono" />
-              <button id="btnSaveBackend" type="button"
-                class="min-h-11 rounded-xl bg-gold px-4 text-sm font-bold text-ink hover:bg-gold-bright transition">
-                Save
-              </button>
-              <button id="btnCheckHealth" type="button"
-                class="min-h-11 rounded-xl border border-cream-2/40 px-3 text-sm font-semibold text-cream hover:bg-ink-soft transition">
-                Health
-              </button>
-            </div>
-            <p class="text-[11px] text-cream-2/70 leading-relaxed">
-              Default uses self-contained automatic gateway routing. Optionally enter a custom FastAPI backend origin (e.g. <code class="text-gold-bright">http://localhost:8000</code>).
-            </p>
-          </div>
-        </details>
-
         <!-- 5. Raw Telemetry JSON Payload -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
@@ -1040,14 +886,14 @@
 
     <!-- Farmer voice interface -->
     <div id="callerPhoneView" class="hidden flex-col items-center justify-between min-h-[85vh] max-w-md mx-auto py-4 px-2">
-      <!-- (a) Top Bar: Verified Bank Agent Badge + 3 Language Pills -->
+      <!-- (a) Top Bar: Voice Profile Status + Language Pills -->
       <div class="w-full flex items-center justify-between gap-2 border-b-2 border-line pb-4 mb-4">
         <div class="inline-flex items-center gap-2 rounded-full bg-safe-bg border-2 border-safe/40 px-3.5 py-1.5 shadow-2xs">
           <span class="relative flex h-2.5 w-2.5">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
           </span>
-          <span id="callerAgentBadge" class="text-xs sm:text-sm font-extrabold text-safe tracking-wide">🛡️ Bank Voice Security Active</span>
+          <span id="callerAgentBadge" class="text-xs sm:text-sm font-extrabold text-safe tracking-wide">Voice profile status</span>
         </div>
         <div class="inline-flex rounded-2xl border-2 border-line bg-paper p-1 shadow-2xs" id="callerLangBar">
           <button type="button" class="caller-lang-btn active rounded-xl px-3 py-1.5 text-sm font-black transition border-2 border-ink bg-ink text-paper" data-lang="kn">ಕನ್ನಡ</button>
@@ -1176,7 +1022,7 @@
           </div>
         </div>
 
-        <!-- Spoken Transcript / Translation (Stays blank on BLOCK to prove LLM skipped!) -->
+        <!-- Spoken Transcript / Translation, when returned by the provider -->
         <div class="rounded-2xl border-2 border-line bg-cream/60 p-4 sm:p-5 space-y-2">
           <div class="flex items-center justify-between text-xs font-bold text-muted uppercase tracking-wider">
             <span>Spoken Voice Transcript &amp; Translation:</span>
@@ -1191,11 +1037,8 @@
       <!-- Card 4: Cost & Live Credits Bar + Clean 5-Row Recent Events Table -->
       <div class="rounded-3xl border-3 border-line bg-paper p-6 sm:p-8 shadow-md space-y-6">
         <!-- Top 3 Metrics Ribbon -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="rounded-2xl border-2 border-line bg-cream p-4 text-center">
-            <span class="text-xs font-black text-muted uppercase tracking-wider block">Paid LLM Steps Skipped</span>
-            <span id="consoleStepsSkipped" class="font-mono text-3xl sm:text-4xl font-black text-safe mt-1 block">—</span>
-          </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
           <div class="rounded-2xl border-2 border-line bg-cream p-4 text-center">
             <span class="text-xs font-black text-muted uppercase tracking-wider block">Voice Checks Recorded</span>
             <span id="consoleCallsScreened" class="font-mono text-3xl sm:text-4xl font-black text-safe mt-1 block">—</span>
@@ -1250,7 +1093,7 @@
         </div>
 
         <p class="text-xs text-muted mb-4 leading-relaxed">
-          Recite the dynamic Nemotron phrase aloud within the latency window (&lt; 5.0 seconds). If latency exceeds 800ms, an automated synthesizer lag flag triggers.
+          Recite the requested phrase clearly. Timing is informational only. The voice decision comes from the provider check.
         </p>
 
         <!-- 4 Words in Modal -->
@@ -1291,56 +1134,6 @@
           </button>
         </div>
         <p id="modalResult" class="text-xs font-mono mt-3 hidden text-center"></p>
-      </div>
-    </div>
-
-    <!-- Backend Gateway Configuration Modal (Mobile & Senior Friendly) -->
-    <div id="backendConfigModal" class="fixed inset-0 bg-ink/80 hidden items-center justify-center z-50 p-4 backdrop-blur-xs">
-      <div class="bg-paper border-2 border-line rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-ink space-y-4">
-        <div class="flex items-center justify-between border-b border-line pb-3">
-          <div class="flex items-center gap-2">
-            <span class="text-xl text-gold">⚙️</span>
-            <div>
-              <h3 class="text-base font-bold text-ink font-display">Configure Gateway Origin</h3>
-              <p class="text-xs text-muted">Backend URL for API requests</p>
-            </div>
-          </div>
-          <button id="btnModalCloseBackend" type="button" class="text-muted hover:text-ink text-2xl font-bold px-2 py-1 leading-none cursor-pointer">&times;</button>
-        </div>
-
-        <div class="space-y-2">
-          <label class="block text-xs font-bold text-muted uppercase tracking-wider">Gateway Origin:</label>
-          <input id="modalBackendUrlInput" type="text" placeholder="http://localhost:8000 or https://xyz.ngrok-free.app or relative"
-            class="w-full rounded-xl border border-line bg-cream p-3 text-sm text-ink outline-none focus:border-gold font-mono" />
-          
-          <div class="flex flex-wrap gap-2 pt-1">
-            <button type="button" id="modalPresetLocal" class="text-xs font-mono font-semibold px-2.5 py-1 rounded-lg border border-line bg-cream hover:bg-cream-2 text-ink cursor-pointer">
-              localhost:8000
-            </button>
-            <button type="button" id="modalPresetRelative" class="text-xs font-mono font-semibold px-2.5 py-1 rounded-lg border border-line bg-cream hover:bg-cream-2 text-ink cursor-pointer">
-              Relative (/api)
-            </button>
-          </div>
-        </div>
-
-        <!-- Mixed Content Warning -->
-        <div id="modalMixedContentWarning" class="hidden rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 text-xs text-amber-800 space-y-1">
-          <p class="font-bold flex items-center gap-1">⚠️ Mixed Content Warning</p>
-          <p class="leading-relaxed">This page is served over HTTPS. Mobile browsers block insecure HTTP connections. Use an HTTPS tunnel (e.g. ngrok / Railway) for mobile access.</p>
-        </div>
-
-        <div id="modalConnectionStatus" class="text-xs font-mono py-1 text-muted hidden"></div>
-
-        <div class="flex gap-2 pt-2">
-          <button type="button" id="btnModalSaveBackend"
-            class="flex-1 bg-gold hover:bg-gold-bright text-ink font-bold py-2.5 rounded-xl text-sm transition shadow cursor-pointer">
-            Save &amp; Test Connection
-          </button>
-          <button type="button" id="btnModalCancelBackend"
-            class="px-4 py-2.5 rounded-xl border border-line bg-cream text-muted font-semibold text-sm hover:text-ink cursor-pointer">
-            Cancel
-          </button>
-        </div>
       </div>
     </div>
 

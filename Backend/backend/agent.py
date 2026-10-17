@@ -5,7 +5,7 @@ Core Security & Compute Optimization Requirements:
 1. Stage B Active Challenge: When gate returns STEP_UP / EXTRA_CHECK, calls Nemotron to
    generate a random 4-word challenge phrase (e.g., 'Golden river seven mango') with vocal instruction.
 2. Caller Response Latency Buffer: Measures response latency buffer to catch real-time voice conversion
-   lag (>800ms indicates voice changer software like RVC/neural vocoder pipelines).
+   response timing is retained for diagnostics but does not determine authenticity.
 3. Rural Farmer Voice Response: When APPROVED, calls Nemotron to formulate a calm, respectful
    Hindi/English response (e.g., 'Namaste Ramesh ji. Voice verified. Payment of Rs 5,000 to IFFCO
    Fertilizer Co-op is completed via Hello! UPI.').
@@ -32,7 +32,6 @@ from backend.tools import BankingTools
 logger = logging.getLogger("unclone.agent")
 
 # Constants for GramPay & Voice Conversion Defense
-VOICE_CHANGER_LATENCY_THRESHOLD_MS = 800.0  # >800ms indicates active voice conversion lag
 DEFAULT_GRAMPAY_RECIPIENT = "IFFCO Fertilizer Co-op"
 DEFAULT_GRAMPAY_AMOUNT = 5000.0
 
@@ -131,24 +130,12 @@ class VoiceAgentOrchestrator:
             return f"Understood. Security check passed. Error invoking Nemotron: {str(e)}"
 
     def measure_latency_buffer(self, response_latency_ms: float) -> Dict[str, Any]:
-        """Measures caller response latency buffer to catch real-time voice conversion lag.
-        
-        Rule 2: In real-time AI voice conversion (RVC/neural vocoder streaming), chunk processing,
-        pitch-tracking, and synthesis buffers introduce an unavoidable acoustic delay.
-        A buffer delay > 800ms indicates active voice changer software.
-        """
-        is_voice_changer = response_latency_ms > VOICE_CHANGER_LATENCY_THRESHOLD_MS
+        """Return response timing as telemetry without interpreting it as identity evidence."""
         return {
             "latency_ms": round(response_latency_ms, 2),
-            "threshold_ms": VOICE_CHANGER_LATENCY_THRESHOLD_MS,
-            "is_voice_changer": is_voice_changer,
-            "status": "VOICE_CHANGER_DETECTED" if is_voice_changer else "NATURAL_LATENCY",
-            "reason": (
-                f"Real-time voice conversion lag detected: {response_latency_ms:.1f}ms exceeds "
-                f"{VOICE_CHANGER_LATENCY_THRESHOLD_MS}ms threshold. Voice changer active."
-                if is_voice_changer else
-                f"Response latency ({response_latency_ms:.1f}ms) within acceptable natural human response buffer."
-            )
+            "status": "RECORDED",
+            "is_voice_changer": False,
+            "reason": "Response timing is informational and is not used to determine voice authenticity."
         }
 
     def generate_stage_b_challenge(
@@ -284,32 +271,11 @@ class VoiceAgentOrchestrator:
     ) -> Dict[str, Any]:
         """Evaluates a farmer's response to the Stage B Active Challenge.
         
-        1. Checks latency buffer: >800ms lag indicates real-time voice changer -> Short-circuits with ZERO LLM compute.
-        2. Validates spoken phrase matches the 4 challenge words.
-        3. If APPROVED, calls Nemotron to formulate the respectful voice confirmation.
+        Records response timing as diagnostics, validates the challenge phrase, then handles a passed challenge.
         """
-        # Step 1: Check real-time voice changer lag
+        # Step 1: Record response timing for diagnostics
         if response_latency_ms is not None:
             latency_data = self.measure_latency_buffer(response_latency_ms)
-            if latency_data["is_voice_changer"]:
-                self.last_llm_compute_burned = False
-                return {
-                    "status": "blocked",
-                    "fail_closed": True,
-                    "decision": "BLOCK_ALERT",
-                    "reason": latency_data["reason"],
-                    "voice_changer_detected": True,
-                    "llm_compute_burned": False,
-                    "tool": BankingTools.get_tool_definition("transfer_funds"),
-                    "cost": _calculate_cost_saving(skipped=True),
-                    "agent_reply_text": (
-                        "Security Warning: Real-time voice conversion lag detected. "
-                        "Active voice changer blocked with zero LLM compute burned."
-                    ),
-                    "intent": "BLOCK_VOICE_CHANGER",
-                    "latency_telemetry": latency_data
-                }
-
         # Step 2: Validate challenge words
         expected_words = set(re.findall(r'\b\w+\b', expected_phrase.lower()))
         spoken_words = set(re.findall(r'\b\w+\b', spoken_response.lower()))
@@ -372,10 +338,9 @@ class VoiceAgentOrchestrator:
     ) -> Dict[str, Any]:
         """Executes full voice agent turn through the DetectifAI Pre-Gate.
         
-        STAGE 1: HARD DETECTIFAI GATE FIRST + LATENCY BUFFER CHECK (No LLM or TTS runs yet!)
-        STAGE 2: IF BLOCK/CLONE/VOICE-CHANGER: SHORT-CIRCUIT WITH ZERO LLM COMPUTE BURNED.
-        STAGE 3: IF STEP_UP / EXTRA_CHECK: CALL NEMOTRON FOR STAGE B ACTIVE CHALLENGE.
-        STAGE 4: IF APPROVED: EXECUTE TOOL + CALL NEMOTRON FOR CALM GRAMPAY FARMER RESPONSE.
+        STAGE 1: Run the DetectifAI voice gate.
+        STAGE 2: Keep blocked actions locked; response timing is diagnostic only.
+        STAGE 3: Continue only through configured downstream integrations.
         """
         self.last_llm_compute_burned = False
         farmer_name = self._get_farmer_name(speaker_id)
@@ -385,43 +350,10 @@ class VoiceAgentOrchestrator:
         effective_amount = amount if amount is not None else parsed_amt
         effective_recipient = recipient if recipient is not None else parsed_rec
 
-        # Rule 2: Measure caller response latency buffer to catch real-time voice conversion lag
+        # Record caller response timing for diagnostics; it is not identity evidence.
         latency_telemetry = None
         if response_latency_ms is not None:
             latency_telemetry = self.measure_latency_buffer(response_latency_ms)
-            if latency_telemetry["is_voice_changer"]:
-                # Catch real-time voice changer! Short-circuit with ZERO LLM compute burned
-                cost_metrics = _calculate_cost_saving(skipped=True)
-                return {
-                    "status": "blocked",
-                    "fail_closed": True,
-                    "decision": "BLOCK_ALERT",
-                    "reason": latency_telemetry["reason"],
-                    "api_error": None,
-                    "detection": {
-                        "is_synthetic": True,
-                        "synthetic_score": 1.0,
-                        "raw": {"latency_violation_ms": response_latency_ms},
-                        "latency_ms": int(response_latency_ms)
-                    },
-                    "verification": {
-                        "matched": False,
-                        "match_score": 0.0,
-                        "raw": {"latency_violation_ms": response_latency_ms},
-                        "latency_ms": 0
-                    },
-                    "tool": BankingTools.get_tool_definition("transfer_funds"),
-                    "cost": cost_metrics,
-                    "transcript": user_text_hint or "[Call Terminated: Voice Changer Latency Lag Caught]",
-                    "agent_reply_text": (
-                        "Security Warning: Real-time voice conversion lag detected. "
-                        "All GramPay transactions are frozen to protect your account."
-                    ),
-                    "intent": "BLOCK_VOICE_CHANGER",
-                    "llm_compute_burned": False,
-                    "latency_telemetry": latency_telemetry
-                }
-
         # If caller provided an active challenge response, verify it directly
         if active_challenge and challenge_response:
             return self.verify_challenge_response(
@@ -482,7 +414,7 @@ class VoiceAgentOrchestrator:
         tool_allowed = gate_result["tool_allowed"]
         cost_metrics = gate_result["cost"]
 
-        # STAGE 2: SHORT-CIRCUIT ON BLOCK/CLONE WITH ZERO LLM COMPUTE BURNED
+        # STAGE 2: Keep blocked calls locked.
         if not tool_allowed:
             tool_status = BankingTools.get_tool_definition("transfer_funds")
             

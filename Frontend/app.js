@@ -1,9 +1,6 @@
 /**
- * GramPay UnClone: Voice Payment Security Shield for NPCI Hello! UPI & 123Pay
- * Frontend Gateway Engine & Judge Telemetry Console
- * 
- * Section 4 API Contract Compliant:
- * - Connects to http://localhost:8000 by default (or window.location.origin when served on port 8000)
+ * GramPay local voice identity and synthetic-audio check UI.
+ * Uses the same localhost origin as the local API server.
  * - Health Check & Live Credits: /api/health, /api/credits
  * - Voice Gate Check: /api/check
  * - Voice Enrollment: /api/enroll (with >= 15s timer support)
@@ -15,72 +12,12 @@
  * - Live Audit Log Table: /api/audit?limit=30 with auto & manual refresh
  */
 
-// ========== 1. CONFIGURATION & VERCEL/CLOUD GATEWAY RESOLUTION ==========
-function cleanBackendUrl(url) {
-  if (!url) return "";
-  let trimmed = String(url).trim();
-  if (trimmed === "/" || trimmed.toLowerCase() === "relative" || trimmed.toLowerCase() === "self" || trimmed.toLowerCase() === "auto") return "";
-  // Strip quotes if user pasted with quotes
-  trimmed = trimmed.replace(/^["']|["']$/g, "").trim();
-  // Strip trailing slashes
-  trimmed = trimmed.replace(/\/+$/, "");
-  // If protocol missing:
-  if (!/^https?:\/\//i.test(trimmed) && !trimmed.startsWith("/")) {
-    if (trimmed.includes("ngrok") || trimmed.includes("loca.lt") || trimmed.includes("railway.app") || trimmed.includes("render.com") || trimmed.includes("vercel.app") || trimmed.includes("trycloudflare.com")) {
-      trimmed = "https://" + trimmed;
-    } else {
-      trimmed = "http://" + trimmed;
-    }
-  }
-  return trimmed.replace(/\/+$/, "");
-}
-
+// ========== 1. LOCAL GATEWAY ORIGIN ==========
 function resolveInitialBackendUrl() {
-  if (typeof window === "undefined") return "http://localhost:8000";
-
-  // 1. URL Query Parameter override: ?backend=https://... or ?api=... or ?backend=relative
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const param = params.get("backend") || params.get("api");
-    if (param !== null) {
-      const cleaned = cleanBackendUrl(param);
-      try {
-        localStorage.setItem("unclone_backend_url", cleaned || "relative");
-      } catch (e) {}
-      return cleaned;
-    }
-  } catch (e) {}
-
-  // 2. LocalStorage persistence from previous user / judge configuration
-  try {
-    const saved = localStorage.getItem("unclone_backend_url");
-    if (saved !== null && saved !== "") {
-      return cleanBackendUrl(saved);
-    }
-  } catch (e) {}
-
-  // 3. Global Window Injection (e.g., from index.html or CI script)
-  if (typeof window.GRAMPAY_BACKEND_URL === "string" && window.GRAMPAY_BACKEND_URL.trim() !== "") {
-    return cleanBackendUrl(window.GRAMPAY_BACKEND_URL);
-  }
-
-  // 4. Same-origin detection:
-  if (window.location.origin && window.location.origin.startsWith("http")) {
-    // If served directly by FastAPI backend on port 8000
-    if (window.location.port === "8000") {
-      return window.location.origin;
-    }
-    // If local dev server (port 3000, 5500, 8080, etc.), default to local backend on 8000
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      return "http://localhost:8000";
-    }
-    // Deployed on Vercel / HTTPS cloud domain:
-    // Default to relative API routing ("") so requests like fetch(`${BACKEND_URL}/api/...`)
-    // route seamlessly through Vercel rewrites or the hosting domain without mixed-content errors.
-    return "";
-  }
-
-  return "http://localhost:8000";
+  if (typeof window === "undefined") return "http://127.0.0.1:8000";
+  const hostname = window.location.hostname.toLowerCase();
+  if (hostname === "localhost" || hostname === "127.0.0.1") return window.location.origin;
+  return "";
 }
 
 let BACKEND_URL = resolveInitialBackendUrl();
@@ -386,10 +323,10 @@ function setStatusCard(decision, reason) {
     }
     if (reasonEl) {
       const defaultDesc = lang === "kn"
-        ? "ಅಸ್ಪಷ್ಟ ಆಡಿಯೋ • ದಯವಿಟ್ಟು ಕೆಳಗಿನ 4 ಸರಳ ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ (<800ms Latency Check)."
+        ? "ಅಸ್ಪಷ್ಟ ಆಡಿಯೋ • ದಯವಿಟ್ಟು ಕೆಳಗಿನ 4 ಸರಳ ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ."
         : (lang === "hi"
-          ? "अस्पष्ट आवाज़ • कृपया नीचे दिए गए 4 शब्द साफ़ बोलें (<800ms Latency Check)."
-          : "Noisy audio requires active challenge. Please recite the randomized Nemotron phrase within 800ms.");
+          ? "अस्पष्ट आवाज़ • कृपया नीचे दिए गए 4 शब्द साफ़ बोलें."
+          : "The voice result needs another check. Please recite the requested phrase clearly.");
       reasonEl.textContent = reason || defaultDesc;
       reasonEl.className = "mx-auto mt-2 max-w-xl text-base sm:text-lg font-medium text-wait";
     }
@@ -463,39 +400,20 @@ function setHealthBadge(ok, detectifReachable, details) {
   if (!badge) return;
 
   badge.classList.remove("health-ok", "health-fail", "health-unknown");
-
   if (ok === true && detectifReachable === true) {
     badge.classList.add("health-ok");
-    if (dot) {
-      dot.innerHTML = `
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
-      `;
-    }
+    if (dot) dot.innerHTML = '<span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-safe"></span>';
     if (text) text.textContent = "DetectifAI reachable";
-    badge.title = `Backend Gateway: ${BACKEND_URL || "Auto-Integrated"} (DetectifAI Live).`;
-  } else if (ok === true) {
-    badge.classList.add("health-ok");
-    if (dot) {
-      dot.innerHTML = `
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
-      `;
-    }
-    if (text) text.textContent = "DetectifAI & Nemotron Live";
-    badge.title = `GramPay Voice Shield: DetectifAI Aletheia + Eidos and NVIDIA Nemotron Active`;
-  } else {
-    // Seamless auto-integrated fallback for cloud static deployment
-    badge.classList.add("health-ok");
-    if (dot) {
-      dot.innerHTML = `
-        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
-        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
-      `;
-    }
-    if (text) text.textContent = "DetectifAI & Nemotron Live";
-    badge.title = `GramPay Voice Shield: DetectifAI Aletheia + Eidos and NVIDIA Nemotron NIM Active`;
+    badge.title = `Local gateway and DetectifAI are reachable${BACKEND_URL ? ` (${BACKEND_URL})` : ""}.`;
+    return;
   }
+
+  badge.classList.add("health-fail");
+  if (dot) dot.innerHTML = '<span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-alert"></span>';
+  const message = ok === false ? "DetectifAI unavailable" : "Gateway unavailable";
+  if (text) text.textContent = message;
+  const detailText = details?.reason || details?.error || "Check the local API and provider connection.";
+  badge.title = `${message}: ${detailText}`;
 }
 
 /**
@@ -610,7 +528,7 @@ function updateSlide4Counters(statsData) {
 function showError(msg, failClosed = true) {
   let displayMsg = typeof msg === "object" ? (msg.error || msg.message || JSON.stringify(msg)) : String(msg || "");
   if (displayMsg.includes("Unexpected token") || displayMsg.includes("not valid JSON") || displayMsg.includes("The page c")) {
-    displayMsg = "Backend gateway not connected. Check backend URL via the top health badge or start local server.";
+    displayMsg = "Local gateway is not connected. Start the local server and retry.";
   }
   setStatusCard("BLOCK_ALERT", failClosed
     ? (displayMsg || "Security check failed. Transaction held safely to protect funds.")
@@ -679,13 +597,6 @@ function startChallengeTimer() {
     challengeElapsedSeconds = elapsed;
     updateChallengeTimerUI(elapsed);
 
-    // Timeout at 5.0 seconds (Excessive delay for deepfake vocal synthesis)
-    if (elapsed >= 5.0) {
-      stopChallengeTimer();
-      stopRecording();
-      updateChallengeTimerUI(5.0);
-      setChallengeStatus("⚠️ Timeout: Exceeded 5.00s maximum reaction threshold. Neural vocoder synthesis lag suspected.", true);
-    }
   }, 25);
 }
 
@@ -710,53 +621,32 @@ function resetChallengeTimerUI() {
 function updateChallengeTimerUI(elapsed) {
   const formatted = elapsed.toFixed(2) + " s";
   const pct = Math.min(100, (elapsed / 5.0) * 100);
-  const isOverThreshold = elapsed > 0.8; // Rule 2: > 800ms vocoder delay flag
 
   // Inline Box UI
   if ($("challengeTimerVal")) $("challengeTimerVal").textContent = formatted;
   if ($("challengeTimerBar")) {
     $("challengeTimerBar").style.width = pct + "%";
-    $("challengeTimerBar").className = "h-full transition-all duration-75 " +
-      (elapsed > 3.0 ? "bg-red-500" : isOverThreshold ? "bg-amber-500" : "bg-emerald-500");
+    $("challengeTimerBar").className = "h-full transition-all duration-75 bg-gold";
   }
 
-  // 800ms Latency Flag
-  const latencyFlag = $("challengeLatencyFlag");
   const latencyFlagText = $("challengeLatencyFlagText");
-  if (latencyFlag && latencyFlagText) {
-    latencyFlag.classList.remove("latency-flag-ok", "latency-flag-alert");
-    if (isOverThreshold) {
-      latencyFlag.classList.add("latency-flag-alert");
-      latencyFlagText.textContent = `Above 800ms threshold (${formatted})`;
-    } else {
-      latencyFlag.classList.add("latency-flag-ok");
-      latencyFlagText.textContent = `At or below 800ms threshold (${formatted})`;
-    }
-  }
+  if (latencyFlagText) latencyFlagText.textContent = `Elapsed: ${formatted}`;
 
   // Modal UI
   if ($("modalTimerVal")) $("modalTimerVal").textContent = formatted;
   if ($("modalTimerBar")) {
     $("modalTimerBar").style.width = pct + "%";
-    $("modalTimerBar").className = "h-full transition-all duration-75 " +
-      (elapsed > 3.0 ? "bg-red-500" : isOverThreshold ? "bg-amber-500" : "bg-emerald-500");
+    $("modalTimerBar").className = "h-full transition-all duration-75 bg-gold";
   }
   const modalFlag = $("modalLatencyFlag");
   if (modalFlag) {
-    if (isOverThreshold) {
-      modalFlag.className = "font-mono font-bold text-red-400";
-      modalFlag.textContent = `Above 800ms threshold (${formatted})`;
-    } else {
-      modalFlag.className = "font-mono font-bold text-emerald-400";
-      modalFlag.textContent = `At or below 800ms threshold (${formatted})`;
-    }
+    modalFlag.className = "font-mono font-bold text-muted";
+    modalFlag.textContent = `Elapsed: ${formatted}`;
   }
 
-  const statusText = elapsed >= 5.0
-    ? "TIMEOUT: Excessive vocal latency (> 5.0s)"
-    : elapsed > 0
-      ? `Capturing vocal phrase… ${formatted}`
-      : "Status: Ready to capture phrase";
+  const statusText = elapsed > 0
+    ? `Capturing vocal phrase… ${formatted}`
+    : "Status: Ready to capture phrase";
 
   if ($("challengeTimerStatus")) $("challengeTimerStatus").textContent = statusText;
   if ($("modalTimerStatus")) $("modalTimerStatus").textContent = statusText;
@@ -788,23 +678,15 @@ async function safeApiFetch(url, options = {}) {
   let r;
   const fetchOpts = { ...options };
   fetchOpts.mode = fetchOpts.mode || "cors";
-  fetchOpts.headers = {
-    ...(fetchOpts.headers || {}),
-    "ngrok-skip-browser-warning": "true"
-  };
+  fetchOpts.headers = { ...(fetchOpts.headers || {}) };
 
   try {
     r = await fetch(url, fetchOpts);
   } catch (netErr) {
-    const isMixed = typeof window !== "undefined" && window.location.protocol === "https:" && urlStr.startsWith("http://");
-    const hint = isMixed 
-      ? " [Mixed Content: HTTPS browser blocked HTTP connection. Use an HTTPS backend like ngrok/Railway or test over HTTP]."
-      : "";
     throw {
-      error: `Network error reaching gateway: ${netErr.message || "Failed to fetch"}.${hint} Check backend URL in settings.`,
+      error: `Network error reaching the local gateway: ${netErr.message || "Failed to fetch"}. Check that the local server is running.`,
       status: 0,
       isNetwork: true,
-      isMixedContent: isMixed
     };
   }
 
@@ -1309,66 +1191,6 @@ function renderSpectrogramSnapshot(_isSynthetic, decision) {
   if (badge) badge.textContent = "Provider spectrogram unavailable";
 }
 
-// Backend URL Modal Handlers
-function openBackendModal() {
-  const modal = $("backendConfigModal");
-  if (!modal) {
-    const current = BACKEND_URL || (window.location.origin.includes("localhost") ? "http://localhost:8000" : "");
-    const entered = prompt("Configure GramPay Backend Gateway URL (FastAPI / ngrok / Render / Railway):\nLeave empty for relative/local.", current);
-    if (entered !== null) {
-      applyBackendUrl(entered);
-    }
-    return;
-  }
-  const input = $("modalBackendUrlInput");
-  if (input) input.value = BACKEND_URL || "";
-  checkMixedContentWarning();
-  const statusEl = $("modalConnectionStatus");
-  if (statusEl) {
-    statusEl.classList.remove("hidden");
-    statusEl.textContent = `Active Origin: ${BACKEND_URL || "Relative (/api)"}`;
-    statusEl.className = "text-xs font-mono py-1 text-muted";
-  }
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
-}
-
-function closeBackendModal() {
-  const modal = $("backendConfigModal");
-  if (modal) {
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-  }
-}
-
-function checkMixedContentWarning() {
-  const warning = $("modalMixedContentWarning");
-  if (!warning) return;
-  const val = ($("modalBackendUrlInput")?.value || BACKEND_URL || "").trim();
-  if (typeof window !== "undefined" && window.location.protocol === "https:" && val.startsWith("http://") && !val.includes("localhost") && !val.includes("127.0.0.1")) {
-    warning.classList.remove("hidden");
-  } else {
-    warning.classList.add("hidden");
-  }
-}
-
-async function applyBackendUrl(newUrl) {
-  BACKEND_URL = cleanBackendUrl(newUrl);
-  try {
-    localStorage.setItem("unclone_backend_url", BACKEND_URL || "relative");
-    localStorage.setItem("grampay_backend_url", BACKEND_URL || "relative");
-  } catch (e) {}
-  if ($("backendUrlInput")) $("backendUrlInput").value = BACKEND_URL;
-  if ($("modalBackendUrlInput")) $("modalBackendUrlInput").value = BACKEND_URL;
-  closeBackendModal();
-  showOverlay("Connecting to " + (BACKEND_URL || "Relative /api") + "…");
-  try {
-    await apiHealth();
-  } finally {
-    hideOverlay();
-  }
-}
-
 // ========== 8. AUDIO RECORDING ENGINE (16-bit Mono 16kHz PCM WAV) ==========
 function handleRecordingFinished(recordedBlob, elapsedSec) {
   isRecording = false;
@@ -1755,37 +1577,13 @@ $("tabSplit")?.addEventListener("click", () => {
   setView(currentView === "split" ? "farmer" : "split");
 });
 
-// 2. Audio Fixture Loader (looks in audio/ and data_audio/)
-async function loadAudioFixture(filename) {
-  const candidates = [
-    `audio/${filename}`,
-    `/audio/${filename}`,
-    `data_audio/${filename}`,
-    `/data_audio/${filename}`,
-    `${BACKEND_URL}/audio/${filename}`,
-    `${BACKEND_URL}/data_audio/${filename}`
-  ];
-  for (const url of candidates) {
-    try {
-      const resp = await fetch(url, { headers: { "ngrok-skip-browser-warning": "true" } });
-      if (resp.ok) {
-        const blob = await resp.blob();
-        if (blob && blob.size > 0) {
-          return new File([blob], filename, { type: "audio/wav" });
-        }
-      }
-    } catch (e) {}
-  }
-  return null;
-}
-
 // 3. Prepend Audit Table Helper
 function prependAuditRow(r) {
   const tbody = $("auditBody");
   if (!tbody) return;
 
-  const rawTs = r.ts || new Date().toISOString();
-  const t = rawTs.includes("T") ? rawTs.substring(11, 19) : rawTs.substring(0, 19);
+  const rawTs = r.ts || "";
+  const t = rawTs ? (rawTs.includes("T") ? rawTs.substring(11, 19) : rawTs.substring(0, 19)) : "—";
   const d = r.decision || "—";
   const s = typeof r.synthetic_score === "number" ? (r.synthetic_score * 100).toFixed(0) + "%" : "—";
   const m = typeof r.match_score === "number" ? (r.match_score * 100).toFixed(0) + "%" : "—";
@@ -1822,28 +1620,11 @@ $("btnReplayTTS")?.addEventListener("click", () => {
 
 // ========== 10. PRESET EVENT LISTENERS & WORKFLOWS ==========
 
-// Backend URL & Health check buttons
-$("btnSaveBackend")?.addEventListener("click", () => {
-  const inputVal = $("backendUrlInput")?.value;
-  const url = cleanBackendUrl(inputVal);
-  BACKEND_URL = url;
-  try {
-    localStorage.setItem("unclone_backend_url", url || "relative");
-  } catch (e) {}
-  if ($("backendUrlInput")) {
-    $("backendUrlInput").value = BACKEND_URL;
-  }
-  showOverlay("Connecting to " + (url || "Relative /api") + "…");
-  apiHealth().finally(hideOverlay);
-});
-
+// Health check button
 $("btnCheckHealth")?.addEventListener("click", () => {
-  showOverlay("Checking health…");
+  showOverlay("Checking local provider connection…");
   apiHealth().finally(hideOverlay);
 });
-
-// Click Health Badge to configure backend URL modal or test connection
-$("healthBadge")?.addEventListener("click", openBackendModal);
 
 // 2. Senior / Farmer Audio Recording & File Handling
 $("btnRecord")?.addEventListener("click", () => {
@@ -1894,7 +1675,7 @@ $("btnEnroll")?.addEventListener("click", async () => {
     return;
   }
 
-  showOverlay("Enrolling farmer voice profile in DetectifAI Eidos…");
+  showOverlay("Sending voice enrollment to DetectifAI Eidos…");
   try {
     const data = await apiEnroll(audio, name);
     currentSpeakerId = data.speaker_id;
@@ -1931,7 +1712,7 @@ $("btnEnroll")?.addEventListener("click", async () => {
 $("btnCheck")?.addEventListener("click", async () => {
   const audio = getAudioForRequest("audioFileSenior");
   if (!audio) {
-    alert("Please tap to record your payment command or select an audio file first.");
+    alert("Record your voice or select an audio file first.");
     return;
   }
 
@@ -1960,7 +1741,7 @@ $("btnCheck")?.addEventListener("click", async () => {
 $("btnAgentTurn")?.addEventListener("click", async () => {
   const audio = getAudioForRequest("audioFileSenior");
   if (!audio) {
-    alert("Please tap to record your payment command or select an audio file first.");
+    alert("Record your voice or select an audio file first.");
     return;
   }
 
@@ -2052,14 +1833,14 @@ async function verifyChallengeLiveness() {
     renderCheckResponse(data);
 
     if (data.decision === "PAY" || data.decision === "APPROVE" || data.verified) {
-      const msg = `✅ PASS: Human Liveness Verified! Response Latency: ${elapsed.toFixed(2)}s. Phrase recitation & acoustic biometrics authenticated.`;
+      const msg = `✅ PASS: Voice verification passed. Response time: ${elapsed.toFixed(2)}s.`;
       setChallengeStatus(msg, false);
       const okMsg = (window.getReasonText && window.getReasonText(currentLang, "approved"))
         || `Voice challenge passed. Measured response time: ${elapsed.toFixed(2)}s.`;
       setStatusCard("APPROVE", okMsg);
     } else {
       const failReason = (window.getReasonText && window.getReasonText(currentLang, "challenge_failed"))
-        || (data.reason || "Synthetic clone or latency mismatch detected");
+        || (data.reason || "Voice verification could not be completed.");
       const msg = `🛑 FAIL: Tier-2 verification blocked: ${failReason}`;
       setChallengeStatus(msg, true);
       setStatusCard("BLOCK_ALERT", failReason);
@@ -2645,7 +2426,7 @@ async function pollCallerState() {
 
     const agentBadge = $("callerAgentBadge");
     if (agentBadge && latest.badge === "VERIFIED_AGENT") {
-      agentBadge.textContent = "🛡️ Verified Bank Agent";
+      agentBadge.textContent = "Voice profile verified";
     }
 
     const dec = latest.decision;
@@ -2727,9 +2508,8 @@ function initRoleSwitcherPills() {
     }
   });
 
-  // Initialize the local caller clock and keypad
+  // Initialize the local caller clock
   initVirtualPhoneClock();
-  init123PayKeypadToggle();
 }
 
 function initVirtualPhoneClock() {
@@ -2743,20 +2523,7 @@ function initVirtualPhoneClock() {
   setInterval(updateClock, 1000);
 }
 
-function init123PayKeypadToggle() {
-  const btn = $("btnToggleKeypad");
-  const box = $("virtualKeypadBox");
-  const icon = $("keypadToggleIcon");
-  if (btn && box) {
-    btn.onclick = () => {
-      const isHidden = box.classList.contains("hidden");
-      box.classList.toggle("hidden", !isHidden);
-      if (icon) {
-        icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
-      }
-    };
-  }
-}
+
 
 function initCallerPhoneControls() {
   // Wire up caller mic button
@@ -2825,12 +2592,6 @@ function initCallerPhoneControls() {
 
 // ========== 10. SYSTEM INITIALIZATION & MULTI-DEVICE PROTOCOL ==========
 (async function init() {
-  if ($("backendUrlInput")) {
-    $("backendUrlInput").value = BACKEND_URL;
-  }
-  if ($("modalBackendUrlInput")) {
-    $("modalBackendUrlInput").value = BACKEND_URL;
-  }
   setStatusCard(null);
   renderPhraseChips();
 
@@ -2845,20 +2606,6 @@ function initCallerPhoneControls() {
 
   // The farmer and bank are the only product views. Test attacks use labeled controls.
 
-  // Wire Backend Configuration Modal
-  $("btnModalSaveBackend")?.addEventListener("click", () => applyBackendUrl($("modalBackendUrlInput")?.value));
-  $("btnModalCloseBackend")?.addEventListener("click", closeBackendModal);
-  $("btnModalCancelBackend")?.addEventListener("click", closeBackendModal);
-  $("modalPresetLocal")?.addEventListener("click", () => {
-    if ($("modalBackendUrlInput")) $("modalBackendUrlInput").value = "http://localhost:8000";
-    checkMixedContentWarning();
-  });
-  $("modalPresetRelative")?.addEventListener("click", () => {
-    if ($("modalBackendUrlInput")) $("modalBackendUrlInput").value = "relative";
-    checkMixedContentWarning();
-  });
-  $("modalBackendUrlInput")?.addEventListener("input", checkMixedContentWarning);
-
   // Set default speaker profile
   if ($("currentSpeakerLabel")) {
     $("currentSpeakerLabel").textContent = currentSpeakerName || "No voice profile enrolled";
@@ -2872,19 +2619,7 @@ function initCallerPhoneControls() {
     const urlParams = new URLSearchParams(window.location.search);
     const modeParam = urlParams.get("mode");
     const viewParam = urlParams.get("view") || urlParams.get("tab") || window.location.hash.replace("#", "");
-    const backendParam = urlParams.get("backend") || urlParams.get("api");
     const path = window.location.pathname.toLowerCase();
-
-    // 1. Dynamic Backend URL override via query parameter
-    if (backendParam) {
-      BACKEND_URL = cleanBackendUrl(backendParam);
-      try {
-        localStorage.setItem("unclone_backend_url", BACKEND_URL);
-        localStorage.setItem("grampay_backend_url", BACKEND_URL);
-      } catch (e) {}
-      if ($("backendUrlInput")) $("backendUrlInput").value = BACKEND_URL;
-      if ($("modalBackendUrlInput")) $("modalBackendUrlInput").value = BACKEND_URL;
-    }
 
     // 2. Multi-Device Stage Setup (Default to Split View on Desktop with no ?mode=)
     if (modeParam === "console" || path.includes("judge") || path.includes("console")) {
