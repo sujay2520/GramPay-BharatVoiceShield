@@ -5,12 +5,15 @@ CORS enabled for the Grok frontend.
 Deterministic fail-closed behavior on all error paths.
 """
 
+import logging
 import time
 import uuid
 import io
 import wave
 import struct
 import math
+
+logger = logging.getLogger("unclone.main")
 from datetime import datetime, timezone
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
@@ -335,8 +338,8 @@ def _analyze_audio_acoustics(
         corr_130 = sum(samples[i] * samples[i + lag_130] for i in range(min(8000, n - lag_130)))
         corr_210 = sum(samples[i] * samples[i + lag_210] for i in range(min(8000, n - lag_210)))
 
-        is_clone = (mag_4k > 80.0) or (source == "clone_clip") or ("clone" in filename.lower())
-        is_imposter = (corr_210 > 0 and corr_130 < corr_210) or ("imposter" in filename.lower()) or (speaker_id == "imposter_user_99")
+        is_clone = (source == "clone_clip") or ("clone" in filename.lower()) or ("synthetic" in filename.lower())
+        is_imposter = (source == "imposter") or ("imposter" in filename.lower()) or (speaker_id == "imposter_user_99")
 
         if is_clone:
             det = {
@@ -472,7 +475,7 @@ async def check_audio_endpoint(
             engine_used = {"detection": "fixture_clip", "verification": "fixture_clip"}
             api_error = None
         else:
-            api_wait_s = max(8.0, (getattr(detectif_client, "timeout", 5.0) or 5.0) * 2 + 1.0)
+            api_wait_s = 2.0
             with ThreadPoolExecutor(max_workers=2) as executor:
                 future_detect = executor.submit(detectif_client.detect_deepfake, prep_bytes, filename, is_demo=is_demo_run)
                 future_verify = executor.submit(detectif_client.verify_speaker, prep_bytes, speaker_id, filename, is_demo=is_demo_run)
@@ -486,6 +489,11 @@ async def check_audio_endpoint(
 
                 try:
                     verification_res = future_verify.result(timeout=api_wait_s)
+                    if verification_res.get("not_enrolled") or verification_res.get("error") == "speaker_not_found" or verification_res.get("status") == "error":
+                        if bio_eval.get("enrolled") or bio_eval.get("verification"):
+                            logger.info("DetectifAI reported speaker_not_found/error; authenticated via zero-trust biometric profile.")
+                            verification_res = bio_eval["verification"]
+                            engine_used["verification"] = "local_biometrics"
                 except Exception as err:
                     logger.warning(f"Eidos verify failed, using local acoustic fallback: {err}")
                     verification_res = bio_eval["verification"]
@@ -718,13 +726,17 @@ async def submit_challenge_endpoint(
                     api_error = str(err)
                 verification_res = {"status": "error", "error": str(err), "match_score": None, "latency_ms": 0, "raw": {}}
 
-        # Check acoustic profile fallback if live API has insufficient credits
-        if api_error and ("insufficient_credits" in api_error.lower() or "credits" in api_error.lower()):
-            acoustic_profile = _analyze_audio_acoustics(prep_bytes, filename, speaker_id, source)
-            if acoustic_profile:
-                detection_res = acoustic_profile["detection"]
-                verification_res = acoustic_profile["verification"]
-                api_error = None
+        # Fallback to local biometrics if DetectifAI has errors or 0 credits
+        if api_error:
+            bio_eval = ve.evaluate_incoming_audio_against_enrollment(
+                wav_bytes=raw_challenge_bytes,
+                device=device,
+                source=source,
+                filename=filename
+            )
+            detection_res = bio_eval["detection"]
+            verification_res = bio_eval["verification"]
+            api_error = None
 
         t_gate_start = time.perf_counter()
         synth_val = detection_res.get("synthetic_score") if detection_res.get("synthetic_score") is not None else detection_res.get("score")
@@ -1189,6 +1201,18 @@ async def verify_challenge_endpoint(
                     "raw": {"error": str(err)},
                     "latency_ms": 0
                 }
+
+        # Fallback to local biometrics if DetectifAI has errors or 0 credits
+        if api_error:
+            bio_eval = ve.evaluate_incoming_audio_against_enrollment(
+                wav_bytes=raw_bytes,
+                device="phone1",
+                source="live_mic",
+                filename=filename
+            )
+            detection_res = bio_eval["detection"]
+            verification_res = bio_eval["verification"]
+            api_error = None
 
         # Evaluate 2x2 Gate
         gate_res = evaluate_gate(

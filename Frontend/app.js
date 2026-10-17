@@ -422,29 +422,31 @@ function setStatusCard(decision, reason) {
     speakVoiceAssistant("approved");
 
   } else if (d === "BLOCK_ALERT" || d === "BLOCK" || d === "BLOCKED") {
+    const isMismatch = (reason || "").toLowerCase().includes("mismatch") ||
+                       (reason || "").includes("ಹೊಂದಾಣಿಕೆ") ||
+                       (reason || "").includes("मेल नहीं");
+
     if (card) {
       card.classList.remove("status-approve", "status-block", "status-stepup", "status-ready");
       card.classList.add("status-block");
       if (emoji) {
-        emoji.textContent = "🛑";
-        emoji.className = "mx-auto mb-3 flex size-24 sm:size-28 items-center justify-center rounded-full bg-rose-800 border-4 border-rose-400 text-white shadow-2xl text-6xl md:text-7xl transition-transform duration-300 animate-pulse";
+        emoji.textContent = isMismatch ? "⚠️" : "🛑";
+        emoji.className = isMismatch
+          ? "mx-auto mb-3 flex size-24 sm:size-28 items-center justify-center rounded-full bg-amber-700 border-4 border-amber-400 text-white shadow-2xl text-6xl md:text-7xl transition-transform duration-300"
+          : "mx-auto mb-3 flex size-24 sm:size-28 items-center justify-center rounded-full bg-rose-800 border-4 border-rose-400 text-white shadow-2xl text-6xl md:text-7xl transition-transform duration-300 animate-pulse";
       }
       if (title) {
-        if (lang === "kn") {
-          title.textContent = "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ · ಪಾವತಿ ತಡೆಯಲಾಗಿದೆ";
-        } else if (lang === "hi") {
-          title.textContent = "सावधान! नकली आवाज़ पकड़ी गई · भुगतान रोक दिया गया है";
+        if (isMismatch) {
+          title.textContent = lang === "kn" ? "ಧ್ವನಿ ಹೊಂದಾಣಿಕೆಯಾಗುತ್ತಿಲ್ಲ · ಪಾವತಿ ತಡೆಯಲಾಗಿದೆ" : (lang === "hi" ? "आवाज़ मेल नहीं खाई · भुगतान रोका गया" : "Voice Mismatch · Payment Blocked");
         } else {
-          title.textContent = "Warning! Synthetic Voice Clone Detected · Payment Blocked";
+          title.textContent = lang === "kn" ? "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ · ಪಾವತಿ ತಡೆಯಲಾಗಿದೆ" : (lang === "hi" ? "सावधान! नकली आवाज़ पकड़ी गई · भुगतान रोक दिया गया है" : "Warning! Synthetic Voice Clone Detected · Payment Blocked");
         }
         title.className = "font-display text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight text-white tracking-tight";
       }
       if (reasonEl) {
-        const defaultDesc = lang === "kn"
-          ? "ನಕಲಿ ಧ್ವನಿ ವಂಚನೆ ತಡೆಯಲಾಗಿದೆ • ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯ ಹಣ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹20 Compute Saved)"
-          : (lang === "hi"
-            ? "नकली आवाज़ का हमला रोका गया • आपकी बचत सुरक्षित है (₹20 Compute Saved)"
-            : "CRITICAL WARNING: Computer-generated voice clone detected! Gate BLOCKED <300ms, tool hard-locked, ₹20 saved.");
+        const defaultDesc = isMismatch
+          ? (lang === "kn" ? "ಖಾತೆದಾರರ ಧ್ವನಿಗೆ ಹೊಂದಾಣಿಕೆಯಾಗಿಲ್ಲ • ಸುರಕ್ಷತೆಗಾಗಿ ತಡೆಯಲಾಗಿದೆ" : (lang === "hi" ? "खातेदार की आवाज़ से मेल नहीं खाता" : "Voice does not match enrolled account holder."))
+          : (lang === "kn" ? "ನಕಲಿ ಧ್ವನಿ ವಂಚನೆ ತಡೆಯಲಾಗಿದೆ • ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆಯ ಹಣ ಸಂಪೂರ್ಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹20 Compute Saved)" : (lang === "hi" ? "नकली आवाज़ का हमला रोका गया • आपकी बचत सुरक्षित है (₹20 Compute Saved)" : "CRITICAL WARNING: Computer-generated voice clone detected! Gate BLOCKED <300ms, tool hard-locked, ₹20 saved."));
         reasonEl.textContent = reason || defaultDesc;
         reasonEl.className = "mx-auto mt-2 max-w-xl text-lg sm:text-xl font-bold text-rose-100";
       }
@@ -452,18 +454,29 @@ function setStatusCard(decision, reason) {
     }
 
     if (callerCard) {
-      callerCard.className = "status-block w-full flex-1 my-1.5 rounded-2xl border-2 border-rose-500 bg-rose-50 p-3 text-center shadow-md transition-all duration-300 flex flex-col justify-center items-center min-h-[120px] max-h-[200px] overflow-hidden";
+      callerCard.className = isMismatch
+        ? "status-block w-full flex-1 my-1.5 rounded-2xl border-2 border-amber-500 bg-amber-50 p-3 text-center shadow-md transition-all duration-300 flex flex-col justify-center items-center min-h-[120px] max-h-[200px] overflow-hidden"
+        : "status-block w-full flex-1 my-1.5 rounded-2xl border-2 border-rose-500 bg-rose-50 p-3 text-center shadow-md transition-all duration-300 flex flex-col justify-center items-center min-h-[120px] max-h-[200px] overflow-hidden";
       if (callerEmoji) {
-        callerEmoji.textContent = "🛑";
-        callerEmoji.className = "size-11 rounded-full bg-rose-600 text-white flex items-center justify-center text-2xl mb-1 border border-rose-400 shadow-2xs shrink-0 animate-pulse";
+        callerEmoji.textContent = isMismatch ? "⚠️" : "🛑";
+        callerEmoji.className = isMismatch
+          ? "size-11 rounded-full bg-amber-600 text-white flex items-center justify-center text-2xl mb-1 border border-amber-400 shadow-2xs shrink-0"
+          : "size-11 rounded-full bg-rose-600 text-white flex items-center justify-center text-2xl mb-1 border border-rose-400 shadow-2xs shrink-0 animate-pulse";
       }
       if (callerTitle) {
-        callerTitle.textContent = lang === "kn" ? "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಕ್ಲೋನ್ ತಡೆಯಲಾಗಿದೆ" : (lang === "hi" ? "सावधान! नकली आवाज़ पकड़ी गई" : "Warning! AI Voice Clone Blocked");
-        callerTitle.className = "font-display text-base sm:text-lg font-black text-rose-900 leading-tight";
+        if (isMismatch) {
+          callerTitle.textContent = lang === "kn" ? "ಧ್ವನಿ ಹೊಂದಾಣಿಕೆಯಾಗುತ್ತಿಲ್ಲ" : (lang === "hi" ? "आवाज़ मेल नहीं खाई" : "Voice Mismatch · Not Enrolled");
+        } else {
+          callerTitle.textContent = lang === "kn" ? "ಎಚ್ಚರಿಕೆ! ನಕಲಿ ಧ್ವನಿ ಕ್ಲೋನ್ ತಡೆಯಲಾಗಿದೆ" : (lang === "hi" ? "सावधान! नकली आवाज़ पकड़ी गई" : "Warning! AI Voice Clone Blocked");
+        }
+        callerTitle.className = isMismatch ? "font-display text-base sm:text-lg font-black text-amber-900 leading-tight" : "font-display text-base sm:text-lg font-black text-rose-900 leading-tight";
       }
       if (callerReason) {
-        callerReason.textContent = reason || (lang === "kn" ? "ನಕಲಿ ಧ್ವನಿ ವಂಚನೆ ತಡೆಯಲಾಗಿದೆ • ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹20 ಉಳಿತಾಯ)" : (lang === "hi" ? "नकली आवाज़ का हमला रोका गया • बचत सुरक्षित है (₹20 Saved)" : "Fraudulent AI Voice Clone Blocked. Payment safely locked."));
-        callerReason.className = "text-xs text-rose-800 mt-1 font-semibold leading-snug line-clamp-2";
+        const callerDefaultDesc = isMismatch
+          ? (lang === "kn" ? "ಖಾತೆದಾರರ ಧ್ವನಿಗೆ ಹೊಂದಾಣಿಕೆಯಾಗಿಲ್ಲ • ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಸ್ಪಷ್ಟವಾಗಿ ಮಾತನಾಡಿ" : (lang === "hi" ? "खातेदार की आवाज़ से मेल नहीं खाता" : "Voice does not match enrolled account holder."))
+          : (lang === "kn" ? "ನಕಲಿ ಧ್ವನಿ ವಂಚನೆ ತಡೆಯಲಾಗಿದೆ • ನಿಮ್ಮ ಬ್ಯಾಂಕ್ ಖಾತೆ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹20 ಉಳಿತಾಯ)" : (lang === "hi" ? "नकली आवाज़ का हमला रोका गया • बचत सुरक्षित है (₹20 Saved)" : "Fraudulent AI Voice Clone Blocked. Payment safely locked."));
+        callerReason.textContent = reason || callerDefaultDesc;
+        callerReason.className = isMismatch ? "text-xs text-amber-800 mt-1 font-semibold leading-snug line-clamp-2" : "text-xs text-rose-800 mt-1 font-semibold leading-snug line-clamp-2";
       }
       if (callerChallengeBox) callerChallengeBox.classList.add("hidden");
     }
@@ -562,9 +575,24 @@ function setStatusCard(decision, reason) {
       if (cBox) cBox.classList.add("hidden");
     } else if (d === "BLOCK_ALERT" || d === "BLOCK" || d === "BLOCKED") {
       cCard.classList.add("status-block");
-      if (cEmoji) cEmoji.textContent = "🛑";
-      if (cTitle) cTitle.textContent = lang === "kn" ? "🛑 ಎಚ್ಚರಿಕೆ! ನಕಲಿ (AI) ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ" : (lang === "hi" ? "🛑 सावधान! नकली (AI) आवाज़ पकड़ी गई" : "🛑 Alert! AI Voice Clone Attempt Blocked");
-      if (cReason) cReason.textContent = reason || (lang === "kn" ? "ಯಾರೋ ನಿಮ್ಮ ಧ್ವನಿ ನಕಲು ಮಾಡಲು ಯತ್ನಿಸಿದ್ದಾರೆ · ನಿಮ್ಮ ಹಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹0 Debited)" : (lang === "hi" ? "किसी ने आपकी आवाज़ की नकल करने की कोशिश की · आपकी बचत सुरक्षित है" : "Someone attempted to clone your voice · Your money is safe (₹0 Debited)"));
+      const isMismatch = (reason || "").toLowerCase().includes("mismatch") ||
+                         (reason || "").includes("ಹೊಂದಾಣಿಕೆ") ||
+                         (reason || "").includes("मेल नहीं");
+      if (cEmoji) cEmoji.textContent = isMismatch ? "⚠️" : "🛑";
+      if (cTitle) {
+        if (isMismatch) {
+          cTitle.textContent = lang === "kn" ? "⚠️ ಧ್ವನಿ ಹೊಂದಾಣಿಕೆಯಾಗುತ್ತಿಲ್ಲ" : (lang === "hi" ? "⚠️ आवाज़ मेल नहीं खाई" : "⚠️ Voice Mismatch");
+        } else {
+          cTitle.textContent = lang === "kn" ? "🛑 ಎಚ್ಚರಿಕೆ! ನಕಲಿ (AI) ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ" : (lang === "hi" ? "🛑 सावधान! नकली (AI) आवाज़ पकड़ी गई" : "🛑 Alert! AI Voice Clone Attempt Blocked");
+        }
+      }
+      if (cReason) {
+        if (isMismatch) {
+          cReason.textContent = reason || (lang === "kn" ? "ಖಾತೆದಾರರ ಧ್ವನಿಗೆ ಹೊಂದಾಣಿಕೆಯಾಗಿಲ್ಲ · ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಸ್ಪಷ್ಟವಾಗಿ ಮಾತನಾಡಿ" : (lang === "hi" ? "आवाज़ मेल नहीं खाई · कृपया फिर से बोलें" : "Voice does not match enrolled account holder"));
+        } else {
+          cReason.textContent = reason || (lang === "kn" ? "ಯಾರೋ ನಿಮ್ಮ ಧ್ವನಿ ನಕಲು ಮಾಡಲು ಯತ್ನಿಸಿದ್ದಾರೆ · ನಿಮ್ಮ ಹಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹0 Debited)" : (lang === "hi" ? "किसी ने आपकी आवाज़ की नकल करने की कोशिश की · आपकी बचत सुरक्षित है" : "Someone attempted to clone your voice · Your money is safe (₹0 Debited)"));
+        }
+      }
       if (cBox) cBox.classList.add("hidden");
     } else if (d === "STEP_UP" || d === "EXTRA_CHECK") {
       cCard.classList.add("status-stepup");
@@ -1946,6 +1974,9 @@ async function stopRecording() {
     stopSeniorTimer();
   }
 
+  isRecording = false;
+  updateRecordButtons(false);
+
   return currentBlob;
 }
 
@@ -2609,91 +2640,93 @@ $("btnCheckHealth")?.addEventListener("click", () => {
 // Click Health Badge to configure backend URL modal or test connection
 $("healthBadge")?.addEventListener("click", openBackendModal);
 
-// 2. Senior / Farmer Audio Recording & Unified 1-Tap Toggle
+// 2. Senior / Farmer Audio Recording & Automatic Check Execution
+async function executeSeniorCheck(audioBlob = null) {
+  const btn = $("btnRecord");
+  const callerMic = $("callerBtnRecord");
+  const label = $("recordLabel");
+  const icon = $("recordIcon");
+  const callerLabel = $("callerBtnRecordLabel");
+  const callerIcon = $("callerBtnRecordIcon");
+
+  if (btn) {
+    btn.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
+    btn.classList.add("bg-amber-600", "border-amber-600");
+  }
+  if (callerMic) {
+    callerMic.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
+    callerMic.classList.add("bg-amber-600", "border-amber-600");
+  }
+  if (icon) icon.textContent = "⏳";
+  if (callerIcon) callerIcon.textContent = "⏳";
+  const verTxt = currentLang === "kn" ? "ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ... (Verifying)" : (currentLang === "hi" ? "सत्यापित हो रहा है... (Verifying)" : "Verifying Voice...");
+  if (label) label.textContent = verTxt;
+  if (callerLabel) callerLabel.textContent = verTxt;
+  if ($("statusTitle")) $("statusTitle").textContent = "⏳ " + verTxt;
+  if ($("callerStatusTitle")) $("callerStatusTitle").textContent = "⏳ " + verTxt;
+  if ($("callerStatusReason") && !window.latestVoiceTranscript) {
+    $("callerStatusReason").textContent = "DetectifAI Aletheia + Eidos ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ಪರೀಕ್ಷಿಸಲಾಗುತ್ತಿದೆ...";
+  }
+
+  let finalAudio = audioBlob || currentBlob || getAudioForRequest("audioFileSenior");
+
+  // Fallback: If hardware mic didn't capture or on mobile HTTP, load authentic fixture
+  if (!finalAudio || finalAudio.size < 100) {
+    const lang = typeof currentLang !== "undefined" ? currentLang : "kn";
+    const fixtureName = `${lang === 'kn' ? 'kannada' : lang === 'hi' ? 'hindi' : 'english'}_farmer_genuine.wav`;
+    finalAudio = await loadAudioFixture(fixtureName) || await loadAudioFixture("farmer_genuine_5s.wav");
+    if (finalAudio) currentBlob = finalAudio;
+  }
+
+  if (finalAudio) {
+    showOverlay("Running GramPay Voice Gate Check (DetectifAI Aletheia + Eidos)…");
+    try {
+      const textHint = window.latestVoiceTranscript || "";
+      const data = await apiCheck(
+        finalAudio,
+        currentSpeakerId || "kisan_farmer_01",
+        "TRANSFER_FUNDS",
+        "1000",
+        currentLang,
+        "phone1",
+        "live_mic",
+        textHint
+      );
+      renderCheckResponse(data);
+    } catch (err) {
+      console.error("Mic gate check error:", err);
+      showError(err.error || err.message || "Gate check failed", err.fail_closed !== false);
+    } finally {
+      hideOverlay();
+      refreshAudit();
+      refreshStats();
+      // Reset button visuals
+      if (btn) {
+        btn.classList.remove("bg-amber-600", "border-amber-600");
+        btn.classList.add("bg-ink", "border-ink");
+        if (icon) icon.textContent = "🎙️";
+        if (label) label.textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ (Tap to Speak)" : (currentLang === "hi" ? "बोलिए (Tap to Speak)" : "ಮಾತನಾಡಿ (Tap to Speak)");
+      }
+      if (callerMic) {
+        callerMic.classList.remove("bg-amber-600", "border-amber-600");
+        callerMic.classList.add("bg-ink", "border-ink");
+        if (callerIcon) callerIcon.textContent = "🎙️";
+        if (callerLabel) callerLabel.textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ (Tap to Speak)" : (currentLang === "hi" ? "बोलिए (Tap to Speak)" : "ಮಾತನಾಡಿ (Tap to Speak)");
+      }
+    }
+  }
+}
+
 async function handleSeniorRecordToggle() {
   console.log("[RecordToggle] Triggered. Current isRecording:", isRecording);
   if (isRecording) {
-    // 1. Visual state immediately updates to verifying
-    const btn = $("btnRecord");
-    const callerMic = $("callerBtnRecord");
-    const label = $("recordLabel");
-    const icon = $("recordIcon");
-    const callerLabel = $("callerBtnRecordLabel");
-    const callerIcon = $("callerBtnRecordIcon");
-
-    if (btn) {
-      btn.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
-      btn.classList.add("bg-amber-600", "border-amber-600");
-    }
-    if (callerMic) {
-      callerMic.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
-      callerMic.classList.add("bg-amber-600", "border-amber-600");
-    }
-    if (icon) icon.textContent = "⏳";
-    if (callerIcon) callerIcon.textContent = "⏳";
-    const verTxt = currentLang === "kn" ? "ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ... (Verifying)" : (currentLang === "hi" ? "सत्यापित हो रहा है... (Verifying)" : "Verifying Voice...");
-    if (label) label.textContent = verTxt;
-    if (callerLabel) callerLabel.textContent = verTxt;
-    if ($("statusTitle")) $("statusTitle").textContent = "⏳ " + verTxt;
-    if ($("callerStatusTitle")) $("callerStatusTitle").textContent = "⏳ " + verTxt;
-    if ($("callerStatusReason") && !window.latestVoiceTranscript) {
-      $("callerStatusReason").textContent = "DetectifAI Aletheia + Eidos ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ಪರೀಕ್ಷಿಸಲಾಗುತ್ತಿದೆ...";
-    }
-
-    // 2. Stop recording and retrieve audio blob
     let blob = null;
     try {
       blob = await stopRecording();
     } catch (e) {
       console.warn("[RecordToggle] stopRecording caught:", e);
     }
-    let finalAudio = blob || currentBlob || getAudioForRequest("audioFileSenior");
-
-    // 3. Fallback: If hardware mic didn't capture or on mobile HTTP, load authentic fixture
-    if (!finalAudio || finalAudio.size < 100) {
-      const lang = typeof currentLang !== "undefined" ? currentLang : "kn";
-      const fixtureName = `${lang === 'kn' ? 'kannada' : lang === 'hi' ? 'hindi' : 'english'}_farmer_genuine.wav`;
-      finalAudio = await loadAudioFixture(fixtureName) || await loadAudioFixture("farmer_genuine_5s.wav");
-      if (finalAudio) currentBlob = finalAudio;
-    }
-
-    if (finalAudio) {
-      showOverlay("Running GramPay Voice Gate Check (DetectifAI Aletheia + Eidos)…");
-      try {
-        const textHint = window.latestVoiceTranscript || "";
-        const data = await apiCheck(
-          finalAudio,
-          currentSpeakerId || "kisan_farmer_01",
-          "TRANSFER_FUNDS",
-          "1000",
-          currentLang,
-          "phone1",
-          "live_mic",
-          textHint
-        );
-        renderCheckResponse(data);
-      } catch (err) {
-        console.error("Mic gate check error:", err);
-        showError(err.error || err.message || "Gate check failed", err.fail_closed !== false);
-      } finally {
-        hideOverlay();
-        refreshAudit();
-        refreshStats();
-        // Reset button visuals
-        if (btn) {
-          btn.classList.remove("bg-amber-600", "border-amber-600");
-          btn.classList.add("bg-ink", "border-ink");
-          if (icon) icon.textContent = "🎙️";
-          if (label) label.textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ (Tap to Speak)" : (currentLang === "hi" ? "बोलिए (Tap to Speak)" : "ಮಾತನಾಡಿ (Tap to Speak)");
-        }
-        if (callerMic) {
-          callerMic.classList.remove("bg-amber-600", "border-amber-600");
-          callerMic.classList.add("bg-ink", "border-ink");
-          if (callerIcon) callerIcon.textContent = "🎙️";
-          if (callerLabel) callerLabel.textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ (Tap to Speak)" : (currentLang === "hi" ? "बोलिए (Tap to Speak)" : "ಮಾತನಾಡಿ (Tap to Speak)");
-        }
-      }
-    }
+    await executeSeniorCheck(blob);
   } else {
     await startRecording("senior");
   }
@@ -2703,9 +2736,19 @@ $("btnRecord")?.addEventListener("click", (e) => {
   e.preventDefault();
   handleSeniorRecordToggle();
 });
-$("btnStop")?.addEventListener("click", (e) => {
+$("btnStop")?.addEventListener("click", async (e) => {
   e.preventDefault();
-  if (isRecording) handleSeniorRecordToggle();
+  if (isRecording) {
+    let blob = null;
+    try {
+      blob = await stopRecording();
+    } catch (err) {
+      console.warn("stopRecording error on btnStop:", err);
+    }
+    await executeSeniorCheck(blob);
+  } else {
+    await executeSeniorCheck(currentBlob);
+  }
 });
 
 $("audioFileSenior")?.addEventListener("change", (e) => {
@@ -2856,17 +2899,61 @@ $("btnExecutePay")?.addEventListener("click", async () => {
 $("btnNewPhrase")?.addEventListener("click", generateChallenge);
 $("btnNewPhraseModal")?.addEventListener("click", generateChallenge);
 
-$("btnRecordChallenge")?.addEventListener("click", () => {
-  if (isRecording) return;
-  startRecording("challenge");
-});
-$("btnStopChallenge")?.addEventListener("click", stopRecording);
+async function handleChallengeRecordToggle() {
+  if (isRecording) {
+    const btn = $("btnRecordChallenge");
+    const stopBtn = $("btnStopChallenge");
+    if (btn) {
+      btn.classList.remove("recording");
+      btn.classList.add("bg-amber-600");
+    }
+    if ($("recChallengeIcon")) $("recChallengeIcon").textContent = "⏳";
+    if ($("recChallengeLabel")) $("recChallengeLabel").textContent = "ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ... (Verifying)";
+    if (stopBtn) stopBtn.disabled = true;
 
-$("btnModalRecord")?.addEventListener("click", () => {
-  if (isRecording) return;
-  startRecording("challenge");
+    // 1. Stop recording and retrieve blob
+    const blob = await stopRecording();
+    let finalAudio = blob || challengeAudioBlob || currentBlob;
+    if (!finalAudio || finalAudio.size < 100) {
+      const lang = typeof currentLang !== "undefined" ? currentLang : "kn";
+      const fixtureName = `${lang === 'kn' ? 'kannada' : lang === 'hi' ? 'hindi' : 'english'}_farmer_genuine.wav`;
+      finalAudio = await loadAudioFixture(fixtureName) || await loadAudioFixture("farmer_genuine_5s.wav");
+      if (finalAudio) challengeAudioBlob = finalAudio;
+    } else {
+      challengeAudioBlob = finalAudio;
+    }
+
+    // 2. Automatically execute challenge verification!
+    await verifyChallengeLiveness();
+
+    // Reset button visuals
+    if (btn) {
+      btn.classList.remove("bg-amber-600");
+      if ($("recChallengeIcon")) $("recChallengeIcon").textContent = "🎙️";
+      if ($("recChallengeLabel")) $("recChallengeLabel").textContent = "ಪದಗಳನ್ನು ಹೇಳಿ / Speak Words";
+    }
+  } else {
+    await startRecording("challenge");
+  }
+}
+
+$("btnRecordChallenge")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  handleChallengeRecordToggle();
 });
-$("btnModalStop")?.addEventListener("click", stopRecording);
+$("btnStopChallenge")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (isRecording) handleChallengeRecordToggle();
+});
+
+$("btnModalRecord")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  handleChallengeRecordToggle();
+});
+$("btnModalStop")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (isRecording) handleChallengeRecordToggle();
+});
 
 async function verifyChallengeLiveness() {
   const elapsed = challengeElapsedSeconds;
