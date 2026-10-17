@@ -1883,6 +1883,34 @@ async def serve_pdf():
     return Response(content=pdf_path.read_bytes(), media_type="application/pdf")
 
 
+@app.get("/qr_code_phone.svg")
+@app.get("/api/qr-code.svg")
+async def serve_qr_code(request: Request, url: Optional[str] = None):
+    target_url = url
+    if not target_url:
+        host = request.headers.get("host", "10.80.20.113:8000")
+        target_url = f"http://{host}/?mode=caller"
+    try:
+        import qrcode
+        import qrcode.image.svg
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=2,
+        )
+        qr.add_data(target_url)
+        qr.make(fit=True)
+        img = qr.make_image(image_factory=qrcode.image.svg.SvgPathImage)
+        return Response(content=img.to_string(), media_type="image/svg+xml")
+    except Exception:
+        fallback_file = FRONTEND_DIR / "qr_code_phone.svg"
+        if fallback_file.exists():
+            return Response(content=fallback_file.read_bytes(), media_type="image/svg+xml")
+        raise HTTPException(status_code=500, detail="Could not generate QR code")
+
+
+
 @app.get("/audio/{filename}")
 async def serve_audio_file(filename: str):
     file_path = FRONTEND_DIR / "audio" / filename

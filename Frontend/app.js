@@ -1833,7 +1833,7 @@ function setView(view) {
     judgeOverview?.classList.remove("hidden");
 
     if (workspaceGrid) {
-      workspaceGrid.className = "mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr] items-start transition-all duration-300";
+      workspaceGrid.className = "mx-auto grid max-w-6xl gap-6 lg:grid-cols-[430px_1fr] items-start transition-all duration-300";
     }
 
     refreshStats();
@@ -3131,17 +3131,15 @@ function switchStageMode(mode, device = "phone1") {
       $("standardView").classList.add("hidden");
     }
     setView("farmer");
-    setDevice(device);
-    if ($("callerBtnClone")) {
-      if (device === "phone2") {
-        $("callerBtnClone").classList.remove("hidden");
-      } else {
-        $("callerBtnClone").classList.add("hidden");
-      }
-    }
     initCallerPhoneControls();
+
+    // Start 1500ms live fraud sync on Farmer Phone
+    pollCallerState();
+    if (!window._callerPollInterval) {
+      window._callerPollInterval = setInterval(pollCallerState, 1500);
+    }
   } else {
-    // Default: Split View (Caller panel on left, Judge Console on right)
+    // Default: Split View (Farmer Phone on left, Bank Console on right)
     document.body.classList.remove("mode-caller", "mode-console");
     if ($("standardView")) {
       $("standardView").classList.remove("hidden");
@@ -3154,17 +3152,92 @@ function switchStageMode(mode, device = "phone1") {
       $("judgeConsoleView").classList.add("hidden");
       $("judgeConsoleView").classList.remove("flex");
     }
-    setView(normMode === "farmer" ? "farmer" : normMode === "judge" ? "judge" : "split");
-    setDevice(device);
+    setView("split");
+    pollLatestState();
+    if (!window._consolePollInterval) {
+      window._consolePollInterval = setInterval(pollLatestState, 1500);
+    }
+  }
+}
+
+let lastCallerNotifiedEventId = null;
+
+async function pollCallerState() {
+  try {
+    const url = lastCallerNotifiedEventId
+      ? `${BACKEND_URL}/api/latest-state?since=${lastCallerNotifiedEventId}`
+      : `${BACKEND_URL}/api/latest-state`;
+    const data = await safeApiFetch(url);
+    if (!data || !data.events || data.events.length === 0) return;
+
+    const latest = data.events[data.events.length - 1];
+    const evId = latest.event_id || latest.request_id;
+    if (evId === lastCallerNotifiedEventId) return;
+    lastCallerNotifiedEventId = evId;
+
+    const dec = latest.decision;
+    const lang = (currentLang || "kn").toLowerCase();
+
+    // Flash security result directly on Farmer Phone
+    if (dec === "BLOCK_ALERT" || dec === "BLOCK") {
+      const card = $("callerStatusCard");
+      const emoji = $("callerStatusEmoji");
+      const title = $("callerStatusTitle");
+      const reason = $("callerStatusReason");
+      const box = $("callerChallengeBox");
+
+      if (card) {
+        card.classList.remove("status-ready", "status-approve", "status-stepup");
+        card.classList.add("status-block");
+      }
+      if (emoji) emoji.textContent = "🛑";
+      if (title) {
+        title.textContent = lang === "kn"
+          ? "🛑 ಎಚ್ಚರಿಕೆ! ನಕಲಿ (AI) ಧ್ವನಿ ಪತ್ತೆಯಾಗಿದೆ"
+          : (lang === "hi" ? "🛑 सावधान! नकली (AI) आवाज़ पकड़ी गई" : "🛑 Alert! AI Voice Clone Attempt Blocked");
+      }
+      if (reason) {
+        reason.textContent = lang === "kn"
+          ? "ಯಾರೋ ನಿಮ್ಮ ಧ್ವನಿ ನಕಲು ಮಾಡಲು ಯತ್ನಿಸಿದ್ದಾರೆ · ನಿಮ್ಮ ಹಣ ಸುರಕ್ಷಿತವಾಗಿದೆ (₹0 Debited)"
+          : (lang === "hi" ? "किसी ने आपकी आवाज़ की नकल करने की कोशिश की · आपकी बचत सुरक्षित है" : "Someone attempted to clone your voice · Your money is safe (₹0 Debited)");
+      }
+      if (box) box.classList.add("hidden");
+      speakVoiceAssistant("blocked");
+    } else if (dec === "APPROVE" || dec === "PAY") {
+      const card = $("callerStatusCard");
+      const emoji = $("callerStatusEmoji");
+      const title = $("callerStatusTitle");
+      const reason = $("callerStatusReason");
+      const box = $("callerChallengeBox");
+
+      if (card) {
+        card.classList.remove("status-ready", "status-block", "status-stepup");
+        card.classList.add("status-approve");
+      }
+      if (emoji) emoji.textContent = "✅";
+      if (title) {
+        title.textContent = lang === "kn"
+          ? "✅ ಧ್ವನಿ ದೃಢೀಕರಿಸಲಾಗಿದೆ! ₹1,000 ಪಾವತಿ ಅನುಮೋದಿಸಲಾಗಿದೆ"
+          : (lang === "hi" ? "✅ असली आवाज़ प्रमाणित! ₹1,000 भुगतान सफल हुआ" : "✅ Voice Verified! ₹1,000 Payment Approved");
+      }
+      if (reason) {
+        reason.textContent = lang === "kn"
+          ? "ನಿಮ್ಮ ನೈಜ ಧ್ವನಿ ದೃಢಪಟ್ಟಿದೆ · ಅಧಿಕೃತ NPCI 123Pay"
+          : (lang === "hi" ? "आपकी असली आवाज़ सत्यापित · आधिकारिक NPCI 123Pay" : "Human voice verified · Official NPCI 123Pay");
+      }
+      if (box) box.classList.add("hidden");
+      speakVoiceAssistant("approved");
+    }
+  } catch (e) {
+    // Polling retry
   }
 }
 
 function initRoleSwitcherPills() {
   const pills = [
-    { id: "pillModeSplit", mode: "split", device: "phone1", url: "?view=split" },
-    { id: "pillModePhone1", mode: "caller", device: "phone1", url: "?mode=caller&device=phone1" },
-    { id: "pillModePhone2", mode: "caller", device: "phone2", url: "?mode=caller&device=phone2" },
-    { id: "pillModeConsole", mode: "console", device: "phone1", url: "?mode=console" }
+    { id: "pillModeSplit", mode: "split", url: "?view=split" },
+    { id: "pillModePhone1", mode: "caller", url: "?mode=caller" },
+    { id: "pillModeConsole", mode: "console", url: "?mode=console" }
   ];
 
   pills.forEach(p => {
@@ -3175,10 +3248,105 @@ function initRoleSwitcherPills() {
         try {
           window.history.pushState({}, "", p.url);
         } catch (err) {}
-        switchStageMode(p.mode, p.device);
+        switchStageMode(p.mode);
       };
     }
   });
+
+  // Wire up Bank Console live clone attack injection button
+  const consoleCloneBtn = $("consoleBtnInjectClone");
+  if (consoleCloneBtn) {
+    consoleCloneBtn.onclick = () => {
+      sendConsentedCloneClip();
+    };
+  }
+
+  // Initialize Local Wi-Fi Phone QR modal, virtual clock, and keypad
+  initPhoneQrModal();
+  initVirtualPhoneClock();
+  init123PayKeypadToggle();
+}
+
+function initPhoneQrModal() {
+  const btnShow = $("btnShowPhoneQR");
+  const modal = $("phoneQrModal");
+  const btnClose = $("btnClosePhoneQR");
+  const backdrop = $("phoneQrModalBackdrop");
+  const urlInput = $("phoneLanUrlInput");
+  const btnCopy = $("btnCopyPhoneUrl");
+  const btnCopyText = $("btnCopyPhoneUrlText");
+  const qrContainer = $("qrCodeContainer");
+
+  const detectedHost = (window.location.hostname && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")
+    ? `${window.location.hostname}:8000`
+    : "10.80.20.113:8000";
+  const callerUrl = `http://${detectedHost}/?mode=caller`;
+
+  if (urlInput) {
+    urlInput.value = callerUrl;
+  }
+
+  if (qrContainer) {
+    qrContainer.innerHTML = `<img src="/api/qr-code.svg?url=${encodeURIComponent(callerUrl)}" onerror="this.src='/qr_code_phone.svg'" class="size-48 mx-auto" alt="Phone Wi-Fi QR Code" />`;
+  }
+
+  if (btnShow && modal) {
+    btnShow.onclick = () => {
+      modal.classList.remove("hidden");
+    };
+  }
+
+  const closeModal = () => {
+    if (modal) modal.classList.add("hidden");
+  };
+
+  if (btnClose) btnClose.onclick = closeModal;
+  if (backdrop) backdrop.onclick = closeModal;
+
+  if (btnCopy && urlInput) {
+    btnCopy.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(urlInput.value);
+        if (btnCopyText) btnCopyText.textContent = "✅ Copied!";
+        setTimeout(() => {
+          if (btnCopyText) btnCopyText.textContent = "📋 Copy Link";
+        }, 2000);
+      } catch (e) {
+        urlInput.select();
+        document.execCommand("copy");
+        if (btnCopyText) btnCopyText.textContent = "✅ Copied!";
+        setTimeout(() => {
+          if (btnCopyText) btnCopyText.textContent = "📋 Copy Link";
+        }, 2000);
+      }
+    };
+  }
+}
+
+function initVirtualPhoneClock() {
+  const clockEl = $("phoneSimClock");
+  if (!clockEl) return;
+  const updateClock = () => {
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
+function init123PayKeypadToggle() {
+  const btn = $("btnToggleKeypad");
+  const box = $("virtualKeypadBox");
+  const icon = $("keypadToggleIcon");
+  if (btn && box) {
+    btn.onclick = () => {
+      const isHidden = box.classList.contains("hidden");
+      box.classList.toggle("hidden", !isHidden);
+      if (icon) {
+        icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+      }
+    };
+  }
 }
 
 function initCallerPhoneControls() {
@@ -3225,12 +3393,11 @@ function initCallerPhoneControls() {
     };
   }
 
-  // Wire up consented clone clip button for phone2
+  // Wire up subtle Test Clone Attack button on Phone 1
   const callerClone = $("callerBtnClone");
   if (callerClone) {
     callerClone.onclick = () => {
-      const cloneBtn = $("btnSendCloneClipProminent") || $("btnSendCloneClip") || $("btnQuickClone");
-      if (cloneBtn) cloneBtn.click();
+      sendConsentedCloneClip();
     };
   }
 }
