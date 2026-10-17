@@ -1130,6 +1130,7 @@ function setView(view) {
   const panelFarmer = $("panelFarmer") || document.querySelector("section#panelFarmer") || document.querySelector("main section:first-of-type");
   const panelJudge = $("panelJudge") || document.querySelector("section#panelJudge") || document.querySelector("main section:last-of-type");
   const workspaceGrid = $("workspaceGrid");
+  const judgeOverview = $("judgeOverviewSection");
 
   if (view === "farmer") {
     tabFarmer?.classList.add("active");
@@ -1141,8 +1142,12 @@ function setView(view) {
     panelJudge?.classList.add("hidden");
     panelJudge?.classList.remove("flex");
 
+    // Hide judge overview (Slide 4 stats ribbon & 1-click test cards) for clean, senior-friendly screen
+    judgeOverview?.classList.add("hidden");
+
     if (workspaceGrid) {
-      workspaceGrid.className = "mx-auto max-w-3xl transition-all duration-300";
+      // Clean, centered responsive container for mobile phone & laptop mode
+      workspaceGrid.className = "mx-auto w-full max-w-xl md:max-w-2xl transition-all duration-300";
     }
   } else if (view === "judge") {
     tabJudge?.classList.add("active");
@@ -1153,6 +1158,9 @@ function setView(view) {
     panelFarmer?.classList.add("hidden");
     panelJudge?.classList.remove("hidden");
     panelJudge?.classList.add("flex");
+
+    // Reveal telemetry stats ribbon & 1-click test cards for judges
+    judgeOverview?.classList.remove("hidden");
 
     if (workspaceGrid) {
       workspaceGrid.className = "mx-auto max-w-4xl transition-all duration-300";
@@ -1170,6 +1178,9 @@ function setView(view) {
     panelFarmer?.classList.remove("hidden");
     panelJudge?.classList.remove("hidden");
     panelJudge?.classList.add("flex");
+
+    // Reveal telemetry stats ribbon & 1-click test cards for judges
+    judgeOverview?.classList.remove("hidden");
 
     if (workspaceGrid) {
       workspaceGrid.className = "mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr] items-start transition-all duration-300";
@@ -1530,26 +1541,34 @@ window.handleHeroCase3 = handleHeroCase3;
 // 1. GramPay Quick Scenario Presets
 $("presetFertilizer")?.addEventListener("click", () => {
   if ($("actionSelect")) $("actionSelect").value = "TRANSFER_FUNDS";
-  if ($("amountInput")) $("amountInput").value = "5000";
-  setStatusCard(null, "Scenario selected: Send ₹5,000 for IFFCO Fertilizer & Seeds (High Risk). Tap and speak order or select audio.");
+  if ($("amountInput")) $("amountInput").value = "1000";
+  const label = currentLang === "kn" ? "ಗೊಬ್ಬರಕ್ಕೆ ₹1,000 ಪಾವತಿಸಿ" : currentLang === "hi" ? "खाद के लिए ₹1,000 भुगतान करें" : "Pay ₹1,000 Fertilizer";
+  if ($("recordLabel")) $("recordLabel").textContent = label;
+  setStatusCard(null, `Scenario: ₹1,000 IFFCO Fertilizer. Tap the giant button and speak to pay.`);
 });
 
 $("presetFuel")?.addEventListener("click", () => {
   if ($("actionSelect")) $("actionSelect").value = "TRANSFER_FUNDS";
   if ($("amountInput")) $("amountInput").value = "2500";
-  setStatusCard(null, "Scenario selected: Send ₹2,500 for tractor diesel & fuel. Tap and speak order or select audio.");
+  const label = currentLang === "kn" ? "ಡೀಸೆಲ್ಗೆ ₹2,500 ಪಾವತಿಸಿ" : currentLang === "hi" ? "डीजल के लिए ₹2,500 भुगतान करें" : "Pay ₹2,500 Fuel";
+  if ($("recordLabel")) $("recordLabel").textContent = label;
+  setStatusCard(null, `Scenario: ₹2,500 Tractor Diesel. Tap the giant button and speak to pay.`);
 });
 
 $("presetBalance")?.addEventListener("click", () => {
   if ($("actionSelect")) $("actionSelect").value = "CHECK_BALANCE";
   if ($("amountInput")) $("amountInput").value = "0";
-  setStatusCard(null, "Scenario selected: Check Kisan Credit balance (Low Risk). Tap and speak order or select audio.");
+  const label = currentLang === "kn" ? "ಬ್ಯಾಲೆನ್ಸ್ ಪರಿಶೀಲಿಸಿ" : currentLang === "hi" ? "बैलेंस चेक करें" : "Check Kisan Balance";
+  if ($("recordLabel")) $("recordLabel").textContent = label;
+  setStatusCard(null, `Scenario: Kisan Credit Balance Inquiry. Tap the giant button and speak.`);
 });
 
 $("presetPmKisan")?.addEventListener("click", () => {
   if ($("actionSelect")) $("actionSelect").value = "PAY_UPI";
   if ($("amountInput")) $("amountInput").value = "2000";
-  setStatusCard(null, "Scenario selected: PM-Kisan Samman Nidhi DBT Subsidy payment of ₹2,000. Tap and speak order or select audio.");
+  const label = currentLang === "kn" ? "ಪಿಎಂ-ಕಿಸಾನ್ ₹2,000" : currentLang === "hi" ? "पीएम-किसान ₹2,000" : "PM-Kisan ₹2,000";
+  if ($("recordLabel")) $("recordLabel").textContent = label;
+  setStatusCard(null, "Scenario: PM-Kisan Samman Nidhi DBT Subsidy of ₹2,000. Tap the giant button to speak.");
 });
 
 // Backend URL & Health check buttons
@@ -2076,16 +2095,16 @@ $("costAssumption")?.addEventListener("change", () => {
 function setLanguage(lang) {
   currentLang = lang || "kn";
   
-  // Highlight active lang button
+  // Highlight active lang button with senior-accessible classes (min 52px height)
   document.querySelectorAll(".lang-btn").forEach((btn) => {
     if (btn.dataset.lang === currentLang) {
-      btn.className = "lang-btn active rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-ink bg-ink text-paper shadow-2xs";
+      btn.className = "lang-btn active min-h-[52px] sm:min-h-[56px] rounded-xl px-2 sm:px-4 py-2 text-sm sm:text-base font-bold transition border-2 border-ink bg-ink text-paper shadow-md flex items-center justify-center text-center";
     } else {
-      btn.className = "lang-btn rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-line bg-paper text-ink hover:bg-cream-2";
+      btn.className = "lang-btn min-h-[52px] sm:min-h-[56px] rounded-xl px-2 sm:px-4 py-2 text-sm sm:text-base font-bold transition border-2 border-line bg-paper text-ink hover:bg-cream-2 shadow-2xs flex items-center justify-center text-center";
     }
   });
 
-  // Localized hint
+  // Localized hint and primary button CTA
   const cfg = (typeof window !== "undefined" && window.LANGUAGES && window.LANGUAGES[currentLang]) || null;
   if (cfg) {
     if ($("statusReason")) {
@@ -2094,6 +2113,11 @@ function setLanguage(lang) {
     if ($("recordHint")) {
       $("recordHint").textContent = cfg.speak_cta || "Hold the button, say your payment order.";
     }
+  }
+
+  // Update primary Speak button label
+  if ($("recordLabel")) {
+    $("recordLabel").textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ ಪಾವತಿಸಿ" : currentLang === "hi" ? "बोलकर भुगतान करें" : "Tap and speak";
   }
 
   // Regenerate challenge words in selected script

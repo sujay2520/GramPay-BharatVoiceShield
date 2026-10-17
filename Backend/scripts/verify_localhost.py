@@ -100,7 +100,10 @@ def test_step_up_fix1_flow():
 
     # Submit challenge audio to /api/challenge/submit
     # Using a 5s genuine test file
-    with open("clips/kn/genuine/kannada_farmer_genuine.wav", "rb") as f:
+    clip_path = os.path.join(os.path.dirname(__file__), "..", "clips", "kn", "genuine", "kannada_farmer_genuine.wav")
+    if not os.path.exists(clip_path):
+        clip_path = os.path.join(os.path.dirname(__file__), "..", "data_audio", "farmer_genuine_5s.wav")
+    with open(clip_path, "rb") as f:
         clip_bytes = f.read()
 
     files = {"audio": ("challenge.wav", clip_bytes, "audio/wav")}

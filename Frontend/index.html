@@ -124,196 +124,199 @@
     </header>
 
     <!-- ========================================================================== -->
-    <!-- 2. TOP STAT RIBBON: OFFICIAL SLIDE 4 TELEMETRY COUNTERS                    -->
-    <!-- ========================================================================== -->
-    <section class="mx-auto mb-5 max-w-6xl rounded-2xl border border-line bg-paper p-4 md:p-5 shadow-xs">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-line pb-2.5">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-bold tracking-wider text-muted uppercase">Slide 4 Live Defense Telemetry</span>
-          <span class="rounded-full bg-cream border border-line px-2.5 py-0.5 text-[10px] font-bold text-ink uppercase tracking-wide">
-            Real-Time Proof
-          </span>
-        </div>
-        <div class="flex items-center gap-3">
-          <button id="btnRefreshStats" type="button" class="inline-flex items-center gap-1 text-xs font-semibold text-gold hover:underline">
-            <span>🔄</span> Refresh Telemetry
-          </button>
-          <div class="flex items-center gap-1.5 text-xs text-muted">
-            <label for="costAssumption" class="text-[11px] font-semibold text-ink">Rate (₹/min):</label>
-            <input id="costAssumption" type="number" value="10" min="1" step="1"
-              class="w-14 rounded-lg border border-line bg-cream px-2 py-0.5 text-xs text-center font-mono font-bold text-ink outline-none focus:border-gold" />
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 font-mono">
-        <!-- 1. Checks Run -->
-        <div class="rounded-xl border border-line bg-cream/70 p-3.5 transition hover:shadow-xs">
-          <span class="text-[11px] font-bold tracking-wider text-muted uppercase font-sans">Checks Run</span>
-          <p id="checks_run" class="mt-1 font-display text-2xl md:text-3xl font-bold text-ink">0</p>
-          <span class="text-[10px] text-muted font-sans block mt-0.5">Calls pre-gated &lt;300ms</span>
-        </div>
-
-        <!-- 2. Clones Blocked -->
-        <div class="rounded-xl border border-alert/30 bg-alert-bg/60 p-3.5 transition hover:shadow-xs">
-          <span class="text-[11px] font-bold tracking-wider text-alert uppercase font-sans">Clones Blocked</span>
-          <p id="clones_blocked" class="mt-1 font-display text-2xl md:text-3xl font-bold text-alert">0</p>
-          <span class="text-[10px] text-alert/80 font-sans block mt-0.5">Vocoder synthetics</span>
-        </div>
-
-        <!-- 3. LLM Turns Saved -->
-        <div class="rounded-xl border border-gold/40 bg-wait-bg/50 p-3.5 transition hover:shadow-xs">
-          <span class="text-[11px] font-bold tracking-wider text-gold uppercase font-sans">LLM Turns Saved</span>
-          <p id="agent_steps_skipped" class="mt-1 font-display text-2xl md:text-3xl font-bold text-gold">0</p>
-          <span class="text-[10px] text-muted font-sans block mt-0.5">Inference avoided</span>
-        </div>
-
-        <!-- 4. INR Saved -->
-        <div class="rounded-xl border border-safe/30 bg-safe-bg/60 p-3.5 transition hover:shadow-xs">
-          <span class="text-[11px] font-bold tracking-wider text-safe uppercase font-sans">INR Saved</span>
-          <p id="agent_time_saved_inr" class="mt-1 font-display text-2xl md:text-3xl font-bold text-safe">₹0.00</p>
-          <span id="costAssumptionText" class="text-[10px] text-safe/80 font-sans block mt-0.5">Saved @ ₹10/min</span>
-        </div>
-      </div>
-
-      <!-- Secondary counter targets required by app.js -->
-      <div class="mt-3 pt-2 border-t border-line/60 flex items-center justify-between text-xs text-muted font-mono">
-        <div class="flex items-center gap-3">
-          <span>Steps: <strong id="costSteps" class="text-ink">0</strong></span>
-          <span>Secs: <strong id="costSeconds" class="text-ink">0</strong>s</span>
-          <span>Saved: <strong id="costInr" class="text-safe">₹0.00</strong></span>
-        </div>
-        <span class="text-[11px] font-sans text-muted hidden sm:inline">Aletheia + Eidos Dual-Stage Savings</span>
-      </div>
-    </section>
-
-    <!-- ========================================================================== -->
-    <!-- 3. 1-CLICK LIVE JUDGE DEMO BAR (3 LARGE FRIENDLY HERO CARDS/BUTTONS)       -->
-    <!-- ========================================================================== -->
-    <section class="mx-auto mb-6 max-w-6xl rounded-2xl border-2 border-gold/40 bg-gradient-to-r from-cream via-paper to-cream p-4 md:p-6 shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-2.5">
-          <span class="flex size-8 items-center justify-center rounded-xl bg-gold text-paper font-bold text-base shadow-xs">⚡</span>
-          <div>
-            <h2 class="font-display text-xl md:text-2xl font-bold text-ink">1-Click Live Judge Demo</h2>
-            <p class="text-xs md:text-sm text-muted">Instant one-touch evaluation scenarios designed for hackathon jury walkthroughs</p>
-          </div>
-        </div>
-        <span class="rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold uppercase tracking-wider border border-gold/30">
-          Jury Fast-Track
-        </span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-        <!-- 🟢 Case 1: Authentic Farmer Voice -->
-        <button type="button" id="demoCase1"
-          class="hero-demo-card group relative text-left rounded-2xl border-2 border-safe/50 bg-safe-bg/60 hover:bg-safe-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs">
-          <div>
-            <div class="flex items-center justify-between mb-2.5">
-              <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-safe uppercase">
-                <span class="size-2.5 rounded-full bg-safe animate-pulse"></span> Case 1
-              </span>
-              <span class="rounded-full bg-safe text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
-                Gate Approves
-              </span>
-            </div>
-            <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-safe transition">
-              Authentic Farmer Voice
-            </h3>
-            <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
-              Ramesh Patel pays <strong>₹5,000</strong> for fertilizer &rarr; Gate <strong>APPROVES</strong> in &lt;300ms, tool unlocks.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-safe/20 flex items-center justify-between text-xs font-bold text-safe">
-            <span class="flex items-center gap-1.5">
-              <span class="text-base">🟢</span> Run Authentic Payment
-            </span>
-            <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
-          </div>
-        </button>
-
-        <!-- 🔴 Case 2: AI Voice Clone Attack -->
-        <button type="button" id="demoCase2"
-          class="hero-demo-card group relative text-left rounded-2xl border-2 border-alert/50 bg-alert-bg/60 hover:bg-alert-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs">
-          <div>
-            <div class="flex items-center justify-between mb-2.5">
-              <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-alert uppercase">
-                <span class="size-2.5 rounded-full bg-alert animate-pulse"></span> Case 2
-              </span>
-              <span class="rounded-full bg-alert text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
-                Blocks &lt;300ms
-              </span>
-            </div>
-            <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-alert transition">
-              AI Voice Clone Attack
-            </h3>
-            <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
-              Fraudulent neural clone &rarr; Gate <strong>BLOCKS</strong> in &lt;300ms, tool stays locked, <strong>₹20 saved</strong>.
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-alert/20 flex items-center justify-between text-xs font-bold text-alert">
-            <span class="flex items-center gap-1.5">
-              <span class="text-base">🔴</span> Simulate Clone Attack
-            </span>
-            <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
-          </div>
-        </button>
-
-        <!-- 🟡 Case 3: Tier-2 Active Cognitive Challenge -->
-        <button type="button" id="demoCase3"
-          class="hero-demo-card group relative text-left rounded-2xl border-2 border-wait/50 bg-wait-bg/60 hover:bg-wait-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs">
-          <div>
-            <div class="flex items-center justify-between mb-2.5">
-              <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-wait uppercase">
-                <span class="size-2.5 rounded-full bg-wait animate-pulse"></span> Case 3
-              </span>
-              <span class="rounded-full bg-wait text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
-                Cognitive Liveness
-              </span>
-            </div>
-            <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-wait transition">
-              Tier-2 Active Challenge
-            </h3>
-            <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
-              Noisy audio &rarr; Nemotron dynamic 4-word phrase &amp; response latency timer (&lt;800ms).
-            </p>
-          </div>
-          <div class="mt-4 pt-3 border-t border-wait/20 flex items-center justify-between text-xs font-bold text-wait">
-            <span class="flex items-center gap-1.5">
-              <span class="text-base">🟡</span> Launch Active Challenge
-            </span>
-            <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
-          </div>
-        </button>
-      </div>
-    </section>
-
-    <!-- ========================================================================== -->
-    <!-- 4. VIEW TOGGLE BAR: CLEAN TABBED VIEW (SIMPLE VS TECHNICAL DEEP DIVE)      -->
+    <!-- 2. VIEW TOGGLE BAR: CLEAN TABBED VIEW (SIMPLE VS TECHNICAL DEEP DIVE)      -->
     <!-- ========================================================================== -->
     <div class="mx-auto mb-6 flex max-w-6xl flex-wrap items-center justify-between gap-3">
       <!-- Tabs: Simple View vs Technical Console -->
       <div class="inline-flex rounded-2xl border border-line bg-cream-2/70 p-1.5 shadow-2xs">
         <button type="button" id="tabFarmer"
-          class="tab-btn active flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition">
+          class="tab-btn active flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2.5 text-sm sm:text-base font-bold transition">
           <span>🌾</span>
           <span>Farmer Voice Shield</span>
-          <span class="rounded-full bg-safe/20 text-safe px-2 py-0.5 text-[10px] font-bold">Default View</span>
+          <span class="rounded-full bg-safe/20 text-safe px-2.5 py-0.5 text-xs font-bold">Simple Mode</span>
         </button>
         <button type="button" id="tabJudge"
-          class="tab-btn flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition">
+          class="tab-btn flex items-center gap-2 rounded-xl px-4 sm:px-5 py-2.5 text-sm sm:text-base font-semibold transition">
           <span>🔬</span>
           <span>Judge Technical Forensic Console</span>
-          <span class="rounded-full bg-ink/15 text-ink px-2 py-0.5 text-[10px] font-bold">Deep Dive</span>
+          <span class="rounded-full bg-ink/15 text-ink px-2.5 py-0.5 text-xs font-bold">Deep Dive</span>
         </button>
       </div>
 
       <!-- Split View Toggle -->
       <button type="button" id="tabSplit"
-        class="inline-flex items-center gap-1.5 rounded-xl border border-line bg-paper px-3.5 py-2 text-xs font-bold text-ink hover:bg-cream-2 transition shadow-2xs">
+        class="inline-flex items-center gap-1.5 rounded-xl border border-line bg-paper px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-bold text-ink hover:bg-cream-2 transition shadow-2xs">
         <span id="splitIcon">⊞</span>
         <span id="splitLabel">Side-by-Side Split View</span>
       </button>
+    </div>
+
+    <!-- ========================================================================== -->
+    <!-- 3. JUDGE & TECHNICAL OVERVIEW (Revealed in Judge & Split Views)             -->
+    <!-- ========================================================================== -->
+    <div id="judgeOverviewSection" class="hidden space-y-5 mx-auto mb-6 max-w-6xl">
+
+      <!-- TOP STAT RIBBON: OFFICIAL SLIDE 4 TELEMETRY COUNTERS -->
+      <section class="rounded-2xl border border-line bg-paper p-4 md:p-5 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-line pb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold tracking-wider text-muted uppercase">Slide 4 Live Defense Telemetry</span>
+            <span class="rounded-full bg-cream border border-line px-2.5 py-0.5 text-[10px] font-bold text-ink uppercase tracking-wide">
+              Real-Time Proof
+            </span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="btnRefreshStats" type="button" class="inline-flex items-center gap-1 text-xs font-semibold text-gold hover:underline">
+              <span>🔄</span> Refresh Telemetry
+            </button>
+            <div class="flex items-center gap-1.5 text-xs text-muted">
+              <label for="costAssumption" class="text-[11px] font-semibold text-ink">Rate (₹/min):</label>
+              <input id="costAssumption" type="number" value="10" min="1" step="1"
+                class="w-14 rounded-lg border border-line bg-cream px-2 py-0.5 text-xs text-center font-mono font-bold text-ink outline-none focus:border-gold" />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 font-mono">
+          <!-- 1. Checks Run -->
+          <div class="rounded-xl border border-line bg-cream/70 p-3.5 transition hover:shadow-xs">
+            <span class="text-[11px] font-bold tracking-wider text-muted uppercase font-sans">Checks Run</span>
+            <p id="checks_run" class="mt-1 font-display text-2xl md:text-3xl font-bold text-ink">0</p>
+            <span class="text-[10px] text-muted font-sans block mt-0.5">Calls pre-gated &lt;300ms</span>
+          </div>
+
+          <!-- 2. Clones Blocked -->
+          <div class="rounded-xl border border-alert/30 bg-alert-bg/60 p-3.5 transition hover:shadow-xs">
+            <span class="text-[11px] font-bold tracking-wider text-alert uppercase font-sans">Clones Blocked</span>
+            <p id="clones_blocked" class="mt-1 font-display text-2xl md:text-3xl font-bold text-alert">0</p>
+            <span class="text-[10px] text-alert/80 font-sans block mt-0.5">Vocoder synthetics</span>
+          </div>
+
+          <!-- 3. LLM Turns Saved -->
+          <div class="rounded-xl border border-gold/40 bg-wait-bg/50 p-3.5 transition hover:shadow-xs">
+            <span class="text-[11px] font-bold tracking-wider text-gold uppercase font-sans">LLM Turns Saved</span>
+            <p id="agent_steps_skipped" class="mt-1 font-display text-2xl md:text-3xl font-bold text-gold">0</p>
+            <span class="text-[10px] text-muted font-sans block mt-0.5">Inference avoided</span>
+          </div>
+
+          <!-- 4. INR Saved -->
+          <div class="rounded-xl border border-safe/30 bg-safe-bg/60 p-3.5 transition hover:shadow-xs">
+            <span class="text-[11px] font-bold tracking-wider text-safe uppercase font-sans">INR Saved</span>
+            <p id="agent_time_saved_inr" class="mt-1 font-display text-2xl md:text-3xl font-bold text-safe">₹0.00</p>
+            <span id="costAssumptionText" class="text-[10px] text-safe/80 font-sans block mt-0.5">Saved @ ₹10/min</span>
+          </div>
+        </div>
+
+        <!-- Secondary counter targets required by app.js -->
+        <div class="mt-3 pt-2 border-t border-line/60 flex items-center justify-between text-xs text-muted font-mono">
+          <div class="flex items-center gap-3">
+            <span>Steps: <strong id="costSteps" class="text-ink">0</strong></span>
+            <span>Secs: <strong id="costSeconds" class="text-ink">0</strong>s</span>
+            <span>Saved: <strong id="costInr" class="text-safe">₹0.00</strong></span>
+          </div>
+          <span class="text-[11px] font-sans text-muted hidden sm:inline">Aletheia + Eidos Dual-Stage Savings</span>
+        </div>
+      </section>
+
+      <!-- 1-CLICK LIVE JUDGE DEMO BAR (3 LARGE FRIENDLY HERO CARDS/BUTTONS) -->
+      <section class="rounded-2xl border-2 border-gold/40 bg-gradient-to-r from-cream via-paper to-cream p-4 md:p-6 shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div class="flex items-center gap-2.5">
+            <span class="flex size-8 items-center justify-center rounded-xl bg-gold text-paper font-bold text-base shadow-xs">⚡</span>
+            <div>
+              <h2 class="font-display text-xl md:text-2xl font-bold text-ink">1-Click Live Judge Demo</h2>
+              <p class="text-xs md:text-sm text-muted">Instant one-touch evaluation scenarios designed for hackathon jury walkthroughs</p>
+            </div>
+          </div>
+          <span class="rounded-full bg-gold/15 px-3 py-1 text-xs font-bold text-gold uppercase tracking-wider border border-gold/30">
+            Jury Fast-Track
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <!-- 🟢 Case 1: Authentic Farmer Voice -->
+          <button type="button" id="demoCase1"
+            class="hero-demo-card group relative text-left rounded-2xl border-2 border-safe/50 bg-safe-bg/60 hover:bg-safe-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs">
+            <div>
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-safe uppercase">
+                  <span class="size-2.5 rounded-full bg-safe animate-pulse"></span> Case 1
+                </span>
+                <span class="rounded-full bg-safe text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+                  Gate Approves
+                </span>
+              </div>
+              <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-safe transition">
+                Authentic Farmer Voice
+              </h3>
+              <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
+                Ramesh Patel pays <strong>₹5,000</strong> for fertilizer &rarr; Gate <strong>APPROVES</strong> in &lt;300ms, tool unlocks.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-safe/20 flex items-center justify-between text-xs font-bold text-safe">
+              <span class="flex items-center gap-1.5">
+                <span class="text-base">🟢</span> Run Authentic Payment
+              </span>
+              <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
+            </div>
+          </button>
+
+          <!-- 🔴 Case 2: AI Voice Clone Attack -->
+          <button type="button" id="demoCase2"
+            class="hero-demo-card group relative text-left rounded-2xl border-2 border-alert/50 bg-alert-bg/60 hover:bg-alert-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs">
+            <div>
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-alert uppercase">
+                  <span class="size-2.5 rounded-full bg-alert animate-pulse"></span> Case 2
+                </span>
+                <span class="rounded-full bg-alert text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+                  Blocks &lt;300ms
+                </span>
+              </div>
+              <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-alert transition">
+                AI Voice Clone Attack
+              </h3>
+              <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
+                Fraudulent neural clone &rarr; Gate <strong>BLOCKS</strong> in &lt;300ms, tool stays locked, <strong>₹20 saved</strong>.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-alert/20 flex items-center justify-between text-xs font-bold text-alert">
+              <span class="flex items-center gap-1.5">
+                <span class="text-base">🔴</span> Simulate Clone Attack
+              </span>
+              <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
+            </div>
+          </button>
+
+          <!-- 🟡 Case 3: Tier-2 Active Cognitive Challenge -->
+          <button type="button" id="demoCase3"
+            class="hero-demo-card group relative text-left rounded-2xl border-2 border-wait/50 bg-wait-bg/60 hover:bg-wait-bg/95 p-4 md:p-5 flex flex-col justify-between shadow-xs">
+            <div>
+              <div class="flex items-center justify-between mb-2.5">
+                <span class="flex items-center gap-1.5 text-xs font-bold tracking-wider text-wait uppercase">
+                  <span class="size-2.5 rounded-full bg-wait animate-pulse"></span> Case 3
+                </span>
+                <span class="rounded-full bg-wait text-paper px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+                  Cognitive Liveness
+                </span>
+              </div>
+              <h3 class="font-display text-lg md:text-xl font-bold text-ink group-hover:text-wait transition">
+                Tier-2 Active Challenge
+              </h3>
+              <p class="text-xs md:text-sm text-muted mt-1.5 leading-relaxed">
+                Noisy audio &rarr; Nemotron dynamic 4-word phrase &amp; response latency timer (&lt;800ms).
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-wait/20 flex items-center justify-between text-xs font-bold text-wait">
+              <span class="flex items-center gap-1.5">
+                <span class="text-base">🟡</span> Launch Active Challenge
+              </span>
+              <span class="text-base transition group-hover:translate-x-1">&rarr;</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
     </div>
 
     <!-- ========================================================================== -->
@@ -324,45 +327,48 @@
       <!-- ======================================================================== -->
       <!-- PANEL 1: Farmer / Senior Citizen Protected Voice Line (Default Simple)   -->
       <!-- ======================================================================== -->
-      <section id="panelFarmer" class="rounded-[var(--radius)] border border-line bg-paper p-5 shadow-sm md:p-7 flex flex-col space-y-5">
-        <div class="flex items-center justify-between">
-          <p class="text-xs font-bold tracking-wider text-muted uppercase">Protected Line</p>
-          <span class="rounded-full bg-cream border border-line px-3 py-1 text-xs font-semibold text-ink" id="currentSpeakerBadge">
-            Ramesh Patel (farmer_ramesh)
+      <section id="panelFarmer" class="w-full rounded-[var(--radius-2xl)] border-2 border-line bg-paper p-5 sm:p-7 md:p-8 shadow-sm flex flex-col space-y-6">
+        
+        <!-- Header Info -->
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-4">
+          <div>
+            <span class="text-xs font-bold tracking-wider text-muted uppercase">Protected Line</span>
+            <h2 class="font-display text-2xl sm:text-3xl font-bold text-ink mt-0.5">GramPay Voice Payment Gate</h2>
+            <p class="text-xs sm:text-sm text-muted mt-0.5">Biometric pre-gate guarding voice payments &amp; Kisan subsidies</p>
+          </div>
+          <span class="rounded-full bg-cream border-2 border-line px-3.5 py-1.5 text-xs sm:text-sm font-bold text-ink shadow-2xs" id="currentSpeakerBadge">
+            👤 Ramesh Patel (farmer_ramesh)
           </span>
         </div>
-        <div>
-          <h2 class="font-display text-3xl font-bold text-ink">NPCI Voice Payment Gate</h2>
-          <p class="text-xs text-muted mt-0.5">Biometric pre-gate guarding voice payments &amp; Kisan subsidies</p>
-        </div>
 
-        <!-- 3-Language Selector Pill Bar (Day 2 Deliverable) -->
-        <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-line bg-cream/70 p-2.5">
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs font-bold uppercase tracking-wider text-muted">🌐 Language:</span>
+        <!-- 3-Language Selector Pill Bar (Large 52px+ Touch Targets) -->
+        <div class="rounded-2xl border-2 border-line bg-cream/70 p-3 sm:p-3.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-muted">🌐 Select Your Language / ಭಾಷೆಯನ್ನು ಆಯ್ಕೆಮಾಡಿ:</span>
+            <span class="text-[11px] font-semibold text-safe">✓ Voice AI Ready</span>
           </div>
-          <div class="flex flex-wrap items-center gap-1.5" id="langSelectorBar">
-            <button type="button" class="lang-btn active rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-ink bg-ink text-paper shadow-2xs" data-lang="kn">
+          <div class="grid grid-cols-3 gap-2 sm:gap-3" id="langSelectorBar">
+            <button type="button" class="lang-btn active min-h-[52px] sm:min-h-[56px] rounded-xl px-2 sm:px-4 py-2 text-sm sm:text-base font-bold transition border-2 border-ink bg-ink text-paper shadow-md flex items-center justify-center text-center" data-lang="kn">
               ಕನ್ನಡ (Kannada)
             </button>
-            <button type="button" class="lang-btn rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-line bg-paper text-ink hover:bg-cream-2" data-lang="hi">
+            <button type="button" class="lang-btn min-h-[52px] sm:min-h-[56px] rounded-xl px-2 sm:px-4 py-2 text-sm sm:text-base font-bold transition border-2 border-line bg-paper text-ink hover:bg-cream-2 shadow-2xs flex items-center justify-center text-center" data-lang="hi">
               हिन्दी (Hindi)
             </button>
-            <button type="button" class="lang-btn rounded-xl px-3.5 py-1.5 text-xs font-bold transition border border-line bg-paper text-ink hover:bg-cream-2" data-lang="en">
+            <button type="button" class="lang-btn min-h-[52px] sm:min-h-[56px] rounded-xl px-2 sm:px-4 py-2 text-sm sm:text-base font-bold transition border-2 border-line bg-paper text-ink hover:bg-cream-2 shadow-2xs flex items-center justify-center text-center" data-lang="en">
               English
             </button>
           </div>
         </div>
 
         <!-- Device Selector (Phone 1 Payer vs Phone 2 Attacker/Test Mode) -->
-        <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-line bg-cream/50 p-2 text-xs">
+        <div class="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-line bg-cream/50 p-2.5 text-xs">
           <div class="flex items-center gap-2">
             <span class="font-bold text-muted uppercase">📱 Mode:</span>
             <div class="inline-flex rounded-xl border border-line bg-paper p-0.5" id="deviceSelectorBar">
-              <button type="button" id="btnDevicePhone1" class="device-btn active rounded-lg px-2.5 py-1 font-bold text-xs bg-ink text-paper transition" data-device="phone1">
+              <button type="button" id="btnDevicePhone1" class="device-btn active rounded-lg px-3 py-1 font-bold text-xs bg-ink text-paper transition" data-device="phone1">
                 Phone 1 (Payer)
               </button>
-              <button type="button" id="btnDevicePhone2" class="device-btn rounded-lg px-2.5 py-1 font-medium text-xs text-muted hover:text-ink transition" data-device="phone2">
+              <button type="button" id="btnDevicePhone2" class="device-btn rounded-lg px-3 py-1 font-medium text-xs text-muted hover:text-ink transition" data-device="phone2">
                 Phone 2 (Attacker / Test)
               </button>
             </div>
@@ -377,25 +383,25 @@
         <!-- ==================================================================== -->
         <!-- LARGE, FRIENDLY, VISUALLY CLEAR STATUS CARD (THUMBS-UP/ALERT/QUESTION)-->
         <!-- ==================================================================== -->
-        <div id="statusCard" class="status-ready rounded-3xl border-2 px-6 py-8 text-center transition-all duration-300 shadow-sm flex flex-col justify-center items-center min-h-[220px]">
-          <div id="statusEmoji" class="mx-auto mb-3 flex size-20 items-center justify-center rounded-full bg-paper/90 shadow-md text-4xl md:text-5xl border border-line transition-transform duration-300">
+        <div id="statusCard" class="status-ready rounded-3xl border-2 px-6 py-8 text-center transition-all duration-300 shadow-md flex flex-col justify-center items-center min-h-[230px]">
+          <div id="statusEmoji" class="mx-auto mb-3 flex size-20 sm:size-24 items-center justify-center rounded-full bg-paper/95 shadow-md text-5xl sm:text-6xl border-2 border-line transition-transform duration-300">
             🛡️
           </div>
-          <h3 id="statusTitle" class="font-display text-2xl md:text-3xl font-bold leading-tight uppercase tracking-tight">
+          <h3 id="statusTitle" class="font-display text-2xl sm:text-3xl md:text-4xl font-bold leading-tight uppercase tracking-tight">
             Tap and speak to pay
           </h3>
-          <p id="statusReason" class="mx-auto mt-2 max-w-lg text-sm md:text-base leading-relaxed text-muted">
+          <p id="statusReason" class="mx-auto mt-2 max-w-lg text-base sm:text-lg leading-relaxed text-muted">
             Hold the button, say your command in Kannada, Hindi or English. DetectifAI evaluates acoustic liveness in &lt;300ms before payment tools execute.
           </p>
           <div id="tier2PromptAction" class="hidden mt-4">
-            <button id="btnOpenChallenge" type="button" class="bg-wait hover:bg-wait/90 active:scale-95 text-paper font-bold px-6 py-3 rounded-xl text-sm flex items-center gap-2 shadow-md transition">
+            <button id="btnOpenChallenge" type="button" class="bg-wait hover:bg-wait/90 active:scale-95 text-paper font-bold px-7 py-3.5 rounded-2xl text-base flex items-center gap-2 shadow-md transition">
               <span>⚡ Launch Tier 2 Active Challenge</span>
             </button>
           </div>
         </div>
 
         <!-- Verified Bank Agent Badge Card (Single-Use Handshake) -->
-        <div class="rounded-2xl border border-line bg-cream px-4 py-3.5 shadow-2xs">
+        <div class="rounded-2xl border border-line bg-cream px-4 py-3 shadow-2xs">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
               <span class="text-gold text-lg">✨</span>
@@ -410,48 +416,48 @@
           </p>
         </div>
 
-        <!-- GramPay One-Touch Presets for Hello! UPI -->
-        <div class="rounded-2xl border border-line bg-cream/70 p-4 space-y-2.5">
+        <!-- GramPay One-Touch Presets for Hello! UPI (Large 64px+ Touch Targets) -->
+        <div class="rounded-2xl border-2 border-line bg-cream/70 p-4 space-y-3">
           <div class="flex items-center justify-between">
             <p class="text-xs font-bold tracking-wider text-muted uppercase">GramPay One-Touch Presets</p>
-            <span class="text-[10px] text-muted">Hello! UPI &amp; 123Pay Scenarios</span>
+            <span class="text-xs font-semibold text-muted">Hello! UPI &amp; 123Pay Scenarios</span>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <!-- 1. Rs 1,000 Fertilizer -->
-            <button type="button" id="presetFertilizer" class="p-3 bg-paper hover:bg-cream-2 border border-line rounded-xl text-left transition shadow-xs flex flex-col justify-between group">
+            <button type="button" id="presetFertilizer" class="p-3.5 min-h-[72px] bg-paper hover:bg-cream-2 border-2 border-line rounded-xl text-left transition shadow-xs flex flex-col justify-between group active:scale-[0.98]">
               <div>
-                <span class="text-xs font-bold text-ink group-hover:text-gold flex items-center gap-1">
-                  <span>🌱</span> ₹1,000 Fertilizer
+                <span class="text-sm font-bold text-ink group-hover:text-gold flex items-center gap-1.5">
+                  <span class="text-base">🌱</span> ₹1,000 Fertilizer
                 </span>
-                <span class="text-[10px] text-muted block mt-0.5">IFFCO Urea &amp; Seeds</span>
+                <span class="text-xs text-muted block mt-0.5">IFFCO Urea &amp; Seeds</span>
               </div>
-              <span class="text-[10px] text-gold font-bold font-mono mt-2 bg-cream px-2 py-0.5 rounded border border-line self-start">
+              <span class="text-xs text-gold font-bold font-mono mt-2 bg-cream px-2 py-0.5 rounded border border-line self-start">
                 Send ₹1,000
               </span>
             </button>
 
             <!-- 2. Rs 2,500 Fuel -->
-            <button type="button" id="presetFuel" class="p-3 bg-paper hover:bg-cream-2 border border-line rounded-xl text-left transition shadow-xs flex flex-col justify-between group">
+            <button type="button" id="presetFuel" class="p-3.5 min-h-[72px] bg-paper hover:bg-cream-2 border-2 border-line rounded-xl text-left transition shadow-xs flex flex-col justify-between group active:scale-[0.98]">
               <div>
-                <span class="text-xs font-bold text-ink group-hover:text-gold flex items-center gap-1">
-                  <span>🚜</span> ₹2,500 Fuel
+                <span class="text-sm font-bold text-ink group-hover:text-gold flex items-center gap-1.5">
+                  <span class="text-base">🚜</span> ₹2,500 Fuel
                 </span>
-                <span class="text-[10px] text-muted block mt-0.5">Tractor Diesel</span>
+                <span class="text-xs text-muted block mt-0.5">Tractor Diesel</span>
               </div>
-              <span class="text-[10px] text-gold font-bold font-mono mt-2 bg-cream px-2 py-0.5 rounded border border-line self-start">
+              <span class="text-xs text-gold font-bold font-mono mt-2 bg-cream px-2 py-0.5 rounded border border-line self-start">
                 Send ₹2,500
               </span>
             </button>
 
             <!-- 3. Check Kisan Balance -->
-            <button type="button" id="presetBalance" class="p-3 bg-paper hover:bg-cream-2 border border-line rounded-xl text-left transition shadow-xs flex flex-col justify-between group">
+            <button type="button" id="presetBalance" class="p-3.5 min-h-[72px] bg-paper hover:bg-cream-2 border-2 border-line rounded-xl text-left transition shadow-xs flex flex-col justify-between group active:scale-[0.98]">
               <div>
-                <span class="text-xs font-bold text-ink group-hover:text-gold flex items-center gap-1">
-                  <span>🔍</span> Check Balance
+                <span class="text-sm font-bold text-ink group-hover:text-gold flex items-center gap-1.5">
+                  <span class="text-base">🔍</span> Check Balance
                 </span>
-                <span class="text-[10px] text-muted block mt-0.5">Kisan Credit Account</span>
+                <span class="text-xs text-muted block mt-0.5">Kisan Credit Account</span>
               </div>
-              <span class="text-[10px] text-muted font-bold font-mono mt-2 bg-cream px-2 py-0.5 rounded border border-line self-start">
+              <span class="text-xs text-muted font-bold font-mono mt-2 bg-cream px-2 py-0.5 rounded border border-line self-start">
                 Inquire ₹0
               </span>
             </button>
@@ -461,84 +467,101 @@
         <!-- Voice Check Controls -->
         <div class="grid gap-3 pt-1">
           <!-- Voice check requirement notice (>= 4s) -->
-          <div class="flex items-center gap-2 rounded-xl bg-safe-bg/70 border border-safe/30 px-3.5 py-2.5 text-xs font-semibold text-safe">
-            <span class="text-sm">ℹ️</span>
+          <div class="flex items-center gap-2 rounded-2xl bg-safe-bg/80 border-2 border-safe/30 px-4 py-3 text-xs sm:text-sm font-semibold text-safe">
+            <span class="text-base">ℹ️</span>
             <span>
               <strong>Voice check requirement:</strong> Minimum ≥ 4 seconds of audio is required to evaluate synthetic vocoder artifacts.
             </span>
           </div>
 
-          <!-- Large 'Tap and speak' button (min-h-16, rounded-2xl) -->
-          <div class="flex flex-col sm:flex-row gap-2">
+          <!-- Giant 'Tap and speak' button (min-h-[80px] - Senior Friendly Touch Target) -->
+          <div class="flex flex-col sm:flex-row gap-2.5">
             <button id="btnRecord" type="button"
-              class="flex-1 min-h-16 rounded-2xl bg-ink hover:bg-ink-soft text-paper text-xl font-bold flex items-center justify-center gap-3 transition-all shadow-md">
-              <span id="recordIcon" class="text-2xl">🎙️</span>
+              class="flex-1 min-h-[76px] sm:min-h-[84px] rounded-3xl bg-ink hover:bg-ink-soft active:scale-[0.99] text-paper text-xl sm:text-2xl font-bold flex items-center justify-center gap-3 transition-all shadow-xl hover:shadow-2xl">
+              <span id="recordIcon" class="text-3xl sm:text-4xl">🎙️</span>
               <span id="recordLabel">Tap and speak</span>
             </button>
             <button id="btnStop" type="button" disabled
-              class="min-h-16 px-6 rounded-2xl border border-line bg-cream text-muted font-bold text-sm hover:bg-cream-2 disabled:opacity-40 transition-all">
+              class="min-h-[56px] sm:min-h-[84px] px-7 rounded-2xl sm:rounded-3xl border-2 border-line bg-cream text-muted font-bold text-base hover:bg-cream-2 disabled:opacity-40 transition-all">
               Stop
             </button>
           </div>
 
-          <div class="flex items-center justify-between text-xs text-muted px-1">
+          <div class="flex items-center justify-between text-xs sm:text-sm text-muted px-1">
             <span id="recordHint">Record ≥ 4 seconds or upload a clean voice clip.</span>
-            <span id="recordTimerText" class="font-mono font-bold bg-cream px-2.5 py-0.5 rounded border border-line text-ink">
+            <span id="recordTimerText" class="font-mono font-bold bg-cream px-3 py-1 rounded-xl border border-line text-ink">
               00:00.0 s
             </span>
           </div>
 
           <!-- Audio playback preview -->
           <div id="previewContainer" class="hidden">
-            <audio id="audioPlayback" controls class="w-full h-9 rounded-lg border border-line"></audio>
+            <audio id="audioPlayback" controls class="w-full h-10 rounded-xl border border-line"></audio>
           </div>
 
-          <!-- Upload Voice Clip -->
-          <label class="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-line bg-cream text-sm font-semibold text-ink hover:bg-cream-2 transition">
-            <span>📤</span>
-            <span>Upload voice clip (≥ 4s)</span>
-            <input type="file" id="audioFileSenior" accept="audio/*,.wav,.webm,.mp3,.ogg,.m4a" class="sr-only" />
-          </label>
-          <div class="text-right">
-            <span id="audioDurationBadge" class="text-[10px] font-mono text-muted">No clip selected</span>
-          </div>
-
-          <!-- Action & Amount Form -->
-          <div class="grid grid-cols-2 gap-2.5 pt-1">
-            <div>
-              <label class="block text-[11px] font-bold text-muted uppercase">Action</label>
-              <select id="actionSelect" class="mt-1 min-h-11 w-full rounded-xl border border-line bg-paper px-3 text-sm font-medium text-ink outline-none focus:border-gold">
-                <option value="TRANSFER_FUNDS">Pay / Transfer (Hello! UPI)</option>
-                <option value="CHECK_BALANCE">Check Kisan Balance</option>
-                <option value="PAY_UPI">NPCI Merchant Payment</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-[11px] font-bold text-muted uppercase">Amount (₹)</label>
-              <input id="amountInput" type="number" value="1000" placeholder="1000" min="0" step="100"
-                class="mt-1 min-h-11 w-full rounded-xl border border-line bg-paper px-3 text-sm font-medium font-mono text-ink outline-none focus:border-gold" />
-            </div>
-          </div>
-
-          <!-- Execute Buttons -->
+          <!-- Primary Verification Action Button -->
           <button id="btnCheck" type="button"
-            class="min-h-14 rounded-2xl bg-safe text-lg font-bold text-paper transition-all hover:bg-safe/90 active:scale-99 shadow flex items-center justify-center gap-2">
-            <span>🛡️</span>
+            class="min-h-14 sm:min-h-16 rounded-2xl bg-safe text-lg sm:text-xl font-bold text-paper transition-all hover:bg-safe/90 active:scale-99 shadow-md flex items-center justify-center gap-2.5">
+            <span class="text-xl">🛡️</span>
             <span>Check this voice (DetectifAI Pre-Gate)</span>
           </button>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button id="btnAgentTurn" type="button"
-              class="min-h-12 rounded-2xl border border-ink text-sm font-bold text-ink transition-all hover:bg-ink hover:text-paper shadow-xs flex items-center justify-center gap-1.5">
-              <span>🤖</span>
-              <span>Full Hello! UPI turn (Nemotron)</span>
-            </button>
-            <button id="btnExecutePay" type="button"
-              class="min-h-12 rounded-2xl border border-gold bg-gold/15 text-sm font-bold text-ink transition-all hover:bg-gold hover:text-paper shadow-xs flex items-center justify-center gap-1.5">
-              <span>⚡</span>
-              <span>Execute Hello! UPI Tool</span>
-            </button>
-          </div>
+          <!-- Collapsible: Advanced & Manual Payment Options -->
+          <details class="group rounded-2xl border-2 border-line bg-cream/40 p-4 transition mt-1">
+            <summary class="cursor-pointer text-sm font-bold text-ink/80 hover:text-ink flex items-center justify-between select-none">
+              <span class="flex items-center gap-2">
+                <span>⚙️</span>
+                <span>Advanced &amp; Manual Options</span>
+              </span>
+              <span class="text-xs text-muted transition group-open:rotate-180">▼</span>
+            </summary>
+            
+            <div class="mt-4 space-y-4 pt-3 border-t border-line/60">
+              <!-- Upload Voice Clip -->
+              <div>
+                <label class="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line bg-cream text-sm font-semibold text-ink hover:bg-cream-2 transition">
+                  <span>📤</span>
+                  <span>Upload voice clip (≥ 4s)</span>
+                  <input type="file" id="audioFileSenior" accept="audio/*,.wav,.webm,.mp3,.ogg,.m4a" class="sr-only" />
+                </label>
+                <div class="text-right mt-1">
+                  <span id="audioDurationBadge" class="text-[11px] font-mono text-muted">No clip selected</span>
+                </div>
+              </div>
+
+              <!-- Action & Amount Form -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-muted uppercase">Action</label>
+                  <select id="actionSelect" class="mt-1 min-h-12 w-full rounded-xl border-2 border-line bg-paper px-3 text-sm font-medium text-ink outline-none focus:border-gold">
+                    <option value="TRANSFER_FUNDS">Pay / Transfer (Hello! UPI)</option>
+                    <option value="CHECK_BALANCE">Check Kisan Balance</option>
+                    <option value="PAY_UPI">NPCI Merchant Payment</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-muted uppercase">Amount (₹)</label>
+                  <input id="amountInput" type="number" value="1000" placeholder="1000" min="0" step="100"
+                    class="mt-1 min-h-12 w-full rounded-xl border-2 border-line bg-paper px-3 text-sm font-medium font-mono text-ink outline-none focus:border-gold" />
+                </div>
+              </div>
+
+              <!-- Full Agent Turn & Tool Buttons -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                <button id="btnAgentTurn" type="button"
+                  class="min-h-12 rounded-xl border-2 border-ink text-sm font-bold text-ink transition-all hover:bg-ink hover:text-paper shadow-2xs flex items-center justify-center gap-1.5">
+                  <span>🤖</span>
+                  <span>Full Hello! UPI turn (Nemotron)</span>
+                </button>
+                <button id="btnExecutePay" type="button"
+                  class="min-h-12 rounded-xl border-2 border-gold bg-gold/15 text-sm font-bold text-ink transition-all hover:bg-gold hover:text-paper shadow-2xs flex items-center justify-center gap-1.5">
+                  <span>⚡</span>
+                  <span>Execute Hello! UPI Tool</span>
+                </button>
+              </div>
+            </div>
+          </details>
+
         </div>
 
         <!-- ==================================================================== -->
