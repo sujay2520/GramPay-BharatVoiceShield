@@ -416,13 +416,20 @@ function setStatusCard(decision, reason) {
 /**
  * Updates Header Connection & DetectifAI Status Badge
  */
-function setHealthBadge(ok, detectifReachable, details) {
+function setHealthBadge(ok, detectifReachable, details, credits = null) {
   const badge = $("healthBadge");
   const dot = $("healthDot");
   const text = $("healthText");
   if (!badge) return;
 
   badge.classList.remove("health-ok", "health-fail", "health-unknown");
+  if (ok === true && detectifReachable === true && credits?.circuit_breaker_active) {
+    badge.classList.add("health-unknown");
+    if (dot) dot.innerHTML = '<span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-wait"></span>';
+    if (text) text.textContent = "Voice checks paused at credit reserve";
+    badge.title = `DetectifAI is reachable, but live voice checks are paused at the ${credits.reserve_floor ?? "configured"}-credit reserve. Current balance: ${credits.available ?? "unknown"}.`;
+    return;
+  }
   if (ok === true && detectifReachable === true) {
     badge.classList.add("health-ok");
     if (dot) dot.innerHTML = '<span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-safe"></span>';
@@ -748,12 +755,14 @@ async function safeApiFetch(url, options = {}) {
 /**
  * 1. Health check (/api/health)
  */
+let latestHealthPayload = null;
 async function apiHealth() {
   try {
     const data = await safeApiFetch(`${BACKEND_URL}/api/health`, { method: "GET" });
+    latestHealthPayload = data;
     setHealthBadge(!!data.ok, data.detectif_reachable, data.detectif_details);
     if (data.credits_remaining != null) updateCreditCounters(data.credits_remaining);
-    else void apiCredits();
+    else await apiCredits();
     return data;
   } catch (e) {
     setHealthBadge(false, false, { reason: e.error || e.message || "Gateway unavailable" });
@@ -777,6 +786,9 @@ async function apiCredits() {
     const data = await safeApiFetch(`${BACKEND_URL}/api/credits`, { method: "GET" });
     if (data && data.available != null) {
       updateCreditCounters(data.available);
+    }
+    if (latestHealthPayload) {
+      setHealthBadge(!!latestHealthPayload.ok, latestHealthPayload.detectif_reachable, latestHealthPayload.detectif_details, data);
     }
     return data;
   } catch (e) {
