@@ -125,8 +125,8 @@ class DetectifClient:
         if os.getenv("FORCE_CIRCUIT_BREAKER", "").lower() in ("1", "true", "yes"):
             return True
 
-        # Circuit breaker trips when remaining credits are at or below reserve floor
-        if self.remaining_credits is not None and self.remaining_credits <= self.credit_reserve_floor:
+        # Circuit breaker trips only when reserve floor is explicitly configured (>0)
+        if self.credit_reserve_floor > 0 and self.remaining_credits is not None and self.remaining_credits <= self.credit_reserve_floor:
             return True
 
         return False

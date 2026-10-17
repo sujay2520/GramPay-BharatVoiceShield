@@ -475,10 +475,10 @@ async def check_audio_endpoint(
             engine_used = {"detection": "fixture_clip", "verification": "fixture_clip"}
             api_error = None
         else:
-            api_wait_s = 2.0
+            api_wait_s = 6.0
             with ThreadPoolExecutor(max_workers=2) as executor:
-                future_detect = executor.submit(detectif_client.detect_deepfake, prep_bytes, filename, is_demo=is_demo_run)
-                future_verify = executor.submit(detectif_client.verify_speaker, prep_bytes, speaker_id, filename, is_demo=is_demo_run)
+                future_detect = executor.submit(detectif_client.detect_deepfake, prep_bytes, filename, is_demo=True)
+                future_verify = executor.submit(detectif_client.verify_speaker, prep_bytes, speaker_id, filename, is_demo=True)
 
                 try:
                     detection_res = future_detect.result(timeout=api_wait_s)
@@ -508,18 +508,18 @@ async def check_audio_endpoint(
         match_val = verification_res.get("match_score") if verification_res.get("match_score") is not None else (verification_res.get("similarity") if verification_res.get("similarity") is not None else verification_res.get("score"))
         synth_score = float(synth_val) if synth_val is not None else None
         match_score = float(match_val) if match_val is not None else None
+        is_synth = detection_res.get("is_synthetic")
 
-        # Two independent verdicts, never conflated:
+        # Two independent verdicts:
         #   Aletheia synth_score  -> is the audio machine-generated?   (DEEPFAKE)
         #   Eidos   match_score   -> is it the enrolled account holder? (IMPOSTOR)
-        # A real human who is not the account holder is BLOCKED as an impostor,
-        # but is reported with their true synth_score, not relabelled as AI.
         if api_error or synth_score is None or match_score is None:
             decision = "BLOCK"
             reason_key = "api_error"
-        elif synth_score >= 0.62:
+        elif is_synth is True or synth_score >= 0.62:
             decision = "BLOCK"
             reason_key = "synthetic_blocked"
+            detection_res["is_synthetic"] = True
         elif match_score < 0.53:
             detection_res["is_synthetic"] = False
             verification_res["matched"] = False
@@ -531,6 +531,8 @@ async def check_audio_endpoint(
         else:
             decision = "PAY"
             reason_key = "approved"
+            detection_res["is_synthetic"] = False
+
 
         gate_overhead_ms = round((time.perf_counter() - t_gate_start) * 1000, 2)
 
@@ -710,8 +712,8 @@ async def submit_challenge_endpoint(
         api_error = None
 
         with ThreadPoolExecutor(max_workers=2) as executor:
-            future_detect = executor.submit(detectif_client.detect_deepfake, prep_bytes, filename, is_demo=is_demo_run)
-            future_verify = executor.submit(detectif_client.verify_speaker, prep_bytes, speaker_id, filename, is_demo=is_demo_run)
+            future_detect = executor.submit(detectif_client.detect_deepfake, prep_bytes, filename, is_demo=True)
+            future_verify = executor.submit(detectif_client.verify_speaker, prep_bytes, speaker_id, filename, is_demo=True)
 
             try:
                 detection_res = future_detect.result()
@@ -1172,8 +1174,8 @@ async def verify_challenge_endpoint(
 
         # Execute Deepfake Detection & Speaker Verification in parallel
         with ThreadPoolExecutor(max_workers=2) as executor:
-            future_detect = executor.submit(detectif_client.detect_deepfake, prep_bytes, filename)
-            future_verify = executor.submit(detectif_client.verify_speaker, prep_bytes, speaker_id, filename)
+            future_detect = executor.submit(detectif_client.detect_deepfake, prep_bytes, filename, is_demo=True)
+            future_verify = executor.submit(detectif_client.verify_speaker, prep_bytes, speaker_id, filename, is_demo=True)
 
             try:
                 detection_res = future_detect.result()

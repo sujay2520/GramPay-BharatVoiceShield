@@ -52,7 +52,7 @@ MATCH_HIGH = float(os.getenv("MATCH_HIGH", "0.53"))  # >= 0.53 indicates authent
 MATCH_LOW = float(os.getenv("MATCH_LOW", "0.40"))    # 0.40 - 0.53 indicates uncertain match (Tier 2)
 
 # Credit Guardian & Circuit Breaker (Reserve Floor)
-CREDIT_RESERVE_FLOOR = int(os.getenv("CREDIT_RESERVE_FLOOR", "3000"))
+CREDIT_RESERVE_FLOOR = int(os.getenv("CREDIT_RESERVE_FLOOR", "0"))
 
 # SQLite Storage
 SQLITE_DB_PATH = Path(os.getenv("SQLITE_DB_PATH", DATA_DIR / "audit.db"))
