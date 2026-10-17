@@ -526,7 +526,6 @@ function setStatusCard(decision, reason) {
         box.classList.remove("ring-4", "ring-wait", "ring-offset-2");
       }, 3500);
     }
-  }
   } else {
     card.classList.add("status-ready");
     if (emoji) {
@@ -2063,12 +2062,14 @@ function updateRecordButtons(recording) {
 
     if (btn) {
       if (recording) {
-        btn.classList.add("recording");
-        if (label) label.textContent = "ಧ್ವನಿ ರೆಕಾರ್ಡ್ ಆಗುತ್ತಿದೆ...";
-        if (icon) icon.textContent = "🔴";
+        btn.classList.add("recording", "bg-red-600", "border-red-600", "animate-pulse");
+        btn.classList.remove("bg-ink", "border-ink");
+        if (label) label.textContent = currentLang === "kn" ? "ನಿಲ್ಲಿಸಿ (Tap to Stop)" : (currentLang === "hi" ? "रोकें (Tap to Stop)" : "Tap to Stop");
+        if (icon) icon.textContent = "⏹️";
       } else {
-        btn.classList.remove("recording");
-        if (label) label.textContent = "ಮಾತನಾಡಿ / बोलिए / TAP TO SPEAK";
+        btn.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
+        btn.classList.add("bg-ink", "border-ink");
+        if (label) label.textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ (Tap to Speak)" : (currentLang === "hi" ? "बोलिए (Tap to Speak)" : "ಮಾತನಾಡಿ (Tap to Speak)");
         if (icon) icon.textContent = "🎙️";
       }
     }
@@ -2608,12 +2609,104 @@ $("btnCheckHealth")?.addEventListener("click", () => {
 // Click Health Badge to configure backend URL modal or test connection
 $("healthBadge")?.addEventListener("click", openBackendModal);
 
-// 2. Senior / Farmer Audio Recording & File Handling
-$("btnRecord")?.addEventListener("click", () => {
-  if (isRecording) return;
-  startRecording("senior");
+// 2. Senior / Farmer Audio Recording & Unified 1-Tap Toggle
+async function handleSeniorRecordToggle() {
+  console.log("[RecordToggle] Triggered. Current isRecording:", isRecording);
+  if (isRecording) {
+    // 1. Visual state immediately updates to verifying
+    const btn = $("btnRecord");
+    const callerMic = $("callerBtnRecord");
+    const label = $("recordLabel");
+    const icon = $("recordIcon");
+    const callerLabel = $("callerBtnRecordLabel");
+    const callerIcon = $("callerBtnRecordIcon");
+
+    if (btn) {
+      btn.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
+      btn.classList.add("bg-amber-600", "border-amber-600");
+    }
+    if (callerMic) {
+      callerMic.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
+      callerMic.classList.add("bg-amber-600", "border-amber-600");
+    }
+    if (icon) icon.textContent = "⏳";
+    if (callerIcon) callerIcon.textContent = "⏳";
+    const verTxt = currentLang === "kn" ? "ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ... (Verifying)" : (currentLang === "hi" ? "सत्यापित हो रहा है... (Verifying)" : "Verifying Voice...");
+    if (label) label.textContent = verTxt;
+    if (callerLabel) callerLabel.textContent = verTxt;
+    if ($("statusTitle")) $("statusTitle").textContent = "⏳ " + verTxt;
+    if ($("callerStatusTitle")) $("callerStatusTitle").textContent = "⏳ " + verTxt;
+    if ($("callerStatusReason") && !window.latestVoiceTranscript) {
+      $("callerStatusReason").textContent = "DetectifAI Aletheia + Eidos ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ಪರೀಕ್ಷಿಸಲಾಗುತ್ತಿದೆ...";
+    }
+
+    // 2. Stop recording and retrieve audio blob
+    let blob = null;
+    try {
+      blob = await stopRecording();
+    } catch (e) {
+      console.warn("[RecordToggle] stopRecording caught:", e);
+    }
+    let finalAudio = blob || currentBlob || getAudioForRequest("audioFileSenior");
+
+    // 3. Fallback: If hardware mic didn't capture or on mobile HTTP, load authentic fixture
+    if (!finalAudio || finalAudio.size < 100) {
+      const lang = typeof currentLang !== "undefined" ? currentLang : "kn";
+      const fixtureName = `${lang === 'kn' ? 'kannada' : lang === 'hi' ? 'hindi' : 'english'}_farmer_genuine.wav`;
+      finalAudio = await loadAudioFixture(fixtureName) || await loadAudioFixture("farmer_genuine_5s.wav");
+      if (finalAudio) currentBlob = finalAudio;
+    }
+
+    if (finalAudio) {
+      showOverlay("Running GramPay Voice Gate Check (DetectifAI Aletheia + Eidos)…");
+      try {
+        const textHint = window.latestVoiceTranscript || "";
+        const data = await apiCheck(
+          finalAudio,
+          currentSpeakerId || "kisan_farmer_01",
+          "TRANSFER_FUNDS",
+          "1000",
+          currentLang,
+          "phone1",
+          "live_mic",
+          textHint
+        );
+        renderCheckResponse(data);
+      } catch (err) {
+        console.error("Mic gate check error:", err);
+        showError(err.error || err.message || "Gate check failed", err.fail_closed !== false);
+      } finally {
+        hideOverlay();
+        refreshAudit();
+        refreshStats();
+        // Reset button visuals
+        if (btn) {
+          btn.classList.remove("bg-amber-600", "border-amber-600");
+          btn.classList.add("bg-ink", "border-ink");
+          if (icon) icon.textContent = "🎙️";
+          if (label) label.textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ (Tap to Speak)" : (currentLang === "hi" ? "बोलिए (Tap to Speak)" : "ಮಾತನಾಡಿ (Tap to Speak)");
+        }
+        if (callerMic) {
+          callerMic.classList.remove("bg-amber-600", "border-amber-600");
+          callerMic.classList.add("bg-ink", "border-ink");
+          if (callerIcon) callerIcon.textContent = "🎙️";
+          if (callerLabel) callerLabel.textContent = currentLang === "kn" ? "ಮಾತನಾಡಿ (Tap to Speak)" : (currentLang === "hi" ? "बोलिए (Tap to Speak)" : "ಮಾತನಾಡಿ (Tap to Speak)");
+        }
+      }
+    }
+  } else {
+    await startRecording("senior");
+  }
+}
+
+$("btnRecord")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  handleSeniorRecordToggle();
 });
-$("btnStop")?.addEventListener("click", stopRecording);
+$("btnStop")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (isRecording) handleSeniorRecordToggle();
+});
 
 $("audioFileSenior")?.addEventListener("change", (e) => {
   const file = e.target.files?.[0];
@@ -3687,56 +3780,9 @@ function initCallerPhoneControls() {
   // Wire up caller mic button
   const callerMic = $("callerBtnRecord");
   if (callerMic) {
-    callerMic.onclick = async () => {
-      if (isRecording) {
-        // 1. Visual state immediately updates to processing
-        callerMic.classList.remove("recording", "bg-red-600", "border-red-600", "animate-pulse");
-        callerMic.classList.add("bg-amber-600", "border-amber-600");
-        if ($("callerBtnRecordIcon")) $("callerBtnRecordIcon").textContent = "⏳";
-        if ($("callerBtnRecordLabel")) $("callerBtnRecordLabel").textContent = "ಪರಿಶೀಲಿಸಲಾಗುತ್ತಿದೆ... (Verifying)";
-        if ($("callerStatusTitle")) $("callerStatusTitle").textContent = "⏳ ಧ್ವನಿ ಪರಿಶೀಲನೆ... / Verifying Voice";
-        if ($("callerStatusReason") && !window.latestVoiceTranscript) {
-          $("callerStatusReason").textContent = "DetectifAI Aletheia + Eidos ಬಯೋಮೆಟ್ರಿಕ್ಸ್ ಪರೀಕ್ಷಿಸಲಾಗುತ್ತಿದೆ...";
-        }
-
-        // 2. Stop recording and await the audio blob
-        const blob = await stopRecording();
-        let finalAudio = blob || currentBlob || getAudioForRequest("audioFileSenior");
-
-        // Fallback: If hardware mic didn't capture or on mobile HTTP, load authentic fixture
-        if (!finalAudio || finalAudio.size < 100) {
-          const lang = typeof currentLang !== "undefined" ? currentLang : "kn";
-          const fixtureName = `${lang === 'kn' ? 'kannada' : lang === 'hi' ? 'hindi' : 'english'}_farmer_genuine.wav`;
-          finalAudio = await loadAudioFixture(fixtureName) || await loadAudioFixture("farmer_genuine_5s.wav");
-          if (finalAudio) currentBlob = finalAudio;
-        }
-
-        if (finalAudio) {
-          showOverlay("Running GramPay Voice Gate Check (DetectifAI Aletheia + Eidos)…");
-          try {
-            const data = await apiCheck(
-              finalAudio,
-              currentSpeakerId || "kisan_farmer_01",
-              "TRANSFER_FUNDS",
-              "1000",
-              currentLang,
-              "phone1",
-              "live_mic",
-              window.latestVoiceTranscript
-            );
-            renderCheckResponse(data);
-          } catch (err) {
-            console.error("Caller mic gate check error:", err);
-            showError(err.error || err.message || "Gate check failed", err.fail_closed !== false);
-          } finally {
-            hideOverlay();
-            refreshAudit();
-            refreshStats();
-          }
-        }
-      } else {
-        await startRecording("senior");
-      }
+    callerMic.onclick = (e) => {
+      e.preventDefault();
+      handleSeniorRecordToggle();
     };
   }
 
@@ -3838,6 +3884,7 @@ function initCallerPhoneControls() {
 
   // Initialize 1-Tap Role Switcher Pills
   initRoleSwitcherPills();
+  initCallerPhoneControls();
 
   // Initialize Active View & Multi-Device Query Params (?mode=caller&device=phone1 / phone2 / ?mode=console)
   try {
