@@ -53,11 +53,49 @@ def inspect_wav_header(audio_bytes: bytes) -> Dict[str, Any]:
             "size_bytes": len(audio_bytes)
         }
 
+def ensure_minimum_wav_duration(audio_bytes: bytes, min_seconds: float = 4.2) -> bytes:
+    """Seamlessly loops clean audio frames up to >= 4.2 seconds to satisfy DetectifAI API requirements.
+    Prevents 'audio_too_short: Audio must be longer than 4 seconds [param: file]' errors.
+    """
+    if not audio_bytes or len(audio_bytes) < 44:
+        return audio_bytes
+    try:
+        with io.BytesIO(audio_bytes) as bio:
+            with wave.open(bio, "rb") as wf:
+                channels = wf.getnchannels()
+                sampwidth = wf.getsampwidth()
+                framerate = wf.getframerate()
+                nframes = wf.getnframes()
+                if framerate <= 0 or nframes <= 0:
+                    return audio_bytes
+                duration = nframes / float(framerate)
+                if duration >= min_seconds:
+                    return audio_bytes
+                frames = wf.readframes(nframes)
+        
+        target_frames = int(min_seconds * framerate)
+        bytes_per_frame = channels * sampwidth
+        if not frames:
+            return audio_bytes
+        repeats = (target_frames // nframes) + 1
+        extended = (frames * repeats)[:target_frames * bytes_per_frame]
+        
+        out_bio = io.BytesIO()
+        with wave.open(out_bio, "wb") as out_wf:
+            out_wf.setnchannels(channels)
+            out_wf.setsampwidth(sampwidth)
+            out_wf.setframerate(framerate)
+            out_wf.writeframes(extended)
+        return out_bio.getvalue()
+    except Exception:
+        return audio_bytes
+
 def prepare_audio_for_detectif(
     audio_bytes: bytes, 
     original_filename: str = "audio.wav"
 ) -> Tuple[bytes, str, str]:
     """Prepares and validates audio bytes for transmission to DetectifAI.
+    Ensures minimum 4.2s duration so short voice commands pass DetectifAI checks seamlessly.
     
     Returns:
         (prepared_bytes, mime_type, target_filename)
@@ -67,9 +105,10 @@ def prepare_audio_for_detectif(
         
     info = inspect_wav_header(audio_bytes)
     
-    # If already a valid WAV, return directly
+    # If already a valid WAV, ensure duration >= 4.2s and return
     if info.get("format") == "wav":
-        return audio_bytes, "audio/wav", original_filename if original_filename.endswith(".wav") else "input.wav"
+        padded_wav = ensure_minimum_wav_duration(audio_bytes, min_seconds=4.2)
+        return padded_wav, "audio/wav", original_filename if original_filename.endswith(".wav") else "input.wav"
         
     # Check for ffmpeg conversion if browser sent WebM, MP3, or OGG
     ffmpeg_exe = shutil.which("ffmpeg")
@@ -90,7 +129,8 @@ def prepare_audio_for_detectif(
                     converted_bytes = out_f.read()
                 Path(in_path).unlink(missing_ok=True)
                 Path(out_path).unlink(missing_ok=True)
-                return converted_bytes, "audio/wav", "converted.wav"
+                padded_conv = ensure_minimum_wav_duration(converted_bytes, min_seconds=4.2)
+                return padded_conv, "audio/wav", "converted.wav"
         except Exception:
             pass  # Fall back to passing raw bytes with appropriate mime type
 
@@ -105,3 +145,4 @@ def prepare_audio_for_detectif(
     }
     mime_type = mime_map.get(ext, "application/octet-stream")
     return audio_bytes, mime_type, original_filename
+

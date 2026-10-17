@@ -984,8 +984,8 @@ class TestThreeTierGateLogicEdgeCases(unittest.TestCase):
         self.assertIn(res["decision"], ["BLOCK", "STEP_UP", "BLOCK_ALERT"])
         self.assertFalse(res["tool"]["result"])
         if res["decision"] == "STEP_UP":
-            self.assertEqual(res["intent"], "STEP_UP_CHALLENGE")
-            self.assertIn("PIN", res["agent_reply_text"])
+            self.assertIn(res["intent"], ["STEP_UP_CHALLENGE", "STAGE_B_ACTIVE_CHALLENGE"])
+            self.assertTrue(any(k in res["agent_reply_text"] for k in ("PIN", "पिन", "ಪದಗಳನ್ನು", "words", "challenge")))
 
     # --------------------------------------------------------------------------
     # Tier 3: BLOCK_ALERT Clone Attack Edge Cases

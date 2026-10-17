@@ -1332,40 +1332,40 @@
     <!-- ========================================================================== -->
     <!-- STAGE DEMO: PHONE CALLER VIEW (?mode=caller) - MAX 4 ELEMENTS ONLY        -->
     <!-- ========================================================================== -->
-    <div id="callerPhoneView" class="hidden flex-col items-center justify-between min-h-[85vh] max-w-md mx-auto py-4 px-2">
+    <div id="callerPhoneView" class="hidden flex-col items-center justify-between h-[100dvh] max-h-[100dvh] max-w-sm mx-auto py-2 px-3 overflow-hidden box-border">
       <!-- (a) Top Bar: Verified Bank Agent Badge + 3 Language Pills -->
-      <div class="w-full flex items-center justify-between gap-2 border-b-2 border-line pb-4 mb-4">
-        <div class="inline-flex items-center gap-2 rounded-full bg-safe-bg border-2 border-safe/40 px-3.5 py-1.5 shadow-2xs">
-          <span class="relative flex h-2.5 w-2.5">
+      <div class="w-full flex items-center justify-between gap-1.5 border-b border-line/60 pb-2 mb-1 shrink-0">
+        <div class="inline-flex items-center gap-1.5 rounded-full bg-safe-bg border border-safe/40 px-2.5 py-1 shadow-2xs">
+          <span class="relative flex h-2 w-2">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-safe opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-safe"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-safe"></span>
           </span>
-          <span class="text-xs sm:text-sm font-extrabold text-safe tracking-wide">🛡️ Verified Bank Agent</span>
+          <span class="text-xs font-extrabold text-safe tracking-wide">🛡️ Bank Agent</span>
         </div>
-        <div class="inline-flex rounded-2xl border-2 border-line bg-paper p-1 shadow-2xs" id="callerLangBar">
-          <button type="button" class="caller-lang-btn active rounded-xl px-3 py-1.5 text-sm font-black transition border-2 border-ink bg-ink text-paper" data-lang="kn">ಕನ್ನಡ</button>
-          <button type="button" class="caller-lang-btn rounded-xl px-3 py-1.5 text-sm font-bold transition border-2 border-transparent text-ink hover:bg-cream-2" data-lang="hi">हिन्दी</button>
-          <button type="button" class="caller-lang-btn rounded-xl px-3 py-1.5 text-sm font-bold transition border-2 border-transparent text-ink hover:bg-cream-2" data-lang="en">EN</button>
+        <div class="inline-flex rounded-xl border border-line bg-paper p-0.5 shadow-2xs" id="callerLangBar">
+          <button type="button" class="caller-lang-btn active rounded-lg px-2.5 py-1 text-xs font-black transition border border-ink bg-ink text-paper" data-lang="kn">ಕನ್ನಡ</button>
+          <button type="button" class="caller-lang-btn rounded-lg px-2.5 py-1 text-xs font-bold transition border border-transparent text-ink hover:bg-cream-2" data-lang="hi">हिन्दी</button>
+          <button type="button" class="caller-lang-btn rounded-lg px-2.5 py-1 text-xs font-bold transition border border-transparent text-ink hover:bg-cream-2" data-lang="en">EN</button>
         </div>
       </div>
 
       <!-- (b) ONE Large Status / Instruction Card (Displays 4 Challenge Words during EXTRA_CHECK) -->
-      <div id="callerStatusCard" class="status-ready w-full my-auto rounded-3xl border-3 border-line bg-paper p-6 sm:p-8 text-center shadow-lg transition-all duration-300 flex flex-col justify-center items-center min-h-[280px]">
-        <div id="callerStatusEmoji" class="size-20 rounded-full bg-cream flex items-center justify-center text-5xl mb-4 border-2 border-line shadow-xs">
+      <div id="callerStatusCard" class="status-ready w-full flex-1 my-1.5 rounded-2xl border-2 border-line bg-paper p-3 text-center shadow-md transition-all duration-300 flex flex-col justify-center items-center min-h-[130px] max-h-[220px] overflow-hidden">
+        <div id="callerStatusEmoji" class="size-12 rounded-full bg-cream flex items-center justify-center text-3xl mb-1 border border-line shadow-2xs shrink-0">
           🛡️
         </div>
-        <h2 id="callerStatusTitle" class="font-display text-2xl sm:text-3xl font-black text-ink leading-tight">
+        <h2 id="callerStatusTitle" class="font-display text-xl sm:text-2xl font-black text-ink leading-tight">
           ಮಾತನಾಡಿ ಪಾವತಿಸಿ
         </h2>
-        <p id="callerStatusReason" class="text-base sm:text-lg text-muted mt-2 font-medium leading-relaxed">
+        <p id="callerStatusReason" class="text-xs sm:text-sm text-muted mt-1 font-medium leading-snug line-clamp-2">
           ದೊಡ್ಡ ಗುಂಡಿಯನ್ನು ಒತ್ತಿ ಮಾತನಾಡಿ: "ಇಫ್ಕೊ ಗೊಬ್ಬರಕ್ಕೆ 1,000 ರೂ ಕಳುಹಿಸಿ"
         </p>
 
         <!-- EXTRA_CHECK: 4 Dynamic Challenge Words in Huge Text -->
-        <div id="callerChallengeBox" class="hidden mt-4 w-full">
-          <div class="p-4 bg-wait-bg/90 border-3 border-wait rounded-2xl shadow-sm">
-            <p class="text-xs font-black text-wait uppercase tracking-wider mb-2">⚡ ಈ 4 ಪದಗಳನ್ನು ಗಟ್ಟಿಯಾಗಿ ಹೇಳಿ / Say 4 Words:</p>
-            <div id="callerChallengeWords" class="text-3xl sm:text-4xl font-black text-wait tracking-wide py-2 leading-relaxed font-sans">
+        <div id="callerChallengeBox" class="hidden mt-2 w-full">
+          <div class="p-2 bg-wait-bg/90 border-2 border-wait rounded-xl shadow-xs">
+            <p class="text-[11px] font-black text-wait uppercase tracking-wider mb-1">⚡ ಈ 4 ಪದಗಳನ್ನು ಹೇಳಿ / Say 4 Words:</p>
+            <div id="callerChallengeWords" class="text-xl sm:text-2xl font-black text-wait tracking-wide py-0.5 leading-tight font-sans">
               ಹಸಿರು &nbsp; ಮಳೆ &nbsp; ಕಮಲ &nbsp; ನವಿಲು
             </div>
           </div>
@@ -1373,29 +1373,29 @@
       </div>
 
       <!-- (c) ONE Large "Tap to Speak" Mic Button -->
-      <div class="w-full my-6 flex flex-col items-center">
+      <div class="w-full my-1.5 flex flex-col items-center shrink-0">
         <button id="callerBtnRecord" type="button"
-          class="w-full max-w-sm min-h-[80px] py-4 px-6 rounded-3xl bg-ink hover:bg-ink-soft active:scale-[0.98] text-paper flex items-center justify-center gap-4 transition-all shadow-xl hover:shadow-2xl border-3 border-ink focus-visible:ring-4 cursor-pointer">
-          <span id="callerBtnRecordIcon" class="text-3xl sm:text-4xl shrink-0">🎙️</span>
-          <span id="callerBtnRecordLabel" class="text-xl sm:text-2xl font-black tracking-wide font-sans">
+          class="w-full max-w-xs min-h-[64px] py-2.5 px-4 rounded-2xl bg-ink hover:bg-ink-soft active:scale-[0.98] text-paper flex items-center justify-center gap-3 transition-all shadow-lg border-2 border-ink focus-visible:ring-2 cursor-pointer">
+          <span id="callerBtnRecordIcon" class="text-2xl shrink-0">🎙️</span>
+          <span id="callerBtnRecordLabel" class="text-lg sm:text-xl font-black tracking-wide font-sans">
             ಮಾತನಾಡಿ (Tap to Speak)
           </span>
         </button>
-        <span id="callerBtnRecordTimer" class="mt-2 text-xs font-mono font-bold text-muted">00:00.0s</span>
+        <span id="callerBtnRecordTimer" class="mt-1 text-[11px] font-mono font-bold text-muted">00:00.0s</span>
       </div>
 
       <!-- (d) Compact Footer: Enroll Voice + Test Clone Attack (.wav) -->
-      <div class="w-full pt-4 border-t-2 border-line/80 flex items-center justify-between gap-3">
+      <div class="w-full pt-2 border-t border-line/70 flex items-center justify-between gap-2 shrink-0">
         <button id="callerBtnEnroll" type="button"
-          class="flex-1 py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs sm:text-sm font-bold text-ink transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer">
+          class="flex-1 py-2 px-2.5 rounded-xl border border-line bg-cream hover:bg-cream-2 text-xs font-bold text-ink transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer">
           <span>👤</span>
           <span>Enroll Voice (5s)</span>
         </button>
         <button id="callerBtnClone" type="button"
-          class="flex-1 py-2.5 px-3 rounded-xl border-2 border-line bg-cream hover:bg-cream-2 text-xs sm:text-sm font-semibold text-muted hover:text-alert transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+          class="flex-1 py-2 px-2.5 rounded-xl border border-line bg-cream hover:bg-cream-2 text-xs font-semibold text-muted hover:text-alert transition flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
           title="Simulate an incoming AI clone attack call">
           <span>🧪</span>
-          <span>Test Clone Attack (.wav)</span>
+          <span>Test Clone (.wav)</span>
         </button>
       </div>
     </div>

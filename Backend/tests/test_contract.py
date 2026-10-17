@@ -171,24 +171,27 @@ class TestUnCloneContract(unittest.TestCase):
 
     def test_api_check_with_audio_fail_closed_if_unconfigured(self):
         """When DETECTIF_API_KEY is not yet populated with live platform key, endpoint fails closed safely."""
-        with open(self.sample_wav_path, "rb") as audio_file:
-            resp = self.client.post(
-                "/api/check",
-                files={"audio": ("sample_human.wav", audio_file, "audio/wav")},
-                data={"speaker_id": "senior_user_01", "action": "TRANSFER_FUNDS", "amount": "25000"}
-            )
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertIn("request_id", data)
-        self.assertIn("decision", data)
-        # Must fail closed: either BLOCK or STEP_UP
-        self.assertIn(data["decision"], ["BLOCK", "STEP_UP"])
-        self.assertEqual(data["tool"]["status"], "LOCKED")
-        self.assertTrue(data.get("fail_closed"))
-        self.assertEqual(data.get("status"), "error")
-        # Rule 5.4: Strictly NO mock or fake numbers when DetectifAI is unconfigured
-        self.assertIsNone(data["detection"]["synthetic_score"])
-        self.assertIsNone(data["verification"]["match_score"])
+        from unittest.mock import patch
+        from backend.detectif_client import detectif_client
+        with patch.object(detectif_client, "is_configured", return_value=False):
+            with open(self.sample_wav_path, "rb") as audio_file:
+                resp = self.client.post(
+                    "/api/check",
+                    files={"audio": ("sample_human.wav", audio_file, "audio/wav")},
+                    data={"speaker_id": "senior_user_01", "action": "TRANSFER_FUNDS", "amount": "25000"}
+                )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertIn("request_id", data)
+            self.assertIn("decision", data)
+            # Must fail closed: either BLOCK or STEP_UP
+            self.assertIn(data["decision"], ["BLOCK", "STEP_UP"])
+            self.assertEqual(data["tool"]["status"], "LOCKED")
+            self.assertTrue(data.get("fail_closed"))
+            self.assertEqual(data.get("status"), "error")
+            # Rule 5.4: Strictly NO mock or fake numbers when DetectifAI is unconfigured
+            self.assertIsNone(data["detection"]["synthetic_score"])
+            self.assertIsNone(data["verification"]["match_score"])
 
     def test_api_health_endpoint_no_fake_connected_when_unconfigured(self):
         """Rule 5.4: Health endpoint must NOT fake 'connected' or 'ok=True' when DetectifAI is unconfigured."""
@@ -213,20 +216,23 @@ class TestUnCloneContract(unittest.TestCase):
 
     def test_agent_turn_fail_closed_no_mock_scores(self):
         """Rule 5.4: Agent turn pre-gate fails closed without fabricating mock scores."""
-        with open(self.sample_wav_path, "rb") as audio_file:
-            resp = self.client.post(
-                "/api/agent/turn",
-                files={"audio": ("sample_human.wav", audio_file, "audio/wav")},
-                data={"speaker_id": "senior_user_01", "user_text_hint": "Transfer 10000 to granddaughter"}
-            )
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertEqual(data["status"], "error")
-        self.assertTrue(data["fail_closed"])
-        self.assertIn(data["decision"], ["BLOCK", "STEP_UP"])
-        self.assertEqual(data["tool"]["status"], "LOCKED")
-        self.assertIsNone(data["detection"]["synthetic_score"])
-        self.assertIsNone(data["verification"]["match_score"])
+        from unittest.mock import patch
+        from backend.detectif_client import detectif_client
+        with patch.object(detectif_client, "is_configured", return_value=False):
+            with open(self.sample_wav_path, "rb") as audio_file:
+                resp = self.client.post(
+                    "/api/agent/turn",
+                    files={"audio": ("sample_human.wav", audio_file, "audio/wav")},
+                    data={"speaker_id": "senior_user_01", "user_text_hint": "Transfer 10000 to granddaughter"}
+                )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertEqual(data["status"], "error")
+            self.assertTrue(data["fail_closed"])
+            self.assertIn(data["decision"], ["BLOCK", "STEP_UP"])
+            self.assertEqual(data["tool"]["status"], "LOCKED")
+            self.assertIsNone(data["detection"]["synthetic_score"])
+            self.assertIsNone(data["verification"]["match_score"])
 
     def test_api_audit_and_stats_endpoints(self):
         audit_resp = self.client.get("/api/audit?limit=10")

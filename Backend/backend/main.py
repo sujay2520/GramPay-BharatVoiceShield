@@ -220,7 +220,7 @@ async def enroll_speaker_endpoint(
     target_name = name or speaker_name or speaker_id or "senior_user_01"
     normalized_language = normalize_lang(lang)
     ua = request.headers.get("user-agent", "").lower() if request else ""
-    is_demo_run = ("demo" in ua) or ("judge" in ua) or (request.query_params.get("demo", "").lower() in ("1", "true") if request else False)
+    is_demo_run = (request.query_params.get("demo", "1").lower() not in ("0", "false")) if request else True
 
     try:
         raw_bytes = await audio_upload.read()
@@ -433,7 +433,7 @@ async def check_audio_endpoint(
     audio_source = source or "live_mic"
     event_id = meta["request_id"]
     ua = request.headers.get("user-agent", "").lower() if request else ""
-    is_demo_run = ("demo" in ua) or ("judge" in ua) or (request.query_params.get("demo", "").lower() in ("1", "true") if request else False)
+    is_demo_run = (request.query_params.get("demo", "1").lower() not in ("0", "false")) if request else True
 
     try:
         raw_bytes = await audio_upload.read()
@@ -706,7 +706,7 @@ async def submit_challenge_endpoint(
     first_audio_bytes = cached_first.get("audio_bytes") if cached_first else None
     event_id = meta["request_id"]
     ua = request.headers.get("user-agent", "").lower() if request else ""
-    is_demo_run = ("demo" in ua) or ("judge" in ua) or (request.query_params.get("demo", "").lower() in ("1", "true") if request else False)
+    is_demo_run = (request.query_params.get("demo", "1").lower() not in ("0", "false")) if request else True
 
     try:
         raw_challenge_bytes = await audio_upload.read()

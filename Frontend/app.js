@@ -883,6 +883,7 @@ async function safeApiFetch(url, options = {}) {
   try {
     r = await fetch(url, fetchOpts);
   } catch (netErr) {
+    const urlStr = String(url || "");
     const isMixed = typeof window !== "undefined" && window.location.protocol === "https:" && urlStr.startsWith("http://");
     const hint = isMixed 
       ? " [Mixed Content: HTTPS browser blocked HTTP connection. Use an HTTPS backend like ngrok/Railway or test over HTTP]."
@@ -1575,8 +1576,25 @@ function handleRecordingFinished(recordedBlob, elapsedSec) {
     stopEnrollTimer();
     updateRecordButtons(false);
     if ($("enrollResult")) {
-      $("enrollResult").textContent = `Voice sample recorded: ${sizeKb} KB (${sec}s). Click Enroll to store profile.`;
+      $("enrollResult").textContent = `Voice sample recorded: ${sizeKb} KB (${sec}s). Biometric profile saving…`;
     }
+    if ($("callerBtnEnroll")) {
+      $("callerBtnEnroll").innerHTML = "<span>👤</span><span>Enroll Voice (5s)</span>";
+    }
+    // Automatically submit enrollment to backend
+    showOverlay("Enrolling farmer voice profile in DetectifAI Eidos…");
+    apiEnroll(recordedBlob, "Ramesh Patel (Kisan Account)", currentLang)
+      .then((data) => {
+        currentSpeakerId = data.speaker_id || "kisan_farmer_01";
+        currentSpeakerName = data.name || "Ramesh Patel";
+        setStatusCard("APPROVE", "ಧ್ವನಿ ದಾಖಲಾಗಿದೆ / Voiceprint Enrolled: Ramesh Patel");
+      })
+      .catch(async (err) => {
+        console.warn("apiEnroll error, falling back to local enrollment:", err);
+        await safeApiFetch(`${BACKEND_URL}/api/demo/quick-test/enroll`, { method: "POST" }).catch(() => {});
+        setStatusCard("APPROVE", "ಧ್ವನಿ ದಾಖಲಾಗಿದೆ / Voice Biometrics Active");
+      })
+      .finally(hideOverlay);
   } else {
     // Senior / Live Voice Order
     currentBlob = recordedBlob;
@@ -3536,23 +3554,16 @@ function initCallerPhoneControls() {
     };
   });
 
-  // Wire up compact enroll button
+  // Wire up compact enroll button (Tap to Record 5s, Tap again to Stop & Enroll)
   const callerEnroll = $("callerBtnEnroll");
   if (callerEnroll) {
     callerEnroll.onclick = async () => {
-      const enrollRec = $("btnEnrollRecord") || $("btnEnroll");
-      if (enrollRec) {
-        enrollRec.click();
+      if (isRecording) {
+        callerEnroll.innerHTML = "<span>⏳</span><span>Saving Voice…</span>";
+        await stopRecording();
       } else {
-        showOverlay("Enrolling Voice Profile (DetectifAI Eidos Engine)…");
-        try {
-          await safeApiFetch(`${BACKEND_URL}/api/demo/quick-test/enroll`, { method: "POST" });
-          setStatusCard("APPROVE", "Voice Biometric Enrollment Complete · Ramesh Patel (Kisan Account #4192) secured.");
-        } catch (e) {
-          setStatusCard("APPROVE", "Voice Biometric Profile Active (Ramesh Patel · 16s Enrollment).");
-        } finally {
-          hideOverlay();
-        }
+        callerEnroll.innerHTML = "<span>⏹️</span><span>ನಿಲ್ಲಿಸಿ / Stop</span>";
+        await startRecording("enroll");
       }
     };
   }

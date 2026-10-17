@@ -24,17 +24,16 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
 from backend.config import (
+    CREDIT_RESERVE_FLOOR,
     DETECTIF_API_KEY,
     DETECTIF_BASE_URL,
     DETECTIF_TIMEOUT_SECONDS,
     MATCH_HIGH,
     SYNTH_HIGH,
 )
+from backend.audio_prep import ensure_minimum_wav_duration
 
 logger = logging.getLogger("detectif_client")
-
-# Credit Guardian Reserve Floor: preserve at least 3,000 credits for live judge presentations
-CREDIT_RESERVE_FLOOR = 3000
 
 
 class DetectifAPIError(Exception):
@@ -105,21 +104,22 @@ class DetectifClient:
         elif isinstance(credits_info, (int, float)):
             self.remaining_credits = int(credits_info)
 
-    def is_circuit_breaker_active(self, is_demo: bool = False) -> bool:
+    def is_circuit_breaker_active(self, is_demo: Optional[bool] = None) -> bool:
         """Determines if the Credit Guardian circuit breaker is active.
         Circuit breaker activates when remaining credits <= CREDIT_RESERVE_FLOOR (3000)
         during automated non-demo runs, guaranteeing that 3,000 credits remain 100% safe
         for live judge presentations.
         """
         # Demo runs bypass the circuit breaker to allow live evaluations for judges
-        if is_demo or self.demo_mode:
+        if is_demo is True or self.demo_mode:
             return False
-        if os.getenv("LIVE_DEMO", "").lower() in ("1", "true", "yes"):
-            return False
-        if os.getenv("DEMO_MODE", "").lower() in ("1", "true", "yes"):
-            return False
-        if os.getenv("UNCLONE_DEMO", "").lower() in ("1", "true", "yes"):
-            return False
+        if is_demo is None:
+            if os.getenv("LIVE_DEMO", "").lower() in ("1", "true", "yes"):
+                return False
+            if os.getenv("DEMO_MODE", "").lower() in ("1", "true", "yes"):
+                return False
+            if os.getenv("UNCLONE_DEMO", "").lower() in ("1", "true", "yes"):
+                return False
 
         # Forced circuit breaker testing flag
         if os.getenv("FORCE_CIRCUIT_BREAKER", "").lower() in ("1", "true", "yes"):
@@ -222,11 +222,9 @@ class DetectifClient:
             cached = dict(self._response_cache[cache_key])
             cached["idempotent_replay"] = True
             cached["circuit_breaker_active"] = True
-            return cached
-
         fname = (filename or "").lower()
         sid_lower = clean_speaker_id.lower()
-        is_imposter = any(k in fname for k in ("imposter", "unknown")) or ("imposter" in sid_lower)
+        is_imposter = any(k in fname for k in ("imposter", "unknown")) or any(k in sid_lower for k in ("imposter", "unknown", "unregistered")) or sid_raw.startswith("+") or clean_speaker_id.startswith("_91")
         duration_sec = 5.0
 
         try:
@@ -587,6 +585,9 @@ class DetectifClient:
         if not audio_bytes:
             raise DetectifAPIError("Empty audio buffer provided for deepfake detection.")
 
+        # Ensure minimum 4.2s duration to satisfy DetectifAI API requirements
+        audio_bytes = ensure_minimum_wav_duration(audio_bytes, min_seconds=4.2)
+
         # Credit Guardian Circuit Breaker Check
         if self.is_circuit_breaker_active(is_demo=is_demo):
             logger.warning(
@@ -743,6 +744,9 @@ class DetectifClient:
         if not audio_bytes:
             raise DetectifAPIError("Empty audio buffer provided for speaker enrollment.")
 
+        # Ensure minimum 4.2s duration to satisfy DetectifAI API requirements
+        audio_bytes = ensure_minimum_wav_duration(audio_bytes, min_seconds=4.2)
+
         sid_raw = (speaker_id or speaker_name or "senior_user_01").strip()
         clean_speaker_id = re.sub(r"[^A-Za-z0-9_.:-]", "_", sid_raw)[:64]
         if not clean_speaker_id:
@@ -875,6 +879,9 @@ class DetectifClient:
 
         if not audio_bytes:
             raise DetectifAPIError("Empty audio buffer provided for speaker verification.")
+
+        # Ensure minimum 4.2s duration to satisfy DetectifAI API requirements
+        audio_bytes = ensure_minimum_wav_duration(audio_bytes, min_seconds=4.2)
 
         # Disambiguate positional argument variations
         if isinstance(filename_or_deepfake, str):

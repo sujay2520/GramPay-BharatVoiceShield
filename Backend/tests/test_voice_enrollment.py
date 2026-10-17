@@ -88,12 +88,25 @@ class TestVoiceBiometrics(unittest.TestCase):
         self.assertFalse(eval_diff["verification"]["matched"])
         self.assertGreaterEqual(eval_diff["detection"]["synthetic_score"], 0.62)
 
+    def test_natural_prosody_pitch_shift_accepted(self):
+        # Farmer enrolled at 130 Hz, speaks with natural 35 Hz pitch inflection (165 Hz)
+        wav_enrolled = create_synthetic_sine_wav(freq_hz=130.0, duration_sec=1.0)
+        enroll_user_voice(wav_enrolled, speaker_name="Ramesh", speaker_id="farmer_01", lang="kn")
+
+        wav_prosody = create_synthetic_sine_wav(freq_hz=165.0, duration_sec=1.0)
+        eval_prosody = evaluate_incoming_audio_against_enrollment(wav_prosody, device="phone1")
+        self.assertFalse(eval_prosody["detection"]["is_synthetic"])
+        self.assertTrue(eval_prosody["verification"]["matched"])
+        self.assertGreaterEqual(eval_prosody["verification"]["match_score"], 0.70)
+        self.assertLess(eval_prosody["detection"]["synthetic_score"], 0.20)
+
     def test_phone2_scammer_always_flagged(self):
         wav = create_synthetic_sine_wav(freq_hz=140.0, duration_sec=1.0)
         eval_p2 = evaluate_incoming_audio_against_enrollment(wav, device="phone2")
         self.assertTrue(eval_p2["detection"]["is_synthetic"])
         self.assertFalse(eval_p2["verification"]["matched"])
         self.assertGreaterEqual(eval_p2["detection"]["synthetic_score"], 0.62)
+
 
 
 if __name__ == "__main__":

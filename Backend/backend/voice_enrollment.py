@@ -183,25 +183,31 @@ def evaluate_incoming_audio_against_enrollment(
     elif enrolled and bio:
         # Check against enrolled biometric profile
         en_bio = enrolled["biometrics"]
-        f0_diff = abs(bio["f0_hz"] - en_bio["f0_hz"])
-        lag_diff = abs(bio["best_lag"] - en_bio["best_lag"])
+        en_f0 = max(float(en_bio.get("f0_hz", 130.0)), 1.0)
+        curr_f0 = max(float(bio.get("f0_hz", 130.0)), 1.0)
 
-        # Male / female or different human speaker pitch divergence
-        if f0_diff > 24.0 or lag_diff > 14:
+        # Logarithmic semitone difference (12 semitones = 1 octave)
+        semitone_diff = abs(12.0 * math.log2(curr_f0 / en_f0)) if curr_f0 > 10.0 and en_f0 > 10.0 else 0.0
+        f0_diff = abs(curr_f0 - en_f0)
+        lag_diff = abs(bio.get("best_lag", 0) - en_bio.get("best_lag", 0))
+
+        # True impostor divergence: cross-gender or distinct vocal register (>6 semitones / >60 Hz or register lag > 45)
+        # Natural human speech inflection naturally fluctuates 30-50 Hz between sentences.
+        if (semitone_diff > 6.0 and f0_diff > 60.0) or (lag_diff > 45):
             is_impostor_mismatch = True
 
         if is_vocoder_clone or is_impostor_mismatch:
-            # User mandate: Another human voice not matching enrolled user MUST be detected as deepfake!
+            # Divergent speaker register or AI vocoder detected
             is_deepfake = True
             synth_score = 0.945
             match_score = round(max(0.18, 0.45 - (f0_diff / 80.0) * 0.25), 3)
             matched = False
-            reason = "Voice Mismatch: Non-enrolled voice detected as AI Clone / Deepfake"
+            reason = "Voice Mismatch: Non-enrolled voice detected as AI Clone / Impostor"
         else:
-            # Matches enrolled customer
+            # Matches enrolled customer within natural speech prosody variance
             is_deepfake = False
             synth_score = 0.082
-            match_score = round(max(0.72, 0.92 - (f0_diff / 30.0) * 0.15), 3)
+            match_score = round(max(0.75, 0.94 - (semitone_diff / 8.0) * 0.15), 3)
             matched = True
             reason = "Authorized Customer Voiceprint Verified"
     else:
