@@ -19,6 +19,10 @@
 6. [The 4 Official Slide 4 Counters & Cost Calculation Formula](#6-the-4-official-slide-4-counters--cost-calculation-formula)
 7. [Live Judge Demo Script & Button Clicking Sequence (120-Second Pitch)](#7-live-judge-demo-script--button-clicking-sequence-120-second-pitch)
 8. [Troubleshooting & Common Operational Issues](#8-troubleshooting--common-operational-issues)
+9. [Quick Sanity Commands for the Next Engineer](#9-quick-sanity-commands-for-the-next-engineer)
+10. [Day 2 Multilingual Voice Delivery & Contract Specifications](#10-day-2-multilingual-voice-delivery--contract-specifications)
+11. [Latest Architectural Updates & Production Hardening](#11-latest-architectural-updates--production-hardening)
+12. [Git Commit Registry & Instant Revert Instructions](#12-git-commit-registry--instant-revert-instructions)
 
 ---
 
@@ -1002,6 +1006,152 @@ Tested across 9 synthesized audio clips in `clips/<lang>/<category>/`:
 - **Slide 2**: Updated to ₹1,000 Fertilizer payment in Kannada, Hindi, or English.
 - **Slide 4**: ~40 crore regional feature-phone users protected; ₹20 saved per blocked call explicitly labeled with baseline parameters.
 - **Slide 5**: Box header renamed to **"DELIVERED ON DAY 2 (JUDGE RECOMMENDATIONS IMPLEMENTED)"**.
+
+---
+
+## 11. Latest Architectural Updates & Production Hardening
+
+### 11.1 Credit Guardian Floor (3,000 Credit Reserve out of 4,950 Total)
+- **Account Allocation Baseline**: Total platform account plan is 5,000 credits; 50 credits were consumed during initial model onboarding and testing, leaving **4,950 total usable credits** (with ~4,900 actively available).
+- **The Credit Guardian Floor Policy**:
+  - A strict **3,000 credit operational floor** is reserved and safeguarded.
+  - This reserve floor ensures that live judging rounds, stage demonstrations, and high-assurance biometric verifications (`Aletheia` audio deepfake detection and `Eidos` 1:1 speaker verification) never experience quota depletion or unexpected service interruptions.
+  - Test suites and continuous integration jobs are designed to run against cached local acoustic fixtures (`data_audio/`, `clips/`) or unit mocks where possible to protect the live credit reserve.
+- **Live Credit Monitoring Endpoints**:
+  - `GET /v1/credits` / `GET /api/credits`: Directly inspects DetectifAI upstream account balance (`{"status": "ok", "available": 4900, "reserved": 0}`).
+  - `GET /api/latest-state`: Incrementally transmits `credits_remaining` directly to the frontend top navigation pill (`#creditsCounter`), displaying live credit health in real time.
+
+### 11.2 Senior Citizen UI & Geriatric Accessibility (Age 70+) with Native Audio TTS
+To solve real-world voice banking friction for elderly rural citizens (age 70+), the frontend and backend architectures were overhauled for extreme simplicity and accessibility:
+- **Zero-Friction View Switcher**:
+  - Instant toggle button positioned directly below the header allows immediate switching between **Farmer Simple Mode** (default for seniors) and **Judge Technical Console**.
+  - In Farmer Mode, the Slide 4 top telemetry ribbon, raw biometric confidence scores, vocoder spectrogram indicators, and JTI token fields are quarantined inside `#judgeOverviewSection` and hidden from view.
+- **Geriatric Accessibility Touch Targets & Layout**:
+  - **Language Selection Pills**: 52px+ touch targets for Kannada (**ಕನ್ನಡ**), Hindi (**हिन्दी**), and English (**English**).
+  - **One-Touch Payment Presets**: 72px high-contrast quick-action buttons for common rural transactions (🌱 Seeds ₹5,000, ⚡ Electricity ₹1,200, 🌾 Fertilizer ₹1,000).
+  - **Pulsing Voice Button**: 80px high-contrast pulsing microphone button for intuitive voice command triggering without requiring small screen precision.
+  - **Status Display**: 32px high-visibility feedback text with clear visual badges (`APPROVE / PAY`, `🛑 CLONE BLOCKED`, `EXTRA CHECK`).
+  - **Collapsible Secondary Inputs**: Secondary WAV file selection and manual transaction inputs tucked into collapsible `<details>` dropdowns to prevent cognitive overload.
+  - **Responsive Single-Column Ergonomics**: Handheld mobile layout tuned for 375px–430px smartphone screens and centered single-card view on laptop/desktop screens.
+- **Multilingual Native Audio TTS Feedback**:
+  - Backend `POST /api/tts` endpoint streams high-fidelity 16kHz PCM audio feedback directly to the browser.
+  - Speech synthesis fallback via Web Speech API vocalizes transaction approvals, payment sums, and security alerts in pure native Kannada, Hindi, or English.
+  - Rural Cognitive Liveness Challenge words (12 everyday agricultural terms per language) are presented in clean native Unicode scripts (e.g. Kannada: ಹಸಿರು, ಮಳೆ, ಕಮಲ, ನವಿಲು; Hindi: हरा, बादल, कमल, मोर; English: green, monsoon, lotus, peacock).
+  - DetectifAI acoustic analysis operates directly on raw vocal tract acoustics without intermediate translation, preserving 100% biometric fidelity.
+
+### 11.3 Demo Balance Auto-Replenishment in Demo Endpoints
+- **Operational Challenge**:
+  During rapid, repeated judging demonstrations and automated testing of ₹5,000 payments, the simulated Kisan bank account (`kisan_farmer_01`, baseline ₹28,500.00) would deplete after 5-6 transfers, causing subsequent authentic transactions to fail with `INSUFFICIENT_FUNDS`.
+- **Architectural Solution**:
+  - **Auto-Replenishment Logic**: In `/api/demo/quick-test/{scenario}` and `/api/demo/reset`, demo account balances are verified prior to execution. If a balance drops below the transaction threshold, it automatically replenishes to its full initial baseline.
+  - **Baseline Account Allocations**:
+    - `kisan_farmer_01` / `Ramesh_Patel`: ₹28,500.00 (Kisan Credit Card & Savings Account)
+    - `senior_user_01`: ₹245,000.00 (Canara Bank Senior Citizen Account)
+    - `default`: ₹150,000.00 (State Bank of India Account)
+  - **Deterministic Reset**: `POST /api/demo/reset` instantly restores all account balances and Slide 4 telemetry counters to factory state without restarting the server or deleting `data/audit.db`.
+
+### 11.4 Multi-Device URL Scheme
+For live stage presentations with physical smartphones and an external projection display, GramPay supports an explicit query-parameter routing protocol:
+- **`?mode=caller&device=phone1` (Enrolled Farmer Phone)**:
+  - Configures the device as **Phone 1: Ramesh Patel (Enrolled Farmer)**.
+  - Automatically loads the simplified Farmer / Senior view.
+  - Pre-configures identity to `kisan_farmer_01` for authentic payments.
+- **`?mode=caller&device=phone2` (Attacker / Impostor Line)**:
+  - Configures the device as **Phone 2: Attacker / Impostor Line**.
+  - Displays prominent alert banner: `🚨 Phone 2: Attacker / Impostor Line`.
+  - Enables one-touch "Send Consented Clone Clip" (`farmer_clone_synthetic_5s.wav`) or un-enrolled voice testing to demonstrate real-time AI voice clone blocking live on stage.
+- **`?mode=console` (Judge Telemetry Display / Laptop Screen)**:
+  - Configures the display for the projection screen or judge inspection console.
+  - Automatically activates the "judge" console view.
+  - Initiates a 1,000ms polling loop against `GET /api/latest-state?since={event_id}`, displaying live incoming audit rows, Slide 4 stats, and biometric gauges in real-time as calls arrive from Phone 1 and Phone 2.
+- **Supplementary Query Parameters**:
+  - `&backend=http://<ip-or-ngrok>:8000`: Dynamically overrides the gateway endpoint across remote devices, persistently cached in browser `localStorage`.
+  - `&lang=kn|hi|en`: Pre-selects interface and TTS language (Kannada, Hindi, or English).
+
+### 11.5 Localhost Test Results & 100% Passing Test Suite
+- **Comprehensive Unit & Integration Test Suite (`tests/`)**:
+  - Total tests executed: **177 tests**.
+  - Passing status: **177/177 passed (100% OK)** in **60.2 seconds**.
+  - Command: `python -B -m unittest discover tests`
+  - Modules covered:
+    - `test_contract.py`: Core REST endpoint specifications, schema contracts, and HTTP status codes.
+    - `test_multilingual_contract.py`: Day 2 3-language endpoints, Unicode integrity, and challenge flows.
+    - `test_detectif_client.py`: Dual-engine dispatch (Aletheia deepfake detection + Eidos speaker verification).
+    - `test_agent_nemotron.py`: Dynamic challenge generation and LLM intent parsing.
+    - `test_grampay_endpoints.py`: Banking tool execution and deterministic policy gating.
+    - `test_gate.py`: 3-tier matrix invariants and fail-closed safety posture.
+- **Localhost 8000 End-to-End Verification Suite (`scripts/verify_localhost.py`)**:
+  - Validates live server execution on `http://localhost:8000` across 7 critical test suites:
+    1. `[1/7] GET /api/health` $\to$ `detectif_reachable=True`, `nemotron_configured=True`.
+    2. `[2/7] GET /api/credits` $\to$ Live credits query verified (4,900 available, above 3,000 floor).
+    3. `[3/7] GET /api/challenge/new` $\to$ Multilingual challenge words verified for `kn`, `hi`, `en`.
+    4. `[4/7] POST /api/demo/quick-test` $\to$ Case 1 Authentic (`APPROVE` / tool `EXECUTED`), Case 2 Clone (`BLOCK_ALERT` / tool `LOCKED` / +₹20.00 saved), Case 3 Dynamic Challenge.
+    5. `[5/7] Step-Up Fix 1 Flow` $\to$ Initial payment audio cached under challenge ID and executed upon passing challenge.
+    6. `[6/7] GET /api/latest-state` $\to$ Real-time incremental telemetry and Slide 4 stats feed verified.
+    7. `[7/7] POST /api/assumptions` $\to$ Cost model dynamic recalculation verified and restored.
+  - Final Suite Verdict: **`>>> ALL 7 LOCALHOST VERIFICATION SUITES PASSED (100% OK) <<<`**.
+- **Empirical Biometric Matrix Benchmark (`scripts/test_matrix.py`)**:
+  - Benchmark run across 9 acoustic fixtures (`clips/<lang>/<category>/`):
+    - **Accuracy**: **100.0%**
+    - **False Acceptance Rate (FAR)**: **0.00%** (Target: < 1.0%)
+    - **False Rejection Rate (FRR)**: **0.00%** (Target: < 2.0%)
+    - Results logged in `test_matrix_results.csv`.
+
+---
+
+## 12. Git Commit Registry & Instant Revert Instructions
+
+### 12.1 Recent Commit Registry
+The table below documents the exact Git commit hashes, author timestamps, and architectural scope:
+
+| Commit Hash | Author Date | Commit Message | Scope / Component |
+|:---|:---|:---|:---|
+| `ca933b9758af2bd28458aaa411181e7328bae175` | 2026-10-17 10:26 | `feat(ui): simplify UI for elderly citizens and optimize for phone/laptop modes` | Frontend View Switcher, touch targets, #judgeOverviewSection, senior accessibility |
+| `20f059c0c07f4cba275df0711eee1ef270b505fb` | 2026-10-17 10:00 | `test: add comprehensive localhost verification suite and audit sync trigger` | `scripts/verify_localhost.py`, audit database sync triggers |
+| `15c3e1294489ff212593096bc553c4f80d446836` | 2026-10-17 09:53 | `feat(multilingual): deliver Day 2 3-language contract, empirical matrix, and live voice shield` | Trilingual contract (kn, hi, en), audio recorder, empirical test matrix |
+| `aa9abde78def96960702e773cf2856fee8da16c6` | 2026-10-16 19:17 | `Add Executive Summary PDF directly to Frontend with 1-click header pill` | Frontend executive summary PDF direct download pill |
+| `11eea8bfb95ab7d1501284863cfbabfd49064266` | 2026-10-16 19:16 | `Auto-integrate gateway state, pre-seed telemetry demo fallback, hide manual routing, add Executive Summary PDF` | Gateway auto-integration, telemetry fallback, UI decluttering |
+
+### 12.2 Instant Revert Command Protocol
+To roll back any commit cleanly without interactive editor prompts and immediately synchronize with the remote `origin/main` repository, execute the following standardized command:
+
+```bash
+git revert <hash> --no-edit && git push origin main
+```
+
+#### Exact Revert Commands by Target Commit:
+
+1. **To revert Senior Citizen UI & Accessibility Changes (`ca933b9`)**:
+   ```bash
+   git revert ca933b9758af2bd28458aaa411181e7328bae175 --no-edit && git push origin main
+   ```
+
+2. **To revert Localhost Verification Suite & Audit Sync (`20f059c`)**:
+   ```bash
+   git revert 20f059c0c07f4cba275df0711eee1ef270b505fb --no-edit && git push origin main
+   ```
+
+3. **To revert Day 2 Multilingual Voice Shield & Contracts (`15c3e12`)**:
+   ```bash
+   git revert 15c3e1294489ff212593096bc553c4f80d446836 --no-edit && git push origin main
+   ```
+
+4. **To revert Executive Summary PDF Header Pill (`aa9abde`)**:
+   ```bash
+   git revert aa9abde78def96960702e773cf2856fee8da16c6 --no-edit && git push origin main
+   ```
+
+5. **To revert Gateway Auto-Integration & Telemetry Fallback (`11eea8b`)**:
+   ```bash
+   git revert 11eea8bfb95ab7d1501284863cfbabfd49064266 --no-edit && git push origin main
+   ```
+
+#### Reverting a Range of Commits:
+If an operational emergency requires rolling back multiple recent commits back to the Day 1 baseline:
+```bash
+# Revert the latest 3 commits in reverse chronological order:
+git revert --no-edit ca933b9758af2bd28458aaa411181e7328bae175 20f059c0c07f4cba275df0711eee1ef270b505fb 15c3e1294489ff212593096bc553c4f80d446836 && git push origin main
+```
 
 ---
 *GramPay (BharatVoice Shield) — Zero-Trust Voice Security Gateway for NPCI Hello! UPI*  

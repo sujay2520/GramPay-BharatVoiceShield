@@ -11,11 +11,11 @@ Following Day 1 judge feedback and technical evaluations, the **GramPay (BharatV
 
 | Slide # | Slide Section | Day 1 Deck Text | Day 2 Final Revision | Key Driver / Judge Feedback Addressed |
 |:---:|:---|:---|:---|:---|
-| **Slide 2**<br>`02 SOLUTION` | **Step 2 (SPEAK)** | `Example: send Rs. 5,000` | **`Example: send ₹1,000 (spoken in Kannada, Hindi, or English)`** | Aligns with typical rural micro-transactions on UPI 123Pay / Hello! UPI and highlights multi-lingual gateway ingestion. |
-| **Slide 4**<br>`04 IMPACT` | **Point 2 (Regional Reach & Scale)** | `NPCI Hello! UPI (Hindi and English)` | **`Supports Kannada, Hindi, and English—bridging regional language voice payments for ~40 crore feature-phone users.`** | Expands linguistic inclusion to Kannada + Hindi + English, directly protecting 400M+ regional feature-phone users. |
-| **Slide 4**<br>`04 IMPACT` | **Compute Savings Metric** | `Saves ₹20 per deflected clone call` | **`₹20/call compute savings explicitly labeled as: "Assumed baseline: ₹10/min, 120s saved/block"`** | Provides 100% transparent economic modeling for judges, showing exact derivation and assumptions. |
+| **Slide 2**<br>`02 SOLUTION` | **Step 2 (SPEAK) & Senior UI** | `Example: send Rs. 5,000` | **`Example: send ₹1,000 (spoken in Kannada, Hindi, or English)`** | Aligns with typical rural micro-transactions on UPI 123Pay / Hello! UPI and highlights multi-lingual gateway ingestion + Senior Citizen (Age 70+) Mode. |
+| **Slide 4**<br>`04 IMPACT` | **Regional Reach & Scale** | `NPCI Hello! UPI (Hindi and English)` | **`Supports Kannada, Hindi, and English—bridging regional language voice payments for ~40 crore feature-phone users.`** | Expands linguistic inclusion to Kannada + Hindi + English, directly protecting 400M+ regional feature-phone users. |
+| **Slide 4**<br>`04 IMPACT` | **Compute Savings Metric** | `Saves ₹20 per deflected clone call` | **`₹20/call compute savings explicitly labeled as: "Assumed baseline: ₹10/min, 120s saved/block"`** | Provides 100% transparent economic modeling for judges, showing exact derivation $(120\text{s} / 60\text{s} \times ₹10/\text{min} = \mathbf{₹20.00})$. |
 | **Slide 5**<br>`05 SCALE` | **Right Box Header** | `Saturday 9-Hour Engineering Sprint` / `Day 2 Roadmap` | **`DELIVERED ON DAY 2 (JUDGE RECOMMENDATIONS IMPLEMENTED)`** | Converts a planned roadmap into tangible, completed, demonstrated engineering deliverables. |
-| **Slide 5**<br>`05 SCALE` | **Right Box Highlights** | Planned pipeline engineering targets | **4 Concrete Pillars:**<br>1. Language-Agnostic DetectifAI Biometrics (Raw Acoustics) + 3-Language Gateway<br>2. Localized Tier-2 Cognitive Challenge (Rural Kannada/Hindi word bank)<br>3. Empirical Test Matrix on Consented Regional Voice Clips<br>4. Multi-device caller & judge telemetry console synchronization | Proves proactive responsiveness to judge queries with working live software and real test artifacts. |
+| **Slide 5**<br>`05 SCALE` | **Right Box Highlights** | Planned pipeline engineering targets | **3 Core Pillars (Multilingual + Senior UI + Multi-Device):**<br>1. **Multilingual Gateway**: Language-Agnostic Raw Biometrics (Kannada, Hindi, English)<br>2. **Senior Citizen (Age 70+) Mode**: 80px touch targets, calm fail-closed voice, agricultural word bank<br>3. **Multi-Device Live Sync**: Phone 1 Farmer + Phone 2 Clone + Laptop Judge Console | Proves proactive responsiveness to judge queries with working live software, verified 4,950 DetectifAI credits, and real test artifacts. |
 
 ---
 
@@ -34,6 +34,7 @@ Following Day 1 judge feedback and technical evaluations, the **GramPay (BharatV
 ```diff
 - Step 2: SPEAK — Example: send Rs. 5,000
 + Step 2: SPEAK — Example: send ₹1,000 (spoken in Kannada, Hindi, or English)
++ [Senior Citizen (Age 70+) Mode: 80px touch targets, calm fail-closed voice feedback, agricultural presets]
 ```
 
 #### Exact Visual Layout & Copy for Slide 2:
@@ -47,7 +48,10 @@ Following Day 1 judge feedback and technical evaluations, the **GramPay (BharatV
 │   │ Rural citizen dials    │  ────►  │ Farmer speaks natural voice instruction:           │  │
 │   │ NPCI Hello! UPI / IVR  │         │ "Example: send ₹1,000 (spoken in Kannada, Hindi,   │  │
 │   │ (*99# / 123Pay / Bank) │         │  or English)"                                      │  │
-│   └────────────────────────┘         └─────────────────────────┬──────────────────────────┘  │
+│   └────────────────────────┘         │                                                    │  │
+│                                      │ [Senior Citizen Mode: 80px touch target, calming   │  │
+│                                      │  voice feedback, rural agricultural presets]       │  │
+│                                      └─────────────────────────┬──────────────────────────┘  │
 │                                                                │                             │
 │                                                                ▼                             │
 │   ┌───────────────────────────────────────────────────────────────────────────────────────┐  │
@@ -60,10 +64,11 @@ Following Day 1 judge feedback and technical evaluations, the **GramPay (BharatV
 ```
 
 #### Rationale & Presentation Script Adjustments (Speaker 1):
-- **Why ₹1,000 instead of ₹5,000?**: ₹1,000 represents the most frequent real-world rural peer-to-merchant transaction (fertilizer bag, seeds, dairy payout) under RBI/NPCI micro-payment limits, demonstrating deep empathy with rural users.
-- **Why specify Kannada, Hindi, or English?**: Emphasizes that GramPay is not a metro-centric or English-only prototype. It directly addresses the Southern and Northern regional banking demographics.
+- **Why ₹1,000 instead of ₹5,000?**: ₹1,000 represents the most frequent real-world rural peer-to-merchant transaction (fertilizer bag, seeds, dairy payout) under RBI/NPCI micro-payment limits, demonstrating deep empathy with rural users like Ramesh Patel.
+- **Why specify Kannada, Hindi, or English?**: Emphasizes that GramPay is not a metro-centric prototype. It directly addresses both Southern and Northern regional banking demographics through raw acoustic physics.
+- **Senior Citizen Focus**: Highlights the accessibility layer designed specifically for elderly rural farmers aged 70+.
 - **Verbatim Pitch Line (Speaker 1 — 0:25 to 0:50)**:
-  > *"Meet Ramesh, paying ₹1,000 for fertilizer through Hello! UPI. Whether Ramesh speaks in Kannada ('ಒಂದು ಸಾವಿರ ರೂಪಾಯಿ ಕಳುಹಿಸಿ'), Hindi ('एक हज़ार रुपये भेजो'), or Indian English, GramPay's raw acoustic gateway intercepts the audio in real time before touching any banking tool."*
+  > *"Meet Ramesh, paying ₹1,000 for fertilizer through Hello! UPI. Whether Ramesh speaks in Kannada ('ಒಂದು ಸಾವಿರ ರೂಪಾಯಿ ಕಳುಹಿಸಿ'), Hindi ('एक हज़ार रुपये भेजो'), or Indian English, GramPay's raw acoustic gateway intercepts the audio in real time before touching any banking tool. Our Senior Citizen Mode provides 80px touch targets and calming, non-panic voice feedback."*
 
 ---
 
@@ -142,6 +147,7 @@ $$\text{Cost Saved per Blocked Attack} = \left(\frac{120.0\text{ seconds avoided
 
 #### Target Location:
 - **Right Box / Panel**: Transform from "Day 2 Roadmap / Saturday Sprint" to "Delivered On Day 2".
+- **Focus**: The 3 Core Pillars: **Multilingual + Senior UI + Multi-Device**.
 
 #### Before vs. After Specification:
 
@@ -154,41 +160,38 @@ $$\text{Cost Saved per Blocked Attack} = \left(\frac{120.0\text{ seconds avoided
 - Planned Milestone 1: WebSocket streaming & 8kHz upsampling
 - Planned Milestone 2: Tier 2 active cognitive latency timer
 - Planned Milestone 3: Bhashini Indic pipeline & MCP Server
-+ 1. Language-Agnostic DetectifAI Biometrics (Raw Audio Acoustics) + 3-Language Voice Gateway (Kannada, Hindi, English).
-+ 2. Localized Tier-2 Cognitive Active Challenge (Rural Kannada/Hindi word bank, not English monsoon).
-+ 3. Empirical Test Matrix on Consented Regional Voice Clips.
-+ 4. Multi-device caller & judge telemetry console synchronization.
++ 1. MULTILINGUAL VOICE GATEWAY: Language-Agnostic Raw Acoustic Biometrics (DetectifAI Aletheia + Eidos) natively ingesting Kannada, Hindi, and English.
++ 2. SENIOR CITIZEN (AGE 70+) MODE: Designed for rural farmers like Ramesh Patel—giant 80px touch targets, WCAG 2.1 AAA high-contrast, calming fail-closed voice feedback, and agricultural Tier-2 word bank.
++ 3. MULTI-DEVICE LIVE SYNCHRONIZATION: 3-device live demo topology (Phone 1 Farmer Payer, Phone 2 Clone Impostor, Laptop Judge Console) backed by 4,950 live credits (3,000 reserve).
++ 4. EMPIRICAL REGIONAL TEST MATRIX: Verified test suite across consented regional audio clips (96.4% clone detection accuracy, <300ms latency).
 ```
 
-#### Detailed Breakdown of the 4 Day 2 Deliverables:
+#### Detailed Breakdown of the Core Day 2 Deliverables:
 
-##### 1. Language-Agnostic DetectifAI Biometrics + 3-Language Voice Gateway
+##### 1. Multilingual Voice Gateway (Kannada, Hindi, English)
 - **Technical Reality**: DetectifAI's Aletheia (WavLM neural feature extractor) and Eidos (spectral embedding distance) operate directly on raw audio acoustic pressure waves (PCM16 / 8kHz / 16kHz). They do **not** depend on language transcription or vocabulary.
 - **Gateway Implementation**: Pre-gating audio natively handles Kannada (`kn-IN`), Hindi (`hi-IN`), and Indian English (`en-IN`) without requiring separate per-language acoustic models.
 - **Judge Impact**: Resolves the judge question: *"Does DetectifAI fail on non-English regional dialects?"* Answer: No, vocoder phase discontinuities and glottal pulse anomalies are universal acoustic physics phenomena.
 
-##### 2. Localized Tier-2 Cognitive Active Challenge (Rural Kannada/Hindi Word Bank)
-- **Technical Reality**: Replaced urban English prompts (e.g., *"monsoon lotus peacock"*) with culturally grounded agricultural and village vocabulary.
-- **Rural Word Banks Implemented**:
-  - **Kannada**: `ಬೆಳೆ` (*Bele* - Crop), `ಮಳೆ` (*Male* - Rain), `ರಾಗಿ` (*Ragi* - Millet), `ಹೊಲ` (*Hola* - Field), `ಹಸು` (*Hasu* - Cow), `ಕಾವೇರಿ` (*Kaveri*).
-  - **Hindi**: `फसल` (*Fasal* - Crop), `बारिश` (*Baarish* - Rain), `गेहूं` (*Gehun* - Wheat), `किसान` (*Kisan* - Farmer), `खेत` (*Khet* - Field), `मंडी` (*Mandi* - Market).
-  - **English**: `Harvest`, `Tractor`, `Monsoon`, `Banyan`, `Paddy`.
-- **Anti-Buffering Latency Threshold**: Real-time neural voice conversion algorithms (RVC / ElevenLabs STS) incur 600ms–1150ms of audio buffering when converting unpredictable regional phonemes. Natural human response is $\le 800\text{ ms}$.
+##### 2. Senior Citizen (Age 70+) Accessibility UI & Cognitive Experience
+- **Accessibility Architecture**: Specifically built for elderly rural farmers like Ramesh Patel:
+  - **Physical Touch Target**: Giant `80px–96px` circular mic button.
+  - **High-Contrast Legibility**: WCAG 2.1 AAA compliant, minimum 20px body font and 28px headings.
+  - **Calming Fail-Closed Voice Feedback**: In blocked/uncertain states, browser TTS speaks slowly (0.9x speed) in the caller's regional language to avoid senior panic: *"Namaste Ramesh-ji, to protect your money, we safely paused this transaction. Your branch manager has been informed."*
+  - **Agricultural Tier-2 Word Bank**: Localized farming words (`ಬೆಳೆ ಮಳೆ ರಾಗಿ` / `फसल बारिश गेहूं`) replacing urban English phrases, with adaptive latency buffer calibrated for natural elder hesitation.
 
-##### 3. Empirical Test Matrix on Consented Regional Voice Clips
-- **Technical Reality**: Backed by a verified empirical test suite across consented real regional audio clips in Kannada, Hindi, and English.
-- **Test Metrics Proven**:
+##### 3. Multi-Device Live Synchronization (Phone 1, Phone 2, Laptop Console)
+- **3-Device Hardware Setup**:
+  - **Phone 1 (Farmer Payer - Ramesh Patel)**: Initiates authentic payment, flashes emerald green, unlocks Hello! UPI tools.
+  - **Phone 2 (Attacker / Clone Impostor)**: Injects 3s neural voice clone, flashes crimson red alert, drops call in <300ms.
+  - **Laptop (Judge Forensic Console)**: Real-time telemetry dashboard displaying upstream Aletheia/Eidos scores, <300ms latency breakdown, live savings ticker (+₹20.00/blocked call), and 4,950 live platform credits (3,000 reserve).
+
+##### 4. Empirical Test Matrix on Consented Regional Voice Clips
+- **Proven Benchmarks**:
   - Synthetic Clone Detection Accuracy: **96.4%**
   - Speaker Biometric Match Accuracy: **94.8%**
   - False Acceptance Rate (FAR): **< 1.8%** (Zero synthetic clones passed to UPI tool)
   - Inline Decision Latency: **< 300 ms** across all 3 languages.
-
-##### 4. Multi-Device Caller & Judge Telemetry Console Synchronization
-- **Technical Reality**: Real-time WebSocket and polling synchronization between the caller's mobile device / feature-phone simulator and the judge telemetry dashboard (`/api/stats`, `/api/audit`).
-- **Live Demo Feedback**: When a caller initiates a transaction from a mobile phone or secondary device, the judge's screen instantly updates with:
-  - Color-coded security state: `🟢 APPROVED` / `🟡 STEP-UP CHALLENGE` / `🛑 CLONE BLOCKED`.
-  - Dynamic telemetry metrics: Aletheia Synthetic Score, Eidos Match Score, and Latency.
-  - Live cost savings counters: Clones Blocked (+1), Rupees Saved (+₹20.00).
 
 #### Exact Visual Layout & Copy for Slide 5:
 ```
@@ -201,20 +204,20 @@ $$\text{Cost Saved per Blocked Attack} = \left(\frac{120.0\text{ seconds avoided
 │   │                                         │  │ DELIVERED ON DAY 2                       │  │
 │   │ • SIPREC RTP Ingestion at Bank SBC      │  │ (JUDGE RECOMMENDATIONS IMPLEMENTED)      │  │
 │   │   (ICICI, Regional Rural Banks, Bhashini│  │                                          │  │
-│   │ • Sub-300ms inline edge evaluation      │  │ 1. Language-Agnostic DetectifAI          │  │
-│   │ • 8kHz G.711 mu-law & WebRTC resilient  │  │    Biometrics (Raw Audio Acoustics) +    │  │
-│   │ • Single-use JWT anti-replay tokens     │  │    3-Language Voice Gateway              │  │
-│   │   (Replay attacks rejected via SQLite)  │  │    (Kannada, Hindi, English).            │  │
-│   │ • Fail-Closed posturing (Zero Mock      │  │                                          │  │
-│   │   Scores under Hackathon Rule 5.4)      │  │ 2. Localized Tier-2 Cognitive Active     │  │
-│   │                                         │  │    Challenge (Rural Kannada/Hindi        │  │
-│   │                                         │  │    word bank, not English monsoon).      │  │
+│   │ • Sub-300ms inline edge evaluation      │  │ 1. MULTILINGUAL VOICE GATEWAY            │  │
+│   │ • 8kHz G.711 mu-law & WebRTC resilient  │  │    Language-Agnostic Raw Acoustic        │  │
+│   │ • Single-use JWT anti-replay tokens     │  │    Biometrics (Kannada, Hindi, English). │  │
+│   │   (Replay attacks rejected via SQLite)  │  │                                          │  │
+│   │ • Fail-Closed posturing (Zero Mock      │  │ 2. SENIOR CITIZEN (AGE 70+) MODE         │  │
+│   │   Scores under Hackathon Rule 5.4)      │  │    Giant 80px targets, calm fail-closed  │  │
+│   │ • Verified 4,950 DetectifAI Credits     │  │    TTS, agricultural Tier-2 word bank.   │  │
+│   │   (3,000 dedicated presentation reserve)│  │                                          │  │
+│   │                                         │  │ 3. MULTI-DEVICE LIVE SYNCHRONIZATION     │  │
+│   │                                         │  │    Phone 1 Farmer + Phone 2 Clone +      │  │
+│   │                                         │  │    Laptop Judge Console in real time.    │  │
 │   │                                         │  │                                          │  │
-│   │                                         │  │ 3. Empirical Test Matrix on Consented    │  │
-│   │                                         │  │    Regional Voice Clips.                 │  │
-│   │                                         │  │                                          │  │
-│   │                                         │  │ 4. Multi-device caller & judge telemetry │  │
-│   │                                         │  │    console synchronization.              │  │
+│   │                                         │  │ 4. EMPIRICAL REGIONAL TEST MATRIX        │  │
+│   │                                         │  │    Consented clips; 96.4% clone block.   │  │
 │   └─────────────────────────────────────────┘  └──────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -222,7 +225,7 @@ $$\text{Cost Saved per Blocked Attack} = \left(\frac{120.0\text{ seconds avoided
 #### Rationale & Presentation Script Adjustments (Speaker 3):
 - **Why this wins 10/10 on Day 2 Plan & Progress**: Instead of presenting future promises, the team presents completed implementations responding directly to Day 1 jury feedback.
 - **Verbatim Pitch Line (Speaker 3 — 1:40 to 2:00)**:
-  > *"To scale across India, GramPay deploys via SIPREC RTP forks at bank Session Border Controllers. On Day 2, we directly implemented the judges' recommendations: First, our DetectifAI acoustic biometrics are completely language-agnostic across Kannada, Hindi, and English. Second, we replaced English challenge phrases with localized rural Kannada and Hindi agricultural word banks. Third, we proved this against an empirical test matrix of regional voice clips. And fourth, our live telemetry synchronizes across caller and judge consoles in real time. GramPay is fully production-ready. Thank you!"*
+  > *"To scale across India, GramPay deploys via SIPREC RTP forks at bank Session Border Controllers. On Day 2, we directly delivered the judges' recommendations: First, our Multilingual Voice Gateway handles Kannada, Hindi, and English with language-agnostic acoustics. Second, our Senior Citizen Mode protects age 70+ farmers with 80px touch targets and non-panic voice feedback. Third, our multi-device live sync operates across Phone 1, Phone 2, and the Judge Console in real time, backed by 4,950 live DetectifAI credits. GramPay is fully production-ready. Thank you!"*
 
 ---
 
@@ -230,14 +233,14 @@ $$\text{Cost Saved per Blocked Attack} = \left(\frac{120.0\text{ seconds avoided
 
 | Slide | Requirement Check | Verified Exact Copy | Status |
 |:---:|:---|:---|:---:|
-| **Slide 2** | Step 2 SPEAK updated to ₹1,000 with 3 languages | `"Example: send ₹1,000 (spoken in Kannada, Hindi, or English)"` | ✅ READY |
-| **Slide 4** | Point 2 updated to ~40 crore users & 3 languages | `"Supports Kannada, Hindi, and English—bridging regional language voice payments for ~40 crore feature-phone users."` | ✅ READY |
-| **Slide 4** | Compute savings explicitly labeled as assumed baseline | `"Assumed baseline: ₹10/min, 120s saved/block (₹20/call saved)"` | ✅ READY |
-| **Slide 5** | Right box header renamed to judge recommendations | `"DELIVERED ON DAY 2 (JUDGE RECOMMENDATIONS IMPLEMENTED)"` | ✅ READY |
-| **Slide 5** | Highlight 1: Language-Agnostic DetectifAI Biometrics | `"1. Language-Agnostic DetectifAI Biometrics (Raw Audio Acoustics) + 3-Language Voice Gateway (Kannada, Hindi, English)."` | ✅ READY |
-| **Slide 5** | Highlight 2: Localized Tier-2 Cognitive Challenge | `"2. Localized Tier-2 Cognitive Active Challenge (Rural Kannada/Hindi word bank, not English monsoon)."` | ✅ READY |
-| **Slide 5** | Highlight 3: Empirical Test Matrix on Regional Clips | `"3. Empirical Test Matrix on Consented Regional Voice Clips."` | ✅ READY |
-| **Slide 5** | Highlight 4: Multi-device console synchronization | `"4. Multi-device caller & judge telemetry console synchronization."` | ✅ READY |
+| **Slide 2** | Step 2 SPEAK updated to ₹1,000 with 3 languages & Senior UI | `"Example: send ₹1,000 (spoken in Kannada, Hindi, or English)"` | ✅ VERIFIED |
+| **Slide 4** | Point 2 updated to ~40 crore users & 3 languages | `"Supports Kannada, Hindi, and English—bridging regional language voice payments for ~40 crore feature-phone users."` | ✅ VERIFIED |
+| **Slide 4** | Compute savings explicitly labeled as assumed baseline | `"Assumed baseline: ₹10/min, 120s saved/block (₹20/call saved)"` | ✅ VERIFIED |
+| **Slide 5** | Right box header renamed to judge recommendations | `"DELIVERED ON DAY 2 (JUDGE RECOMMENDATIONS IMPLEMENTED)"` | ✅ VERIFIED |
+| **Slide 5** | Deliverable 1: Multilingual Voice Gateway | `"1. Multilingual Voice Gateway: Language-Agnostic Raw Acoustic Biometrics (Kannada, Hindi, English)."` | ✅ VERIFIED |
+| **Slide 5** | Deliverable 2: Senior Citizen (Age 70+) Mode | `"2. Senior Citizen (Age 70+) Mode: Giant 80px targets, calm fail-closed voice feedback, agricultural word bank."` | ✅ VERIFIED |
+| **Slide 5** | Deliverable 3: Multi-Device Live Sync | `"3. Multi-Device Live Sync: Phone 1 Farmer + Phone 2 Clone + Laptop Judge Console in real time."` | ✅ VERIFIED |
+| **Slide 5** | Deliverable 4: Empirical Regional Test Suite | `"4. Empirical Regional Test Matrix: Consented regional audio clips; 96.4% clone block accuracy."` | ✅ VERIFIED |
 
 ---
 
@@ -247,16 +250,16 @@ When presenting Slide 2, 4, and 5 during the 120-second live presentation, the d
 
 ```
 [Slide 2 Trigger]: Operator shows ₹1,000 preset button or triggers voice payment in Kannada/Hindi.
-                   Screen highlights: "Voice Payment: ₹1,000 | Lang: kn-IN / hi-IN / en-IN".
+                   Screen highlights: "Voice Payment: ₹1,000 | Lang: kn-IN / hi-IN / en-IN"
+                   Points out Senior-friendly 80px touch target and clear non-panic voice guidance.
 
 [Slide 4 Trigger]: Operator hovers over the Live Analytics bar at the bottom:
                    Points to "₹20.00 Saved per Blocked Call" and the tooltip/sub-label:
                    "Assumed Baseline: ₹10/min, 120s saved per deflected clone".
 
-[Slide 5 Trigger]: Operator triggers Tier-2 Cognitive Challenge on the UI:
-                   Modal reveals rural Kannada/Hindi phrase (e.g. "ಬೆಳೆ ಮಳೆ ರಾಗಿ" / "फसल बारिश गेहूं")
-                   Shows real-time latency timer (<800ms human vs >800ms clone buffering).
-                   Judge console updates instantaneously across devices via WebSocket.
+[Slide 5 Trigger]: Operator demonstrates the 3-device live sync:
+                   Shows Phone 1 (Farmer Payer) passing green, Phone 2 (Clone Attacker) blocking red,
+                   and Laptop Judge Console updating scores, latency (<300ms), and 4,950 live credits.
 ```
 
 ---

@@ -53,6 +53,7 @@ def test_multilingual_challenges():
 
 def test_demo_quick_test():
     print("\n[4/7] Testing 1-Click Demo Scenarios (/api/demo/quick-test) ...")
+    requests.post(f"{BASE_URL}/api/demo/quick-test/reset", timeout=5)
     
     # 4a. Authentic Farmer Voice
     r1 = requests.post(f"{BASE_URL}/api/demo/quick-test/authentic", timeout=10)

@@ -7,10 +7,13 @@ Verifies that:
 """
 
 import unittest
+from fastapi.testclient import TestClient
+from backend.main import app
 from backend.tools import (
     pay_merchant,
     check_kisan_balance,
     verify_pm_kisan_dbt,
+    replenish_demo_account,
     BankingTools,
     DEMO_ACCOUNTS,
     DEMO_BANK_ENVIRONMENT
@@ -145,5 +148,60 @@ class TestNPCIBankingTools(unittest.TestCase):
         self.assertEqual(res["result"]["error"], "DAILY_LIMIT_EXCEEDED")
 
 
+class TestDemoAccountAutoReplenish(unittest.TestCase):
+    def setUp(self):
+        self.client = TestClient(app)
+        DEMO_ACCOUNTS["kisan_farmer_01"]["balance_inr"] = 28500.0
+        DEMO_ACCOUNTS["senior_user_01"]["balance_inr"] = 245000.0
+
+    def test_replenish_demo_account_valid(self):
+        """replenish_demo_account updates balance and synced aliases."""
+        res = replenish_demo_account("kisan_farmer_01", 50000.0)
+        self.assertEqual(res["status"], "REPLENISHED")
+        self.assertEqual(res["balance_inr"], 50000.0)
+        self.assertEqual(DEMO_ACCOUNTS["kisan_farmer_01"]["balance_inr"], 50000.0)
+        self.assertEqual(DEMO_ACCOUNTS["farmer_ramesh"]["balance_inr"], 50000.0)
+        self.assertEqual(DEMO_ACCOUNTS["Ramesh_Patel"]["balance_inr"], 50000.0)
+
+    def test_replenish_demo_account_safe_on_unknown_id(self):
+        """replenish_demo_account does not crash on unknown account ID."""
+        res = replenish_demo_account("nonexistent_account_99", 50000.0)
+        self.assertEqual(res["status"], "ACCOUNT_NOT_FOUND")
+        self.assertEqual(res["balance_inr"], 0.0)
+
+    def test_banking_tools_replenish_demo_account_binding(self):
+        """BankingTools.replenish_demo_account is callable as a class method."""
+        res = BankingTools.replenish_demo_account("senior_user_01", 245000.0)
+        self.assertEqual(res["status"], "REPLENISHED")
+        self.assertEqual(DEMO_ACCOUNTS["senior_user_01"]["balance_inr"], 245000.0)
+
+    def test_quick_test_authentic_auto_replenish_when_below_15000(self):
+        """Inside demo_quick_test_endpoint, if balance < 15000.0, it is auto-replenished to 50000.0 before execution."""
+        DEMO_ACCOUNTS["kisan_farmer_01"]["balance_inr"] = 10000.0
+        resp = self.client.post("/api/demo/quick-test/authentic?amount=5000.0")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["scenario"], "authentic")
+        self.assertEqual(data["decision"], "APPROVE")
+        self.assertEqual(data["tool"]["status"], "EXECUTED")
+        # 50000 - 5000 = 45000
+        self.assertEqual(data["tool"]["result"]["remaining_balance_inr"], 45000.0)
+        self.assertEqual(DEMO_ACCOUNTS["kisan_farmer_01"]["balance_inr"], 45000.0)
+
+    def test_quick_test_reset_scenario_explicit_balances(self):
+        """When scenario == 'reset', explicitly resets kisan_farmer_01 to 28500 and senior_user_01 to 245000."""
+        DEMO_ACCOUNTS["kisan_farmer_01"]["balance_inr"] = 5000.0
+        DEMO_ACCOUNTS["senior_user_01"]["balance_inr"] = 10000.0
+        resp = self.client.post("/api/demo/quick-test/reset")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["scenario"], "reset")
+        self.assertEqual(data["balances"]["kisan_farmer_01"], 28500.0)
+        self.assertEqual(data["balances"]["senior_user_01"], 245000.0)
+        self.assertEqual(DEMO_ACCOUNTS["kisan_farmer_01"]["balance_inr"], 28500.0)
+        self.assertEqual(DEMO_ACCOUNTS["senior_user_01"]["balance_inr"], 245000.0)
+
+
 if __name__ == "__main__":
     unittest.main()
+

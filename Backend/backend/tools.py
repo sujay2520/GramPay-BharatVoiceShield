@@ -70,6 +70,32 @@ DEMO_ACCOUNTS = {
 }
 
 
+def replenish_demo_account(
+    account_id: str = "kisan_farmer_01",
+    amount: float = 50000.0
+) -> Dict[str, Any]:
+    """Safely replenishes / updates a demo account balance to the specified amount.
+    
+    Safe helper for demonstration environments to prevent demo account depletion.
+    """
+    if account_id in DEMO_ACCOUNTS:
+        DEMO_ACCOUNTS[account_id]["balance_inr"] = float(amount)
+        if account_id in ("kisan_farmer_01", "farmer_ramesh", "Ramesh_Patel"):
+            for alias in ("kisan_farmer_01", "farmer_ramesh", "Ramesh_Patel"):
+                if alias in DEMO_ACCOUNTS:
+                    DEMO_ACCOUNTS[alias]["balance_inr"] = float(amount)
+        return {
+            "account_id": account_id,
+            "balance_inr": float(amount),
+            "status": "REPLENISHED"
+        }
+    return {
+        "account_id": account_id,
+        "balance_inr": 0.0,
+        "status": "ACCOUNT_NOT_FOUND"
+    }
+
+
 def pay_merchant(
     amount: float,
     merchant_name: str = 'IFFCO Fertilizer Co-op',
@@ -334,6 +360,7 @@ class BankingTools:
     pay_merchant = staticmethod(pay_merchant)
     check_kisan_balance = staticmethod(check_kisan_balance)
     verify_pm_kisan_dbt = staticmethod(verify_pm_kisan_dbt)
+    replenish_demo_account = staticmethod(replenish_demo_account)
 
     execute_pay_merchant = staticmethod(pay_merchant)
     execute_check_kisan_balance = staticmethod(check_kisan_balance)
@@ -343,3 +370,5 @@ class BankingTools:
 # Module-level aliases for consistent import patterns
 execute_check_balance = BankingTools.execute_check_balance
 execute_transfer_funds = BankingTools.execute_transfer_funds
+replenish_demo_account = replenish_demo_account
+
